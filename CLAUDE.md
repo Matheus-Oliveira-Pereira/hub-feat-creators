@@ -7,15 +7,19 @@ Vision completa: `docs/product/vision.md`.
 ## Tech Stack
 - Backend: Java 21 (LTS) + Spring Boot 3.x
 - Frontend: Next.js 14+ (App Router) + TypeScript (`strict: true`) + Tailwind CSS
+- Mobile: React Native + Expo (SDK 50+) + TypeScript (`strict: true`) — usuário final apenas
 - Database: PostgreSQL 16
-- Tests: JUnit 5 + Mockito + Testcontainers (api) | Vitest + Playwright (web)
-- Package manager: Maven (api), pnpm (web)
-- Hosting: Railway (api), Vercel (web)
+- E-mail: Jakarta Mail (Spring Mail) via SMTP relay externo (multi-conta cadastrada pelo usuário)
+- WhatsApp: Meta WhatsApp Cloud API (oficial)
+- Tests: JUnit 5 + Mockito + Testcontainers (api) | Vitest + Playwright (web) | Jest + Detox (mobile)
+- Package manager: Maven (api), pnpm (web + mobile)
+- Hosting: Railway (api), Vercel (web), EAS (mobile builds)
 
 ## Architecture
 Monorepo:
 - `/apps/api` → Spring Boot
-- `/apps/web` → Next.js
+- `/apps/web` → Next.js (admin + operacional)
+- `/apps/mobile` → Expo (usuário final — sem telas admin/config)
 - `/docs` → Obsidian vault (PRDs, ADRs, specs, runbooks)
 - `/.claude/` → skills, commands, agents, hooks
 - `/memory` → vector DB (long-term memory L4)
@@ -50,6 +54,14 @@ Monorepo:
 - `pnpm lint` → ESLint
 - `pnpm build` → prod
 
+### Mobile (`apps/mobile`)
+- `pnpm start` → Expo dev server
+- `pnpm ios` / `pnpm android` → run em simulador/device
+- `pnpm test` → Jest + RNTL
+- `pnpm test:e2e` → Detox
+- `pnpm lint` → ESLint
+- `eas build --profile preview` / `eas build --profile production` → builds via EAS
+
 ### Slash commands (Claude)
 - `/implement <PRD>` → implementa feature de PRD
 - `/ralph <PRD>` → persistência até critérios passarem
@@ -67,7 +79,9 @@ Monorepo:
 - Nunca commitar `.env`, segredos, dump de DB
 - Mudança em `/apps/*` que afeta produto exige update em `/docs`
 - LGPD desde dia 1: dado de pessoa (influenciador, contato, e-mail) com base legal documentada
-- E-mails só via provedor configurado (Resend/SES/Postmark) — nunca SMTP local
+- E-mails enviados via SMTP relay externo cadastrado pelo usuário (Jakarta Mail) — credenciais cifradas em repouso (AES-GCM com KMS); nunca MTA local; nunca commitar credenciais
+- Notificações ao usuário final via WhatsApp Cloud API (oficial Meta) com templates aprovados; opt-in obrigatório (LGPD)
+- Mobile (Expo) só telas de usuário final — admin/config exclusivo na web
 - Testes de integração tocam DB real via Testcontainers — sem mocks de DB
 
 ### Documentation Rules
@@ -121,6 +135,9 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `api/` → REST conventions, paginação, erros, versionamento
 - ✅ `ai-ml/` → match marca↔influencer (futuro)
 - ✅ `long-term-memory/` → vector DB (L4)
+- ⏳ `email/` → SMTP relay multi-conta (Jakarta Mail) — ADR-005
+- ⏳ `whatsapp/` → Cloud API oficial Meta — ADR-006
+- ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
 - ⏳ `compliance/` → LGPD — ativar antes de produção
@@ -151,6 +168,10 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **Next App Router**: server components default — `'use client'` quando precisar hooks; hidratação de datas requer ISO no servidor
 - **Soft-delete obrigatório**: `influenciador`, `marca`, `prospeccao` nunca DELETE direto — `deleted_at` + job de purga após retenção
 - **Idempotência envio e-mail**: chave idempotente na fila (retry não pode reenviar)
+- **SMTP multi-conta**: connection pool por conta; respeitar rate limit do provedor (Gmail 500/dia, Outlook 300/dia, M365 10k/dia); circuit breaker em falha de auth (senha trocou/app password revogado); rotacionar credenciais cifradas
+- **WhatsApp Cloud API**: templates HSM precisam aprovação Meta (24-48h); janela de 24h para mensagens free-form após resposta do usuário; webhook de status (sent/delivered/read/failed) é assíncrono; rate limit por número (1k msgs/dia tier inicial)
+- **Expo OTA updates**: mudanças JS via `eas update` sem store review; mudanças nativas exigem novo build + submit; travar SDK version no monorepo
+- **Mobile auth**: token JWT em SecureStore (iOS Keychain / Android Keystore) — nunca AsyncStorage
 - **CORS Vercel↔Railway**: `CORS_ALLOWED_ORIGINS` explícito; cuidado com preview URLs do Vercel
 - **Migrations**: Flyway versionado em `apps/api/src/main/resources/db/migration` — nunca editar V já aplicada, criar nova
 
