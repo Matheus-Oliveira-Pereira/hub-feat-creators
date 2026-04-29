@@ -1,131 +1,133 @@
-# Code Review Gates
+# Code Review Gates — HUB Feat Creator
 
-## Philosophy
+## Filosofia
 
-> **Agents and skills are for on-demand tasks.
-> Hooks are for guarantees that must never fail.**
+> **Agents e skills são para tarefas on-demand.
+> Hooks são para garantias que não podem falhar.**
 
-A security-auditor agent is great for deep reviews, but it needs to be invoked.
-A pre-commit hook runs **always**, without anyone needing to remember.
+Um `@security-auditor` é ótimo para review profundo, mas precisa ser invocado.
+Um pre-commit hook roda **sempre**, sem ninguém precisar lembrar.
 
-## How it works
+## Como funciona
 
-Every `git commit` triggers `scripts/pre-commit-review.sh` via Claude Code hooks.
-The script runs automated checks on staged source files and either:
+Todo `git commit` dispara `scripts/pre-commit-review.sh` via Claude Code hooks.
+O script roda checks automatizados nos arquivos staged e:
 
-- **Blocks** the commit (exit code 2) — for MUST FIX issues
-- **Warns** but allows (exit code 0) — for SHOULD FIX issues
-- **Passes clean** — all checks green
+- **Bloqueia** o commit (exit code 2) — para issues **MUST FIX**
+- **Avisa** mas permite (exit code 0) — para **SHOULD FIX**
+- **Passa limpo** — todos checks verdes
 
-## Review Levels
+## Review levels
 
-Configured via `bootstrap.sh --review <level>` or `REVIEW_LEVEL` env var:
+Configurado via `bootstrap.sh --review <level>` ou env `REVIEW_LEVEL`. **HUB Feat Creator usa `hybrid`**.
 
-| Level | What runs | Time | Cost | Best for |
-|---|---|---|---|---|
-| **simple** | Bash only (grep, compile, tests) | ~5-15s | Free | Solo devs, open source, CI-heavy teams |
-| **hybrid** | Bash + Sonnet AI review | ~20-30s | ~$0.01/commit | Most teams (recommended) |
-| **deep** | Bash + Opus AI review | ~40-60s | ~$0.05/commit | Security-critical, fintech, healthcare |
+| Level | O que roda | Tempo | Custo | Quando usar |
+|-------|-----------|-------|-------|-------------|
+| **simple** | Só bash (grep, compile, test parcial) | ~10-20s | Free | Equipes que pagam por API |
+| **hybrid** | Bash + Sonnet AI review | ~25-40s | ~$0.01/commit | **Default — escolha do projeto** |
+| **deep** | Bash + Opus AI review | ~50-90s | ~$0.05/commit | Antes de release de produção |
 
-### How AI review works (hybrid/deep)
+### Como AI review funciona (hybrid/deep)
 
-1. Bash checks run first (deterministic, fast)
-2. If no MUST FIX blockers, AI review runs on the staged diff
-3. AI analyzes logic bugs, edge cases, security risks, business logic
-4. AI adds **warnings only** — never blocks commits
-5. Bash handles blocking; AI handles intelligence
+1. Bash checks rodam primeiro (deterministas, rápidos)
+2. Se nenhum MUST FIX bloqueia, AI review roda no diff staged
+3. AI analisa: bugs de lógica, edge cases, riscos de segurança, business logic
+4. AI adiciona **warnings only** — nunca bloqueia
+5. Bash bloqueia; AI dá inteligência
 
-### Requirements for hybrid/deep
+### Pré-requisitos
+- `claude` CLI instalado (usa plano Max/Pro — sem API key) **OU**
+- `ANTHROPIC_API_KEY` em `.env` ou `~/.env` (fallback API)
+- `scripts/ai-review.sh` presente (já está no projeto)
 
-- `claude` CLI installed (uses your Max/Pro plan — no API key needed), **OR**
-- `ANTHROPIC_API_KEY` set in environment, `.env`, or `~/.env` (API fallback)
-- `scripts/ai-review.sh` present in the project
-- Python 3 available (only needed for API fallback)
+## Categorias de check
 
-## Check Categories
+### Universais (built-in)
 
-### Universal checks (built-in)
+| # | Check | Severidade | Captura |
+|---|-------|-----------|---------|
+| 1 | Compilação / type check | MUST FIX | Build quebrado |
+| 2 | Tests passing (unit dos arquivos modificados) | MUST FIX | Regressão |
+| 3 | Hardcoded secrets (regex AWS, JWT, etc) | MUST FIX | Vazamento credencial |
+| 4 | Quality (`console.log`, `any`, `@SuppressWarnings`) | SHOULD FIX | Debug artifacts, weak typing |
+| 5 | Error handling (`fetch` sem `.catch`, `try/catch`) | SHOULD FIX | Exceções não tratadas |
+| 6 | Test coverage gaps | CONSIDER | Arquivo sem teste correspondente |
 
-| # | Check | Severity | What it catches |
-|---|---|---|---|
-| 1 | Compilation / type check | MUST FIX | Broken builds |
-| 2 | Tests passing | MUST FIX | Regressions |
-| 3 | Hardcoded secrets | MUST FIX | API keys, passwords in code |
-| 4 | Quality (console.log, any, ts-ignore) | SHOULD FIX | Debugging artifacts, weak typing |
-| 5 | Error handling (fetch without try/catch) | SHOULD FIX | Unhandled exceptions, hung connections |
-| 6 | Test coverage gaps | CONSIDER | Files without test counterparts |
+### Específicos do HUB Feat Creator
 
-### Project-specific checks (customize)
+> Estes capturam **bugs do nosso domínio**. Adicionar quando aprender com bug em produção.
 
-These are the checks that catch **your** bugs. Add them based on lessons learned:
+| # | Check | Severidade | Captura |
+|---|-------|-----------|---------|
+| P1 | Query Java sem filtro `assessoria_id` (multi-tenant leak) | MUST FIX | Vazamento entre assessorias = P0 |
+| P2 | Query sem filtro `deleted_at IS NULL` em soft-deletables | SHOULD FIX | Mostra registros deletados |
+| P3 | Logger com PII raw (`email`, `telefone`, `cpf`, `senha` em string de log) | MUST FIX | Incidente LGPD |
+| P4 | `@Entity` modificada sem nova `V*.sql` em `db/migration/` | MUST FIX | Schema desync prod ↔ código |
+| P5 | Endpoint criado sem teste de cross-tenant | SHOULD FIX | Multi-tenant não validado |
+| P6 | `String.format` em SQL nativo (SQL injection) | MUST FIX | OWASP A03 |
+| P7 | Idempotency-Key ausente em endpoint de envio (e-mail) | SHOULD FIX | Retry duplica |
+| P8 | `@Transactional` em método cross-aggregate sem rollback explícito | CONSIDER | Estado parcial em falha |
+| P9 | `console.log` / `System.out.println` em código novo | SHOULD FIX | Logger estruturado é regra |
+| P10 | Senha em string de teste (`"123456"` etc) com `Argon2` na função | CONSIDER | Senha fraca em fixture é OK; senha real em fixture é bug |
+
+> Cada check específico nasce de incidente real ou risco identificado em ADR/PRD. **Não adicionar speculative checks** — gera fadiga.
+
+## Configuração
+
+### Stack — topo do `scripts/pre-commit-review.sh`
 
 ```bash
-# Example: block risky price calculations (real bug from production)
-PRICE_CALC=$(grep -n 'deal.price.*coupon' "$f" || true)
-if [ -n "$PRICE_CALC" ]; then
-  echo "❌ MUST FIX: Price+coupon calculation — coupons have hidden caps"
-  MUST_FIX=$((MUST_FIX + 1))
-fi
+# Java (apps/api)
+JAVA_FILES="apps/api/src/main/java"
+JAVA_TEST_FILES="apps/api/src/test/java"
+JAVA_COMPILE_CMD="./mvnw -B compile -pl apps/api -q"
+JAVA_TEST_CMD="./mvnw -B test -pl apps/api -q -Dtest='*Test'"
+
+# TypeScript (apps/web)
+TS_FILES="apps/web"
+TS_LINT_CMD="pnpm -C apps/web lint"
+TS_COMPILE_CMD="pnpm -C apps/web tsc --noEmit"
+TS_TEST_CMD="pnpm -C apps/web test --run"
 ```
 
-The `[SPEC]` sections in `scripts/pre-commit-review.sh` mark where to add your project-specific checks.
+## Integração com outras camadas
 
-## Configuration
+| Camada | Tool | Propósito |
+|--------|------|-----------|
+| L2 | `code-review` skill | Review profundo on-demand (manual) |
+| L3 | `pre-commit-review.sh` hook | Gate automático em todo commit |
+| L3 | `lint-check.sh` hook | Lint em todo write de arquivo |
+| L3 | `security-check.sh` hook | Bloqueio de bash perigoso |
+| L3 | `docs-check.sh` hook | Aviso se `apps/*` mudou sem `docs/*` |
+| L4 | `quality-guardian` agent | Review de qualidade profundo (sonnet) em mudanças grandes |
+| L4 | `security-auditor` agent | Audit OWASP em `/spec-review` (opus) |
 
-### Stack configuration (top of script)
+Pre-commit dá **cobertura rápida e automática**.
+Agents dão **análise profunda em mudanças significativas**.
 
-```bash
-LANG_EXTENSIONS="ts"                      # File extensions to review
-SOURCE_DIR="src"                          # Source directory
-TEST_DIR="src/__tests__"                  # Test directory
-TEST_SUFFIX=".test.ts"                    # Test file suffix
-COMPILE_CMD="npx tsc --noEmit"            # Compile command
-TEST_CMD="npm test -- --passWithNoTests"  # Test command
-```
+## Adicionando check novo
 
-### Multi-language support
+Quando bug aparecer em produção, perguntar: "**Pre-commit teria pego?**"
 
-The script includes commented templates for Python and Go.
-Uncomment the relevant sections in `scripts/pre-commit-review.sh`.
-
-## Integration with other layers
-
-| Layer | Tool | Purpose |
-|---|---|---|
-| L2 | `code-review` skill | On-demand deep review (invoked manually) |
-| L3 | `pre-commit-review.sh` hook | Automated gate on every commit |
-| L3 | `lint-check.sh` hook | Lint on every file write |
-| L3 | `security-check.sh` hook | Block dangerous bash commands |
-| L3 | `docs-check.sh` hook | Warn if source changed without docs update |
-| L4 | `quality-guardian` agent | Deep quality audit with agent teams |
-| L4 | `security-auditor` agent | OWASP/security audit with agent teams |
-
-The pre-commit hook provides **fast, automated coverage**.
-Agents provide **deep, context-aware analysis** for bigger changes.
-
-## Adding new checks
-
-When you find a bug in production, ask: "Could a pre-commit check have caught this?"
-
-If yes, add it to the `PROJECT-SPECIFIC CHECKS` section:
+Se sim:
 
 ```bash
-# [Date] Bug: [description]
-# Root cause: [what went wrong]
-# Check: [what to look for]
-for f in $STAGED_FILES; do
-  MATCH=$(grep -n 'pattern' "$f" || true)
+# [YYYY-MM-DD] Bug: <descricao curta>
+# Causa raiz: <o que aconteceu>
+# Check: <padrão a procurar>
+for f in $STAGED_JAVA_FILES; do
+  MATCH=$(grep -nE '<padrão>' "$f" || true)
   if [ -n "$MATCH" ]; then
-    echo "❌ MUST FIX [$f]: [description]"
+    echo "❌ MUST FIX [$f]: <descricao>"
     MUST_FIX=$((MUST_FIX + 1))
   fi
 done
 ```
 
-This turns production incidents into permanent guardrails.
+Incidentes viram guardrails permanentes.
 
-## Origin
+## Origem
 
-This spec was created from real-world validation on the `amaia-agent` project,
-where automated code review caught pricing accuracy bugs before they reached users.
-See ADR: `docs/architecture/adr-004-pre-commit-review.md`.
+Spec original do template `claude-proj-blueprint`, validada em `amaia-agent`.
+Adaptada para HUB Feat Creator com checks específicos de multi-tenancy, LGPD e schema/migration sync.
+ADR: `docs/architecture/adr-004-pre-commit-review.md`.

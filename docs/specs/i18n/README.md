@@ -1,43 +1,77 @@
-# Module: Internationalization (i18n)
+# Module: Internationalization (i18n) — HUB Feat Creator
 
-> Internationalization, localization, and multi-language support.
+> **Status**: ❌ **desativado no MVP**.
 
-## How to enable
-1. Fill in the sections below
-2. Create a skill in `.claude/skills/i18n/SKILL.md` if you want auto-invocation
+## Decisão
 
-## Supported languages
-[SPEC] Define:
-| Language | Code | Status | Fallback |
-|----------|------|--------|----------|
-| [SPEC] | [SPEC] en-US | Primary | — |
-| [SPEC] | [SPEC] | [SPEC] | en-US |
-| [SPEC] | [SPEC] | [SPEC] | [SPEC] |
+MVP é **pt-BR apenas**. Público-alvo é assessoria de influenciadores no Brasil; lançar i18n antes de PMF é overhead sem retorno.
 
-## Translation strategy
-- Library: [SPEC] [i18next / react-intl / next-intl / vue-i18n]
-- File format: [SPEC] [JSON / YAML / PO / XLIFF]
-- File location: [SPEC] [src/locales/ / public/locales/]
-- Management: [SPEC] [manual / Crowdin / Lokalise / Phrase]
-- Translation key: [SPEC] [namespace.component.label / flat]
+Quando reavaliar:
+- [ ] Pós-PMF (≥ 100 assessorias ativas)
+- [ ] Demanda concreta de cliente em outro país
+- [ ] Expansão LATAM (es, en) — provavelmente primeiro destino
 
-## Code rules
-- NEVER hardcode user-visible text — always use a translation key
-- Dates: format with `Intl.DateTimeFormat` or equivalent
-- Numbers: format with `Intl.NumberFormat`
-- Currencies: always display in user's locale
-- Pluralization: use ICU message format or equivalent
-- RTL: [SPEC] [supported / not applicable]
-- Images with text: avoid or have per-language variants
+## Idiomas (planejado para quando ativar)
 
-## Language detection
-[SPEC] Priority order:
-1. Saved user preference
-2. Accept-Language header
-3. Geolocation (if permitted)
-4. Default language (fallback)
+| Idioma | Código | Status atual | Fallback |
+|--------|--------|--------------|----------|
+| Português (Brasil) | `pt-BR` | **Único — atual** | — |
+| Espanhol (LATAM) | `es-419` | planejado Fase 5 | pt-BR |
+| Inglês | `en-US` | planejado Fase 5 | pt-BR |
 
-## Translation QA
-- [ ] Visual test with long text (e.g. German expands ~30%)
-- [ ] Check truncation in fixed-width components
-- [ ] Test with pseudo-locale during development
+## Convenções já adotadas (mesmo no MVP pt-BR only)
+
+Para reduzir custo de i18n futuro, **desde já**:
+
+- [x] **HTML lang**: `<html lang="pt-BR">` em todas páginas
+- [x] **Datas**: usar `Intl.DateTimeFormat` (não format strings hardcoded)
+- [x] **Números/moedas**: usar `Intl.NumberFormat` com locale `pt-BR`, currency `BRL`
+- [x] **Pluralização**: usar lib que suporta ICU (`react-intl` ou `next-intl`) **mesmo só com pt-BR** — tornar i18n-ready desde o primeiro componente
+- [x] **Strings em arquivo separado** (não inline em JSX): `apps/web/locales/pt-BR/<namespace>.json` — facilita extração futura
+- [x] **Imagens com texto**: evitar; SVG inline com `<text>` quando inevitável (extraível)
+- [x] **Backend**: mensagens de erro user-facing em arquivo de mensagens (`apps/api/src/main/resources/messages_pt_BR.properties`) com Spring `MessageSource`
+
+## Translation strategy (quando ativar)
+
+- **Library frontend**: `next-intl` (suporte a App Router, RSC-compatible, ICU)
+- **Library backend**: Spring `MessageSource` (já built-in)
+- **Format**: JSON estruturado por namespace (frontend); `.properties` por locale (backend)
+- **Localização frontend**: `apps/web/locales/<locale>/<namespace>.json`
+- **Localização backend**: `apps/api/src/main/resources/messages_<locale>.properties`
+- **Gestão**: manual no MVP+1 idioma; **Crowdin** ou **Lokalise** quando ≥ 3 idiomas
+- **Translation key**: `<namespace>.<feature>.<elemento>` (ex: `prospeccoes.lista.botao_criar`)
+- **Pseudo-locale** durante dev: opcional, ajuda a detectar strings hardcoded
+
+## Detecção de idioma (quando ativar)
+
+Ordem de prioridade:
+1. Preferência salva do usuário (perfil)
+2. Header `Accept-Language` do browser
+3. Default `pt-BR`
+
+## Code rules (quando ativar)
+
+- ❌ **Nunca** texto hardcoded visível ao usuário — sempre via translation key
+- ✅ Datas: `Intl.DateTimeFormat(locale).format(date)`
+- ✅ Números: `Intl.NumberFormat(locale, opts).format(n)`
+- ✅ Moeda: sempre exibir em locale do usuário (BRL no MVP)
+- ✅ Pluralização: ICU message format (`"{count, plural, one {# tarefa} other {# tarefas}}"`)
+- ✅ RTL: não aplicável (idiomas planejados são LTR)
+- ❌ Imagens com texto embutido — manter texto em DOM/SVG
+
+## QA (quando ativar)
+
+- [ ] Visual test com texto longo (alemão expande ~30%, mas espanhol também tende +20% vs en/pt)
+- [ ] Truncamento em componentes de largura fixa (botões, badges, cards)
+- [ ] Pseudo-locale em dev para detectar strings escapando da extração
+- [ ] Lighthouse i18n audit
+- [ ] Revisão por nativo do idioma alvo antes de release
+
+## Pendências quando ativar
+
+- [ ] Adicionar `next-intl` em `apps/web` (setup App Router)
+- [ ] Migrar todas strings para `apps/web/locales/pt-BR/`
+- [ ] Criar `messages_pt_BR.properties` para backend (templates de e-mail e mensagens de erro)
+- [ ] Adicionar seletor de idioma no header
+- [ ] Persistir `locale` no perfil do usuário (`usuarios.locale`)
+- [ ] Pipeline de extração de strings (ESLint plugin que detecta texto JSX não-key)

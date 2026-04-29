@@ -1,166 +1,143 @@
-# Module: Long-Term Memory
+# Module: Long-Term Memory — HUB Feat Creator
 
-> Persistent vector memory for Level 4 agents. Allows the system to "remember" decisions, solutions, and context from months ago.
+Memória vetorial persistente para agentes Claude Code (L4). Permite ao sistema "lembrar" decisões, soluções e contexto de meses atrás.
 
-## Why
+## Por quê
 
-CLAUDE.md lasts a single session. Obsidian lasts forever, but needs to be read in full. Vector memory solves the middle ground: instant semantic search over the entire project history.
+`CLAUDE.md` dura 1 sessão. Obsidian/`docs/` dura para sempre, mas precisa ser lido. Vector DB resolve o meio: busca semântica instantânea sobre todo histórico do projeto.
 
 ```
-"How did we solve rate limiting last time?"
-→ Vector DB finds: ADR-012, PR #47, March post-mortem
-→ Agent receives precise context without reading 200 files
+"Como resolvemos o rate limit antes?"
+→ Vector DB encontra: ADR-007, PR #42, post-mortem de março
+→ Agent recebe contexto preciso sem ler 200 arquivos
 ```
 
-## Memory architecture (4 layers)
+## Arquitetura — 4 camadas
 
-| Layer | Storage | Duration | What it stores | Search |
-|-------|---------|----------|---------------|--------|
-| Short-term | CLAUDE.md | Session | Stack, conventions, gotchas | Claude reads it whole |
-| Mid-term | docs/ (Obsidian) | Permanent (Git) | PRDs, ADRs, specs, runbooks | Grep, links |
-| Long-term | Vector DB (project) | Permanent | Embeddings of project files | Semantic |
-| Cross-project | Vector DB (global) | Permanent | ADRs, post-mortems, learner reports from ALL projects | Semantic (`--global`) |
+| Camada | Storage | Duração | O que armazena | Busca |
+|--------|---------|---------|---------------|-------|
+| Curto prazo | `CLAUDE.md` | sessão | stack, convenções, gotchas | leitura completa |
+| Médio prazo | `docs/` (Obsidian + Git) | permanente | PRDs, ADRs, specs, runbooks | grep, wiki-links |
+| Longo prazo | Vector DB (projeto) | permanente | embeddings de docs/código | semântica |
+| Cross-projeto | Vector DB global | permanente | ADRs, post-mortems, learner reports de **todos** projetos do dev | semântica (`--global`) |
 
-### Cross-project memory
-Decisions made in one project often apply to others. The global memory layer stores
-ADRs, post-mortems, and learner reports from every project that has it enabled.
-Lives at `~/.claude/memory/global/` (shared across all projects on the machine).
+## Stack escolhido
 
-**What gets promoted to global** (configurable in `config.yaml`):
-- ADRs — architectural decisions transfer across projects
-- Post-mortems — lessons learned are universal
-- Learner reports — extracted patterns benefit all projects
+### MVP — Chroma local
+- **Razão**: zero infra, setup imediato, suficiente para 1 dev
+- **Embedding**: `all-MiniLM-L6-v2` (sentence-transformers, local, 384 dim, free)
+- **Storage**: `memory/.chroma/` (gitignored — cada dev indexa local)
+- **Quando trocar**: time ≥ 2 devs OU índice > 100k chunks
 
-**What stays project-only**:
-- Code — too project-specific to be useful elsewhere
-- PRDs — product requirements are project-scoped
-- Git commits — too granular for cross-project value
+### Quando crescer — pgvector compartilhado
+- **Onde**: extensão do mesmo Postgres da app (schema separado `memory`) ou DB dedicado em Railway
+- **Embedding**: mesmo local OU upgrade para cloud (Voyage `voyage-3` ou OpenAI `text-embedding-3-small`)
+- **Vantagem**: 1 indexação, todos buscam — não duplica trabalho
 
-**Usage**:
-```bash
-python memory/query.py "rate limiting" --global --agent-format   # global only
-python memory/query.py "rate limiting" --both --agent-format     # merged results
-```
+Setup pgvector documentado no template original (incluído abaixo na seção **Setup pgvector** quando ativarmos).
 
-## Recommended stack
+## O que indexar
 
-### Option A: Chroma (blueprint default)
-- **When to use**: most projects, quick setup, no extra infrastructure
-- **How it works**: embedded vector DB, runs locally, persists to disk
-- **Embedding**: `all-MiniLM-L6-v2` via sentence-transformers (local, free)
-- **Storage**: `memory/.chroma/` (gitignored — each dev indexes locally)
+| Source | Tipo | Chunking | Frequência |
+|--------|------|----------|------------|
+| `docs/architecture/` | ADRs | 1 ADR = 1 chunk | post-commit |
+| `docs/product/` | PRDs | seções (`##`) | post-commit |
+| `docs/runbooks/post-mortems/` | post-mortems | 1 = 1 chunk | post-commit |
+| `docs/specs/` | specs modulares | seções (`##`) | post-commit |
+| `apps/api/src/` | código Java | 1 arquivo = 1 chunk | post-commit |
+| `apps/web/` | código TS/TSX | 1 arquivo = 1 chunk | post-commit |
+| Git log | commits | 1 mensagem = 1 chunk | post-commit |
 
-### Option B: pgvector (shared, team-wide)
-- **When to use**: teams with 2+ devs that need shared memory
-- **How it works**: PostgreSQL extension, SQL queries with vector similarity
-- **Advantage**: everyone points to the same DB — what one dev indexes, everyone searches
-- **Embedding**: same local model or via API (OpenAI, Voyage, Cohere)
+Configurado em `memory/config.yaml` — sources já apontados para `apps/api/src/` (Java) e `apps/web/` (TS/TSX).
 
-**pgvector setup:**
-```bash
-# 1. On PostgreSQL (15+), enable the extension
-psql -U postgres -c "CREATE DATABASE project_memory;"
-psql -U postgres -d project_memory -c "CREATE EXTENSION vector;"
+### Não indexar
+- `node_modules/`, `target/`, `.next/`, `dist/`
+- `.env*`, segredos
+- Dados de teste com PII real
+- Migrations (são SQL — pouco valor semântico vs ADR que explica o porquê)
 
-# 2. Create a dedicated user
-psql -U postgres -d project_memory -c "
-  CREATE USER memory_user WITH PASSWORD 'your-secure-password';
-  GRANT ALL PRIVILEGES ON DATABASE project_memory TO memory_user;
-  GRANT ALL ON SCHEMA public TO memory_user;
-"
+## Cross-project memory (global)
 
-# 3. In the project, edit memory/config.yaml:
-#    Comment out backend: chroma
-#    Uncomment backend: pgvector and fill in credentials
+Decisões em um projeto frequentemente se aplicam a outros. Camada global mora em `~/.claude/memory/global/` e armazena:
+- ADRs (decisões arquiteturais transferem entre projetos)
+- Post-mortems (lições aprendidas universais)
+- Learner reports (padrões extraídos)
 
-# 4. Each dev exports the password as an env var (never hardcode)
-export PGVECTOR_PASSWORD="your-secure-password"
+**Habilitado** neste projeto (`memory/config.yaml`: `global_memory.enabled: true`).
 
-# 5. Install extra dependencies
-pip install psycopg2-binary pgvector
+## Metadata por chunk
 
-# 6. Index (schema is created automatically)
-python memory/index.py
-```
-
-**Docker (quick alternative):**
-```bash
-docker run -d --name pgvector \
-  -e POSTGRES_DB=project_memory \
-  -e POSTGRES_USER=memory_user \
-  -e POSTGRES_PASSWORD=your-secure-password \
-  -p 5432:5432 \
-  pgvector/pgvector:pg16
-```
-
-### Option C: Cloud (at scale)
-- **When to use**: large teams, lots of data, need a hosted solution
-- **Options**: Pinecone, Weaviate Cloud, Qdrant Cloud
-- **Trade-off**: monthly cost, but zero ops
-
-## What to index
-
-| Source | Type | Chunking | Frequency |
-|--------|------|----------|-----------|
-| `docs/architecture/` | ADRs | 1 ADR = 1 chunk | On every commit |
-| `docs/product/` | PRDs | Sections (## heading) | On every commit |
-| `docs/runbooks/post-mortems/` | Post-mortems | 1 post-mortem = 1 chunk | On every commit |
-| `docs/specs/` | Spec modules | Sections (## heading) | On every commit |
-| `src/` | Code | 1 file = 1 chunk (with path as metadata) | On every commit |
-| Git log | Commits | 1 commit message = 1 chunk | On every commit |
-
-## Metadata
-
-Each chunk stores:
 ```json
 {
-  "source": "docs/architecture/adr-012-rate-limiting.md",
+  "source": "docs/architecture/adr-007-rate-limiting.md",
   "type": "adr",
-  "title": "ADR-012: Rate Limiting Strategy",
-  "last_modified": "2026-03-15",
-  "tags": ["rate-limiting", "redis", "architecture"]
+  "title": "ADR-007: Rate Limiting via Redis",
+  "last_modified": "2026-04-15",
+  "tags": ["rate-limiting", "redis", "api"],
+  "chunk_index": 0
 }
 ```
 
-## Usage
+## Uso
 
-### Index
+### Index inicial
 ```bash
-# Index the entire project
+pip install -r memory/requirements.txt
 python memory/index.py
+```
 
-# Index only changes since last run
+### Incremental (pós-commit)
+```bash
 python memory/index.py --incremental
 ```
+Configurado como hook `post-commit` em `scripts/post-commit-index.sh`.
 
 ### Search
 ```bash
-# Semantic search
-python memory/query.py "how did we solve authentication"
+# Projeto
+python memory/query.py "como tratamos rate limit"
 
-# Filtered by type
-python memory/query.py "rate limiting" --type docs
+# Global (todos projetos)
+python memory/query.py "rate limit" --global
 
-# Top 5 results
-python memory/query.py "deploy failure" --top 5
+# Merged
+python memory/query.py "rate limit" --both --agent-format
+
+# Filtrado por tipo
+python memory/query.py "deploy falha" --type post_mortem
+
+# Top-N
+python memory/query.py "auth" --top 10
 ```
 
-### In Claude Code (via skill)
-The `memory` skill is auto-invoked when the agent needs historical context. The Lead agent queries it before planning.
-
-## Setup
-
+### Stats
 ```bash
-# Install dependencies
-pip install -r memory/requirements.txt
-
-# First index
-python memory/index.py
-
-# Test
-python memory/query.py "test query"
+python memory/query.py --stats
 ```
 
-## Configuration
+### Via Claude
+- Skill `memory` é auto-invocada quando agent precisa contexto histórico
+- `/memory search "..."` slash command
+- Lead agent consulta antes de planning em features grandes
 
-Edit `memory/config.yaml` — see the file for all available options.
+## Quando o sistema deve consultar memória
+- Antes de propor decisão arquitetural (existe ADR similar?)
+- Antes de implementar feature (existe PR/decisão relacionada?)
+- Quando vê erro recorrente (existe post-mortem?)
+- Em pergunta histórica do usuário ("como fizemos X?")
+- Antes de design de API (convenções já estabelecidas?)
+
+## Limitações conhecidas
+- Embedding local é mais fraco que cloud (Voyage/OpenAI) em queries técnicas longas — aceitar trade-off no MVP
+- Indexação de código Java não distingue inner classes de top-level — busca pode trazer arquivo grande quando só uma classe importa
+- Git log truncado em 200 commits (`memory/config.yaml`) — suficiente; full log demora indexar
+
+## Manutenção
+- Reindex full quando trocar embedding model
+- Reindex full quando estrutura de chunks mudar
+- `memory/.chroma/` regenerável — pode deletar e reindexar sem perda real
+
+## Referências
+- `memory/config.yaml` — toda configuração
+- `memory/index.py`, `memory/query.py` — código
+- README do template original com setup detalhado de pgvector

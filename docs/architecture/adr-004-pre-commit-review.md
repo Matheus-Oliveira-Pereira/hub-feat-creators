@@ -1,78 +1,119 @@
 # ADR-004: Pre-commit Code Review Hook
 
 ## Status
-Accepted
+Accepted — herdado do template `claude-proj-blueprint` e adaptado ao HUB Feat Creator.
 
 ## Context
-During validation of the blueprint on `amaia-agent`, we discovered that relying
-solely on on-demand code review (skills, agents, manual request) leaves gaps.
-Bugs reached production that automated checks could have caught:
 
-1. **Price accuracy bug**: coupon final price calculation was wrong because ML
-   coupons have hidden discount caps. The code calculated `price * coupon%` but
-   the actual coupon gave a fraction of that. Users saw misleading prices,
-   damaging trust.
+Confiar somente em review on-demand (skill, agent, request manual) deixa lacunas. Histórico documentado no template original mostra bugs reais que checks automatizados teriam capturado:
 
-2. **Pix transparency bug**: ML shows Pix-specific prices as the main price on
-   listings, but the bot posted them without mentioning "no Pix", making the
-   discount appear larger than it was for other payment methods.
+1. **Bug de cálculo de preço**: cálculo de cupom errado porque cupons têm cap oculto. Usuários viram preços enganosos.
+2. **Bug de transparência Pix**: bot postou preço Pix como preço principal, fazendo desconto parecer maior do que era.
+3. **Bug de redirect de afiliado**: `fetch()` seguiu redirect para login, quebrando links para usuários finais.
 
-3. **Affiliate link redirect bug**: `fetch()` followed ML's redirect to a login
-   page, breaking product links for end users.
+Os 3 seriam capturados por grep checks pre-commit simples.
 
-All three bugs would have been caught by simple grep-based checks run before commit.
+No HUB Feat Creator, a probabilidade equivalente é alta:
+- **Multi-tenant strict**: query sem filtro de `assessoria_id` é catastrófica — vazamento entre assessorias = P0
+- **Soft-delete**: query sem filtro `deleted_at IS NULL` mostra dados deletados
+- **PII em log**: e-mail/telefone em log raw → incidente LGPD
+- **JWT_SECRET em código**: vazamento credencial de auth
+- **`@Transactional` ausente** em método que faz múltiplas writes em estado inconsistente
+- **Commit sem migration** quando entidade `@Entity` mudou
 
 ## Decision
-Add `scripts/pre-commit-review.sh` as a Claude Code hook that runs automatically
-before every `git commit`. The script:
 
-- Checks staged source files only (fast, focused)
-- Runs universal checks (compilation, tests, secrets, quality)
-- Supports project-specific checks via `[SPEC]` sections
-- Blocks commits on MUST FIX issues (exit code 2)
-- Warns on SHOULD FIX issues (exit code 0)
+Adotar `scripts/pre-commit-review.sh` herdado do blueprint, registrado em `.claude/hooks.json` como `PreToolUse` em `Bash(git commit*)`.
 
-The hook is registered in `.claude/hooks.json` as a `PreToolUse` matcher on
-`Bash(git commit*)`.
+### Configuração para HUB Feat Creator
+
+- **Stack**: monorepo com Java + TypeScript — script roda checks contextuais por extensão
+- **Compile/test commands**:
+  - Java: `./mvnw -B verify -pl apps/api -am -q` (apenas se `apps/api/**` foi alterado)
+  - TS: `pnpm -C apps/web lint && pnpm -C apps/web test --run` (apenas se `apps/web/**` foi alterado)
+- **Review level**: **hybrid** (bash + Claude Sonnet review do diff via `claude --print`)
+
+### Checks específicos do projeto a adicionar
+
+Em `[SPEC]` sections do `pre-commit-review.sh`:
+
+```bash
+# 1. Multi-tenant filter ausente (Java)
+TENANT_LEAK=$(grep -nE 'JdbcTemplate|EntityManager|@Query' "$f" | grep -v 'assessoria_id' || true)
+
+# 2. Logger com PII raw
+PII_LOG=$(grep -nE 'log\.(info|debug|warn).*\b(email|telefone|cpf|senha)\b' "$f" || true)
+
+# 3. JWT_SECRET ou similar em código
+SECRET_HARDCODE=$(grep -nE '(JWT_SECRET|API_KEY|PASSWORD)\s*=\s*"[A-Za-z0-9]{8,}"' "$f" || true)
+
+# 4. Entity modificado sem migration
+if [ "$ENTITY_CHANGED" = "1" ] && [ "$MIGRATION_ADDED" = "0" ]; then
+  echo "❌ MUST FIX: @Entity modificada sem nova V*.sql em apps/api/src/main/resources/db/migration"
+fi
+
+# 5. console.log / print esquecido
+DEBUG_LOG=$(grep -nE 'console\.(log|debug|info)|System\.out\.println' "$f" || true)
+
+# 6. any TS / @SuppressWarnings Java em código novo
+ANY_TS=$(grep -nE ': any\b|as any\b' "$f" || true)
+SUPPRESS=$(grep -nE '@SuppressWarnings' "$f" || true)
+```
+
+Severidade: 1-4 = **MUST FIX** (bloqueia); 5-6 = **SHOULD FIX** (warning).
 
 ## Alternatives considered
 
-1. **Git native pre-commit hook (.git/hooks/pre-commit)**
-   - Pro: Works outside Claude Code
-   - Con: Doesn't integrate with Claude Code's hook system, harder to manage
-   - Con: .git/hooks/ not committed to repo
+1. **Git native pre-commit** (`.git/hooks/pre-commit`)
+   - **+** funciona fora do Claude Code
+   - **−** não integra com hooks do Claude Code, não versionado no repo
+   - Manter ambos seria útil em futuro com mais devs (CI complementar) — registrar em ADR separado se for adotado
 
-2. **CI-only checks (GitHub Actions)**
-   - Pro: Runs on every push regardless of local setup
-   - Con: Feedback loop too slow (push → wait → fail → fix → push)
-   - Con: Doesn't prevent bad commits from being created
+2. **Só CI (GitHub Actions)**
+   - **+** nunca esquecido
+   - **−** feedback lento (push → wait → fail → fix → push)
+   - **−** commits ruins entram no histórico antes de serem barrados
+   - Decisão: CI mantém os mesmos checks (defesa em profundidade)
 
-3. **Agent-only review (invoke agents before commit)**
-   - Pro: Deep, context-aware analysis
-   - Con: Requires explicit invocation — easy to forget
-   - Con: Slow for small changes (agent spawns full context)
+3. **Só agent review** (invocar antes de commit)
+   - **+** análise profunda
+   - **−** requer invocação explícita — esquecível
+   - **−** lento para mudanças pequenas
+   - Mantemos `@quality-guardian` para mudanças grandes em `/spec-review`
 
-4. **Husky / lint-staged (Node.js tooling)**
-   - Pro: Well-established ecosystem
-   - Con: Only works for Node.js projects
-   - Con: Doesn't integrate with Claude Code hooks
+4. **Husky + lint-staged**
+   - **+** ecosistema maduro
+   - **−** só Node — não cobre Java do api
+   - Decisão: não — usar pre-commit-review.sh que cobre ambos
 
 ## Consequences
-- Positive: Every commit goes through automated review — no exceptions
-- Positive: Project-specific checks encode lessons from production bugs
-- Positive: Fast feedback (seconds, not minutes)
-- Positive: Template is stack-agnostic (TypeScript, Python, Go)
-- Negative: Adds ~5-15 seconds to commit time (compilation + tests)
-- Negative: Grep-based checks have false positives — may need tuning
-- Risks: Over-aggressive checks could slow down development
+
+**Positivas**:
+- Toda commit revisado automaticamente — sem exceção
+- Checks específicos do projeto encodam lições antes de produção
+- Feedback rápido (segundos)
+- Stack-agnostic (cobre api Java + web TS no mesmo script)
+- Hybrid review (Sonnet) pega bugs de lógica que regex não pega — barato (~$0.01/commit)
+
+**Negativas**:
+- Adiciona ~10-20s ao commit (compile + test parcial + AI review)
+- Grep checks têm falsos positivos — refinar conforme uso
+- Custo AI review acumula em equipes maiores; reavaliar `--review-level` se passar de $5/mês
+
+**Riscos**:
+- Checks excessivos podem gerar fadiga e cultura de "comentar para passar" — mitigar mantendo só checks que pegaram bug real
+- Solo dev ignorando próprio warning sob pressão — mitigar registrando ignorados em log para revisão semanal
 
 ## Impact on specs
-- Security: Catches hardcoded secrets before they reach git history
-- Testing: Enforces test existence for changed files
-- Observability: Catches console.log leaks (should use structured logger)
+- **security**: pega secrets hardcoded antes de entrar no histórico Git; pega PII em log
+- **testing**: força existência de teste para arquivo modificado (hint, não bloqueio)
+- **observability**: pega `console.log` / `System.out.println` que deveriam ser logger estruturado
+- **data-architecture**: pega entity modificada sem migration
+- **multi-tenancy** (security): pega query sem filtro de tenant
 
 ## References
 - Spec: `docs/specs/code-review-gates.md`
 - Hook: `.claude/hooks.json` → `PreToolUse` → `Bash(git commit*)`
 - Script: `scripts/pre-commit-review.sh`
-- Origin: `amaia-agent` production bugs (2026-03-31)
+- Origem: `claude-proj-blueprint` + bugs do projeto `amaia-agent` (template original)
+- Adaptação para HUB Feat Creator: 2026-04-29

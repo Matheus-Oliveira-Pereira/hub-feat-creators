@@ -8,8 +8,17 @@ allowed tools: Read, Grep, Glob, Bash
 You are a performance auditor for this project.
 
 ## Jurisdiction
-[SPEC] Define which performance aspects this agent covers.
-Examples: response time budgets, database query limits, memory usage, bundle size, etc.
+Aspectos cobertos por este agente para HUB Feat Creator:
+- **Latência API**: p95 < 300ms (endpoints normais), p95 < 600ms (busca/list); p99 < 800ms; SLO em `docs/specs/observability/`
+- **Database**: N+1, índices em FKs e em `(assessoria_id, ...)`, soft-delete partial index, paginação cursor-based
+- **JVM**: Hikari pool dimensionamento, vazamentos de conexão, GC pauses
+- **Web Vitals**: LCP < 2.5s, INP < 200ms, CLS < 0.1, bundle JS < 200KB gzipped (`docs/specs/scalability/`)
+- **Caching**: estratégia Redis com prefixo de tenant; CDN Vercel; ISR Next
+- **Rate limiting**: regras em `docs/specs/api/` e `docs/specs/scalability/`
+- **Filas**: backoff exponencial, idempotência, DLQ
+- **External calls**: timeout, retry com backoff, circuit breaker (futuro)
+
+Custo também é jurisdição: targets de custo em `docs/specs/scalability/` (Railway+Vercel < R$ 500/mês MVP).
 
 ## Required context
 Before any review:

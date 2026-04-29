@@ -1,184 +1,164 @@
-# [SPEC] Project Name
+# HUB Feat Creator
 
 ## Project
-[SPEC] Describe the project in 2-3 lines.
-See `docs/product/vision.md` for the full product vision.
+SaaS de centralização para assessorias de influenciadores digitais. Gerencia prospecção, tarefas, envio de e-mails e cadastros (influenciadores + marcas). Roadmap futuro: sugestão de match marca↔influenciador via IA.
+Vision completa: `docs/product/vision.md`.
 
 ## Tech Stack
-[SPEC] List the actual stack. Example:
-- Backend: [language + framework]
-- Frontend: [language + framework]
-- Database: [database]
-- Tests: [test frameworks]
-- Package manager: [manager]
+- Backend: Java 21 (LTS) + Spring Boot 3.x
+- Frontend: Next.js 14+ (App Router) + TypeScript (`strict: true`) + Tailwind CSS
+- Database: PostgreSQL 16
+- Tests: JUnit 5 + Mockito + Testcontainers (api) | Vitest + Playwright (web)
+- Package manager: Maven (api), pnpm (web)
+- Hosting: Railway (api), Vercel (web)
 
 ## Architecture
-- `/src` → production code
+Monorepo:
+- `/apps/api` → Spring Boot
+- `/apps/web` → Next.js
 - `/docs` → Obsidian vault (PRDs, ADRs, specs, runbooks)
 - `/.claude/` → skills, commands, agents, hooks
+- `/memory` → vector DB (long-term memory L4)
+- `/scripts` → automation (hooks, bootstrap, review, agent events)
 
 ### Documentation directories
-- `/docs/product/` → PRDs, personas, roadmap
-- `/docs/architecture/` → ADRs (Architecture Decision Records)
-- `/docs/specs/` → modular project specifications
+- `/docs/product/` → PRDs, vision, roadmap
+- `/docs/architecture/` → ADRs
+- `/docs/specs/` → módulos ativos (seção "Modular Specifications")
 - `/docs/runbooks/` → deploy, debug, onboarding, post-mortems
 
 ## Code Conventions
-[SPEC] Define your team's conventions. Example:
-- Style: [linter, formatter, rules]
-- Types: [typing policy]
-- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`)
-- Commit body: inclua `Não alterou:` listando arquivos/módulos intencionalmente não modificados
-- Branches: `feature/`, `fix/`, `docs/`, `refactor/`
-- PRs: always with description, reference PRD/ADR when applicable
+- Style: Spotless + Checkstyle (Java) | ESLint + Prettier (TS)
+- Types: TS estrito; Java prefere `record`/`sealed` quando cabe
+- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`)
+- Commit body: incluir `Não alterou:` listando arquivos/módulos intencionalmente não tocados
+- Branches: `feature/<nome>`, `fix/<nome>`, `docs/<nome>`, `refactor/<nome>`
+- PRs: descrição obrigatória + referência a PRD/ADR
+- Idioma: código/identificadores em inglês; docs em pt-BR
 
 ## Commands
-[SPEC] Day-to-day commands. Example:
-- `[dev command]` → dev server
-- `[test command]` → tests
-- `[lint command]` → lint
+### Backend (`apps/api`)
+- `./mvnw spring-boot:run` → dev
+- `./mvnw test` → unit + integration
+- `./mvnw verify` → build + lint + tests
+- `./mvnw spotless:apply` → format
 
-### Slash commands
-- `/implement <PRD>` → implement feature from PRD (Plan Mode → code → test → docs)
-- `/ralph <PRD>` → persistence mode: don't stop until all acceptance criteria pass
-- `/debug <error|file>` → systematic debugging: reproduce → isolate → fix → verify
-- `/refactor <file|module>` → safe refactoring with tests before and after each step
-- `/clean [file|dir]` → remove AI-generated slop from code
-- `/debt [dir]` → scan for technical debt, produce prioritized report
-- `/learn [--commits N]` → analyze recent work, extract patterns, improve skills
-- `/deploy` → run deploy checklist
-- `/memory <search|index|stats>` → long-term memory operations
-- `/spec-review <path>` → run agent audit (security + compliance + quality + performance)
+### Frontend (`apps/web`)
+- `pnpm dev` → dev
+- `pnpm test` → Vitest
+- `pnpm test:e2e` → Playwright
+- `pnpm lint` → ESLint
+- `pnpm build` → prod
 
-### Magic keywords (L3+)
-These phrases are auto-detected and activate the corresponding workflow:
-- "don't stop" / "keep going" / "ralph" → persistence mode
-- "clean up" / "remove slop" / "polish" → slop cleaner
-- "debug" / "why is this failing" / "broken" → debugger skill
-- "refactor" / "extract" / "restructure" → refactoring skill
-- "tech debt" / "code health" → tech debt tracker
-- "write PRD" / "scope this" → PRD writer
-- "design API" / "new endpoint" → API designer
-- "migration" / "schema change" → migration skill
-- "build me feature" / "implement feature" → /implement flow
-- "security audit" / "compliance audit" → /spec-review flow
-- "learn from this" / "retrospective" → learner skill
+### Slash commands (Claude)
+- `/implement <PRD>` → implementa feature de PRD
+- `/ralph <PRD>` → persistência até critérios passarem
+- `/debug <error|file>` → debug sistemático
+- `/refactor <file|module>` → refactor seguro
+- `/clean [path]` → remove slop AI
+- `/debt [path]` → scan tech debt
+- `/learn` → extrai padrões de commits/conversas
+- `/deploy` → checklist deploy
+- `/spec-review <path>` → audit security+compliance+quality+performance
+- `/memory <search|index|stats>` → memória semântica L4
 
 ## Workflow Rules
-[SPEC] Workflow rules. Example:
-- Always run tests before committing
-- Never commit secrets
-- Every UI component follows the design system
+- Rodar `./mvnw verify` (api) e `pnpm lint && pnpm test` (web) antes de cada commit
+- Nunca commitar `.env`, segredos, dump de DB
+- Mudança em `/apps/*` que afeta produto exige update em `/docs`
+- LGPD desde dia 1: dado de pessoa (influenciador, contato, e-mail) com base legal documentada
+- E-mails só via provedor configurado (Resend/SES/Postmark) — nunca SMTP local
+- Testes de integração tocam DB real via Testcontainers — sem mocks de DB
 
 ### Documentation Rules
-Every change that affects the product MUST be documented back to the Obsidian vault (`docs/`).
-PRDs come from Obsidian, implementation flows through code, and decisions go back to Obsidian.
-
-| What changed | What to update |
+| Mudança | Atualizar |
 |---|---|
-| New feature or module | CLAUDE.md module map + README project structure |
-| New env vars | `.env.example` with defaults and comments |
-| Architectural decision | ADR in `docs/architecture/` (next sequential number) |
-| Production bug | Post-mortem in `docs/runbooks/post-mortems/` |
-| Business insight during implementation | Note in the relevant PRD (`docs/product/`) |
-| API/integration change | Runbook in `docs/runbooks/` |
-| Gotcha discovered | CLAUDE.md Gotchas section |
+| Nova feature/módulo | CLAUDE.md (mapa) + README |
+| Nova env var | `.env.example` com default + comentário |
+| Decisão arquitetural | ADR em `docs/architecture/` (próximo número) |
+| Bug em produção | Post-mortem em `docs/runbooks/post-mortems/` |
+| Insight de produto | Nota no PRD em `docs/product/` |
+| Mudança de API | Runbook em `docs/runbooks/` + bump de versão |
+| Gotcha descoberto | Seção Gotchas abaixo |
 
-The `/implement` skill enforces this checklist before committing.
-The `docs-check` hook warns if `src/` changed without `docs/` in the same commit.
+Hook `docs-check` avisa se `/apps` mudou sem `/docs`.
+
+### Code Review Gates (L3)
+`scripts/pre-commit-review.sh` valida: compilação, testes, secrets, qualidade, error handling, cobertura.
+- MUST FIX = bloqueia commit
+- SHOULD FIX = warning
+- CONSIDER = info
+Detalhes em ADR-004 e `docs/specs/code-review-gates.md`.
 
 ### Context management (L3+)
-- **Context guard**: auto-warns when conversation is getting long (50+ tool calls = warning, 80+ = critical)
-- **Pre-compact hook**: auto-saves context to `memory/compact-context.md` before compaction
-- **Session notes**: append important context to `memory/session-notes.md` during long sessions
-- If `memory/compact-context.md` exists at session start, read it to restore context from previous segment
+- Context guard avisa em conversas longas (50+ tool calls)
+- Pre-compact hook salva contexto em `memory/compact-context.md` antes de compactar
+- Sessão longa: append em `memory/session-notes.md`
+- Início de sessão: ler `memory/compact-context.md` se existir
 
-### Code Review Gates (L3+)
-Every `git commit` triggers automated review via `scripts/pre-commit-review.sh`:
-- Compilation, tests, secrets, quality, error handling, test coverage
-- MUST FIX = commit blocked | SHOULD FIX = warning | CONSIDER = info
-- Add project-specific checks in the `[SPEC]` section of the script
-- See `docs/specs/code-review-gates.md` for details and ADR-004
+## Design — Flow A (Claude Design)
+- Design system gerado por Claude Design a partir do código + brand assets
+- Handoff salvo em `docs/design/<slug>-PROMPT.md` via "Send to Claude Code"
+- `/implement` detecta PROMPT.md → skill `claude-design-handoff` reconcilia com PRD + CLAUDE.md
+- Conflito: PRD > CLAUDE.md > PROMPT.md (PROMPT.md nunca sobrescreve convenção em silêncio)
+- Tokens em `docs/specs/design-system/`
 
-## Design
-Design flow: **Agent** (configured by bootstrap)
-
-### Option A — Claude Design flow (recommended for Anthropic-stack teams)
-- Design system auto-generated by Claude Design from codebase + brand assets
-- Handoff bundle saved as `docs/design/<slug>-PROMPT.md` via "Send to Claude Code" button
-- `/implement` detects PROMPT.md and activates `claude-design-handoff` skill to reconcile against PRD + CLAUDE.md
-- Conflict rule: PRD > CLAUDE.md > PROMPT.md (never let PROMPT.md override conventions silently)
-- Skill: `.claude/skills/claude-design-handoff/SKILL.md`
-
-### Option B — Figma flow (team has a designer using Figma)
-- Design system: [FIGMA LINK]
-- Use the Figma MCP server for visual context
-- `/implement` reads Figma link from PRD → extracts design → generates code
-
-### Option C — Agent flow (no designer / dev-only team)
-- Design tokens: `docs/specs/design-system/README.md`
-- Component library: [SPEC] [shadcn / Radix / MUI / custom]
-- `/implement` reads PRD + tokens → frontend agent generates UI
-- Skill: `.claude/skills/frontend-agent/SKILL.md`
-
-### Option D — Hybrid
-- Mix A, B, and C per PRD
-- `/implement` auto-detects: PROMPT.md → A, Figma link → B, neither → C
+> **Como usar**: app.claude.com → Design → conecta repo → gera DS a partir de assets/código → botão "Send to Claude Code" exporta PROMPT.md.
 
 ## Modular Specifications
-The project adopts the following spec modules (see `docs/specs/`):
+Detalhes em `docs/specs/<modulo>/README.md`.
 
-### Enabled
-[SPEC] List the modules enabled for this project:
-- [ ] `compliance/` → Laws, regulations, ISOs
-- [ ] `security/` → Information security
-- [ ] `observability/` → Monitoring, logging, tracing
-- [ ] `scalability/` → Performance, caching, queues
-- [ ] `versioning/` → API versioning, DB migrations, semver
-- [ ] `design-system/` → Design tokens, component patterns, UI strategy
-- [ ] `accessibility/` → a11y, WCAG
-- [ ] `i18n/` → Internationalization, localization
-- [ ] `testing-strategy/` → Test pyramid, QA
-- [ ] `devops/` → CI/CD, IaC, environments
-- [ ] `data-architecture/` → Modeling, pipelines, analytics
-- [ ] `api/` → API conventions, endpoints, error format, pagination
-- [ ] `ai-ml/` → Models, prompts, evals, guardrails
-- [ ] `long-term-memory/` → Vector DB, semantic search (L4)
+### Ativos
+- ✅ `security/` → controles técnicos, OWASP
+- ✅ `observability/` → logs, métricas, traces, alertas
+- ✅ `scalability/` → performance, caching, filas
+- ✅ `versioning/` → API versions, migrations Flyway, semver
+- ✅ `design-system/` → tokens + padrões UI (Next + Tailwind)
+- ✅ `accessibility/` → WCAG 2.1 AA
+- ✅ `testing-strategy/` → pirâmide de testes
+- ✅ `devops/` → CI/CD (GitHub Actions), IaC, ambientes
+- ✅ `data-architecture/` → modelagem Postgres, pipelines
+- ✅ `api/` → REST conventions, paginação, erros, versionamento
+- ✅ `ai-ml/` → match marca↔influencer (futuro)
+- ✅ `long-term-memory/` → vector DB (L4)
+
+### Pendentes / Desativados
+- ⏳ `compliance/` → LGPD — ativar antes de produção
+- ❌ `i18n/` → MVP só pt-BR
 
 ## Model Presets (L4)
-Agents use different models based on task complexity and cost:
-
-| Agent | Model | Why |
+| Agent | Model | Por quê |
 |---|---|---|
-| Lead (you) | opus | Complex reasoning, coding, architecture |
-| `security-auditor` | opus | Deep vulnerability analysis, subtle patterns |
-| `compliance-auditor` | opus | Legal/regulatory interpretation |
-| `quality-guardian` | sonnet | Objective checklists, fast feedback |
-| `performance-auditor` | sonnet | N+1 queries, unbounded loops, caching, pagination |
-| [SPEC] `domain-auditor` | sonnet | Project-specific business rules |
-| [SPEC] `monitoring-agent` | haiku | Health checks, simple metrics |
+| Lead | opus | Raciocínio complexo, código, arquitetura |
+| `security-auditor` | opus | Vulnerabilidades sutis |
+| `compliance-auditor` | opus | Interpretação LGPD |
+| `quality-guardian` | sonnet | Checklist objetivo |
+| `performance-auditor` | sonnet | N+1, índices, caching |
 
-Configure via `model:` in agent frontmatter (`.claude/agents/*.md`).
-Switch session model: `/model opus` or `claude --model sonnet`.
+Configurar via `model:` no frontmatter de `.claude/agents/*.md`.
 
 ### Deliverables verification (L4)
-Agent output is validated against schemas in `docs/specs/deliverables/`.
-The `SubagentStop` hook checks that agents include all required fields (severity, location, remediation, etc.).
-Add new schemas with one required field per line — see `docs/specs/deliverables/_template.schema`.
+Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `SubagentStop` checa campos obrigatórios.
 
 ## Gotchas
-[SPEC] List known edge cases and pitfalls:
-- [Gotcha 1]
-- [Gotcha 2]
+- **OAuth tokens sociais** (Instagram/YouTube/TikTok) expiram — refresh com fila de retry; tokens podem revogar silenciosamente quando creator muda senha
+- **Rate limits APIs sociais**: IG Graph (200/h/user), YouTube Data (10k units/dia) — backoff exponencial + cache agressivo
+- **E-mail deliverability**: SPF/DKIM/DMARC alinhados antes de enviar em massa; warmup de IP/domínio; honrar `List-Unsubscribe`
+- **LGPD desde dia 1**: pseudonimizar logs, soft-delete com retenção definida, base legal documentada por finalidade
+- **Timezone**: DB em UTC; converter para `America/Sao_Paulo` no front; cuidado com agendamento de tarefas e DST (BR não usa mais, mas libs antigas erram)
+- **Postgres locale**: collation `pt_BR.UTF-8` para ordenar nomes com acento ("Álvaro" < "Bruno")
+- **Spring Boot 3 + Java 21**: travar `<java.version>21</java.version>` no `pom.xml` e na CI; Java 22+ não LTS
+- **Next App Router**: server components default — `'use client'` quando precisar hooks; hidratação de datas requer ISO no servidor
+- **Soft-delete obrigatório**: `influenciador`, `marca`, `prospeccao` nunca DELETE direto — `deleted_at` + job de purga após retenção
+- **Idempotência envio e-mail**: chave idempotente na fila (retry não pode reenviar)
+- **CORS Vercel↔Railway**: `CORS_ALLOWED_ORIGINS` explícito; cuidado com preview URLs do Vercel
+- **Migrations**: Flyway versionado em `apps/api/src/main/resources/db/migration` — nunca editar V já aplicada, criar nova
 
 ## Memory (L4)
-Long-term semantic search via vector DB. See `docs/specs/long-term-memory/`.
+Busca semântica em `docs/` e `apps/`:
 - Index: `python memory/index.py`
-- Search: `python memory/query.py "query"`
+- Search: `python memory/query.py "consulta"`
 - Incremental: `python memory/index.py --incremental`
-- Global (cross-project): `python memory/query.py "query" --global`
-- Both (merged): `python memory/query.py "query" --both`
-- Learn from conversations: `/learn --conversations 5`
+- Global (cross-project): `python memory/query.py "consulta" --global`
+- Aprender de conversas: `/learn --conversations 5`
 - Config: `memory/config.yaml`
-- Skill auto-activated when referencing past decisions or historical context
-- Global memory auto-promotes ADRs, post-mortems, and learner reports to `~/.claude/memory/global/`

@@ -8,8 +8,16 @@ allowed tools: Read, Grep, Glob, Bash
 You are a compliance auditor for this project.
 
 ## Jurisdiction
-[SPEC] Define which regulations, laws, and standards this agent covers.
-Examples: LGPD, GDPR, HIPAA, SOX, PCI-DSS, ISO 27001, ISO 27701, etc.
+Regulamentações cobertas por este agente para HUB Feat Creator:
+- **LGPD (Lei 13.709/2018)** — principal; aplicável a 100% dos dados de cadastro (assessor, influenciador, marca, contato)
+- **Marco Civil da Internet (Lei 12.965/2014)** — guarda de logs (Art. 15)
+- **CDC (Código de Defesa do Consumidor)** — termos de uso, política de privacidade clara
+- **ISO 27001 / 27701** — futuro, pós-PMF
+- **ISO 42001** — futuro, quando feature de match IA for produzida
+- **PCI-DSS** — futuro, quando entrar pagamentos (Fase 4)
+- **GDPR** — só quando expandir UE (não aplicável MVP)
+
+Detalhes e bases legais por finalidade: `docs/specs/compliance/`.
 
 ## Required context
 Before any review:

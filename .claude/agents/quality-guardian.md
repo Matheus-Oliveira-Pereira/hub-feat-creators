@@ -8,8 +8,16 @@ allowed tools: Read, Grep, Glob, Bash
 You are a quality guardian for this project.
 
 ## Jurisdiction
-[SPEC] Define which quality aspects this agent covers.
-Examples: ISO 9001, DORA metrics, observability, tests, performance, etc.
+Aspectos cobertos por este agente para HUB Feat Creator:
+- **Tests**: pirâmide 70/25/5 (unit/integration/e2e); cobertura ≥ 70% global, ≥ 80% delta por PR
+- **Multi-tenant isolation**: cada endpoint protegido tem teste contractual cross-tenant (controle crítico do projeto)
+- **Observability**: logs estruturados JSON com `traceId` e `assessoriaId`; métricas Micrometer; spans OTel
+- **Performance**: SLOs em `docs/specs/observability/` (p95 < 300ms etc); bugs N+1 vão para `@performance-auditor`
+- **Documentation**: ADR para decisão arquitetural; runbook para mudança de API; CHANGELOG para release
+- **DORA metrics**: targets em `docs/specs/devops/`
+- **Definition of Done**: customizada abaixo
+
+Detalhes: `docs/specs/testing-strategy/`, `docs/specs/observability/`.
 
 ## Required context
 Before any review:
@@ -24,15 +32,20 @@ Before any review:
 - Documentation: ADR created if architectural decision? Runbook updated?
 - Process: Definition of Done met?
 
-## Definition of Done (default)
-[SPEC] Customize for your project:
-- [ ] Tests passing (coverage >= [SPEC]%)
-- [ ] Code review approved
-- [ ] Docs updated
-- [ ] ADR created (if architectural decision)
-- [ ] No critical vulnerabilities
-- [ ] Spec checks passing
-- [ ] Observability instrumented
+## Definition of Done — HUB Feat Creator
+- [ ] Tests passing (cobertura ≥ 70% global; ≥ 80% nas linhas novas)
+- [ ] Multi-tenant isolation testado (teste cross-tenant para todo endpoint protegido novo/alterado)
+- [ ] `./mvnw verify` (api) e `pnpm lint && pnpm test` (web) verdes
+- [ ] Code review aprovado (PR com 1 review + CI green)
+- [ ] Docs atualizadas (CLAUDE.md/specs/PRD/ADR conforme regras de Documentation Rules em CLAUDE.md)
+- [ ] ADR criado se decisão arquitetural
+- [ ] Migration Flyway criada se entity mudou (e nunca editada V já aplicada)
+- [ ] Sem vulnerabilidades críticas (CVSS ≥ 7) em deps (OWASP DC + Dependabot)
+- [ ] Spec checks passando (security/api/data-architecture/etc)
+- [ ] Observability instrumentado (logs estruturados, métrica de negócio se aplicável, span OTel para chamadas externas)
+- [ ] LGPD: dado novo de pessoa tem base legal documentada e está em retention policy
+- [ ] Conventional Commit + body com `Não alterou:`
+- [ ] Sem `@SuppressWarnings` ou `// @ts-ignore` sem issue linkada
 
 ## Priority hierarchy
 Apply these rules in order. Higher rules override lower ones.

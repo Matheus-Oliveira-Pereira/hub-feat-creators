@@ -1,32 +1,31 @@
 # ===========================================================================
 # Vector DB backend
 # ===========================================================================
-# Option A: Chroma (default) — local, zero infra, per-developer
+# Default: Chroma local (zero infra, per-developer).
+# Para memória compartilhada entre devs, trocar para pgvector (ver bloco abaixo).
 backend: chroma
 persist_dir: memory/.chroma
 
-# Option B: pgvector (shared) — team-wide memory, single source of truth
-# Uncomment below and comment out the chroma lines above.
-# Requires: PostgreSQL 15+ with pgvector extension enabled.
-# All devs point to the same DB — everyone shares the same memory.
+# Alternativa pgvector — descomentar e ajustar quando time crescer.
+# Requer PostgreSQL 16+ com extension pgvector habilitada.
 #
 # backend: pgvector
 # pgvector:
-#   host: localhost              # [SPEC] your PostgreSQL host
+#   host: localhost
 #   port: 5432
-#   database: project_memory     # [SPEC] database name
-#   user: memory_user            # [SPEC] db user
-#   password_env: PGVECTOR_PASSWORD  # reads from env var (never hardcode)
+#   database: hub_feat_creators_memory
+#   user: memory_user
+#   password_env: PGVECTOR_PASSWORD
 #   table_name: embeddings
-#   embedding_dimensions: 384    # must match embedding model output
+#   embedding_dimensions: 384
 
 # ===========================================================================
 # Embedding model
 # ===========================================================================
-# Local (free, no API key needed):
+# Default: local (free, sem API key).
 embedding_model: all-MiniLM-L6-v2
 embedding_dimensions: 384
-# Cloud alternatives (uncomment one, set API key in .env):
+# Alternativas cloud (descomentar e setar API key em .env):
 # embedding_model: text-embedding-3-small
 # embedding_provider: openai
 # embedding_dimensions: 1536
@@ -40,53 +39,46 @@ embedding_dimensions: 384
 sources:
   - path: docs/
     glob: "**/*.md"
-    chunk_by: heading       # heading = split on ## headers
+    chunk_by: heading
     metadata_type: docs
 
-  - path: src/
-    glob: "**/*.py"
-    chunk_by: file          # file = one chunk per file
+  # Backend (Java)
+  - path: apps/api/src/
+    glob: "**/*.java"
+    chunk_by: file
     metadata_type: code
 
-  - path: src/
+  # Frontend (TypeScript / TSX)
+  - path: apps/web/
     glob: "**/*.ts"
     chunk_by: file
     metadata_type: code
 
-  - path: src/
+  - path: apps/web/
     glob: "**/*.tsx"
     chunk_by: file
     metadata_type: code
 
-# Git history (optional)
+# Git history
 index_git_log: true
-git_log_limit: 200          # last N commits
+git_log_limit: 200
 
 # Search defaults
 default_top_k: 5
 min_similarity: 0.3
 
-# Collection name in vector DB
-collection_name: project_memory
+# Collection name
+collection_name: hub_feat_creators_memory
 
 # ===========================================================================
 # Cross-project memory (global)
 # ===========================================================================
-# A shared memory layer across ALL projects. Stores decisions, patterns, and
-# insights that transcend individual projects (e.g., "how did we solve auth
-# in project A" is useful in project B).
-#
-# Global memory lives in a fixed location (~/.claude/memory/) instead of
-# per-project memory/.chroma/. Both can coexist — search with --global flag.
+# Camada compartilhada entre TODOS os projetos do dev.
+# Indexa ADRs, post-mortems e learner reports — conhecimento que transcende projeto.
 global_memory:
-  enabled: false                       # [SPEC] set to true to enable
-  persist_dir: ~/.claude/memory/global  # shared across all projects
+  enabled: true
+  persist_dir: ~/.claude/memory/global
   collection_name: global_memory
-  # What gets indexed into global memory (vs project memory):
-  # - ADRs (architectural decisions transfer across projects)
-  # - Post-mortems (lessons learned are universal)
-  # - Learner reports (extracted patterns)
-  # Project-specific code and PRDs stay in project memory only.
   sources:
     - type: adr
     - type: post_mortem

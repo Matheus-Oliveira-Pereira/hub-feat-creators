@@ -11,14 +11,13 @@
 
 set -euo pipefail
 
-# ─── Configuration ──────────────────────────────────────────
-# [SPEC] Adjust for your project
-CODE_DIRS=("src" "scripts" "tools" ".claude")   # All code directories to monitor
-DOCS_DIR="docs"                                   # Obsidian vault directory
-ENV_EXAMPLE=".env.example"                        # Env example file
+# ─── Configuration — HUB Feat Creator ───────────────────────
+CODE_DIRS=("apps" "scripts" "tools" ".claude")    # Monorepo: apps/api + apps/web
+DOCS_DIR="docs"                                   # Obsidian vault
+ENV_EXAMPLE=".env.example"                        # Env example
 CLAUDE_MD="CLAUDE.md"                             # Project hub
-CHANGELOG="CHANGELOG.md"                          # Changelog file
-README="README.md"                                # README file
+CHANGELOG="CHANGELOG.md"                          # Changelog
+README="README.md"                                # README
 
 # ─── Build staged file lists ────────────────────────────────
 STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
@@ -98,7 +97,7 @@ if [ -n "$CONFIG_CHANGED" ]; then
   # Check if new env vars were added (Node, Python, Go patterns)
   NEW_ENV_VARS=""
   for dir in "${CODE_DIRS[@]}"; do
-    MATCH=$(git diff --cached -- "${dir}/" | grep -E '^[+].*process\.env\.|^[+].*os\.environ\.|^[+].*os\.Getenv\(' | grep -v '^+++' || true)
+    MATCH=$(git diff --cached -- "${dir}/" | grep -E '^[+].*process\.env\.|^[+].*@Value\(.*\$\{|^[+].*System\.getenv\(|^[+].*os\.environ\.|^[+].*os\.Getenv\(' | grep -v '^+++' || true)
     if [ -n "$MATCH" ]; then
       NEW_ENV_VARS="${NEW_ENV_VARS}${MATCH}"
     fi
