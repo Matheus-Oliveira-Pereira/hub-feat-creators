@@ -87,9 +87,9 @@ Permitir que uma assessora cadastre, edite, busque e remova (soft) **influenciad
   - [[adr-002-stack-base]] — Java 21 + Spring + Next + Postgres
   - [[adr-003-flyway-migrations]] — migrations
   - [[adr-004-pre-commit-review]] — gates de commit (já existente no template)
-- ADRs novos a criar durante implementação:
-  - **ADR-005** (proposto): autenticação JWT + refresh rotation (definir lib: jjwt vs auth0 java-jwt)
-  - **ADR-006** (proposto): estratégia multi-tenant (Hibernate `@Filter` global)
+- ADRs habilitadores (aceitos):
+  - [[adr-008-auth-jwt]] — JWT HS256 + refresh rotation (jjwt) + Argon2id
+  - [[adr-009-multi-tenant-strategy]] — shared schema + `@Filter` Hibernate + Postgres RLS
 
 ## Impact on Specs
 
