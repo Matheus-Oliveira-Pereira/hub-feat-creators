@@ -88,8 +88,12 @@ Permitir que uma assessora cadastre, edite, busque e remova (soft) **influenciad
   - [[adr-003-flyway-migrations]] — migrations
   - [[adr-004-pre-commit-review]] — gates de commit (já existente no template)
 - ADRs habilitadores (aceitos):
+  - [[adr-005-email-smtp-multi-conta]] — envio de e-mail LGPD ao criar influenciador (notificação de tratamento)
   - [[adr-008-auth-jwt]] — JWT HS256 + refresh rotation (jjwt) + Argon2id
   - [[adr-009-multi-tenant-strategy]] — shared schema + `@Filter` Hibernate + Postgres RLS
+  - [[adr-010-async-jobs-postgres-queue]] — disparo do e-mail LGPD via fila (idempotência)
+  - [[adr-011-lgpd-baseline]] — base legal por entidade, retenção, soft-delete + purga, opt-out
+  - [[adr-013-observability-stack]] — métricas `cadastros_criados_total`, MDC com `assessoria_id`
 
 ## Impact on Specs
 

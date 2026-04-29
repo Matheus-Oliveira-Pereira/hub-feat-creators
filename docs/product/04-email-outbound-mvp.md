@@ -112,11 +112,20 @@ Permitir que assessoria cadastre múltiplas contas SMTP, crie templates HTML reu
 
 ## Technical Decisions
 
-- **Reusa**: ADRs 001/002/003/005/008/009; PRDs 001/002 (entidades vinculadas)
+- **Reusa**:
+  - [[adr-001-monorepo]], [[adr-002-stack-base]], [[adr-003-flyway-migrations]]
+  - [[adr-005-email-smtp-multi-conta]] (decisão SMTP relay externo + AES-GCM)
+  - [[adr-008-auth-jwt]] (auth), [[adr-009-multi-tenant-strategy]] (multi-tenant strict)
+  - [[adr-010-async-jobs-postgres-queue]] (fila de envio + retry exponencial + idempotência)
+  - [[adr-011-lgpd-baseline]] (opt-out por (assessoria, email), retenção 5y `email_envios`, base legal "legítimo interesse" + opt-out, notificação de tratamento)
+  - [[adr-012-attachment-storage]] (anexos via abstração `AttachmentStorage`)
+  - [[adr-013-observability-stack]] (métricas `email_*`, alerta auth falha, traces)
+  - PRDs 001/002 (entidades vinculadas)
 - **Cifra de senha SMTP**: AES-GCM com chave do `app.secrets.email-key` (env). Rotação documentada em runbook
 - **Engine de template**: Mustache (Java `mustache.java`) — simples, sem execução de código, alinhado a Handlebars-like
 - **Sanitização**: OWASP Java HTML Sanitizer no corpo do template (allowlist de tags/atributos seguros para e-mail: `a`, `img`, `table`, etc.; remove `script`, `on*`)
-- **Storage de anexos**: Railway volume no MVP; abstrair via interface `AttachmentStorage` para migrar a S3 sem refactor
+- **Fila + retry**: tabela `job` com `tipo=EMAIL_SEND` (ADR-010); idempotência via UNIQUE(`assessoria_id`, `tipo`, `idempotency_key`)
+- **Storage de anexos**: driver `LocalVolumeAttachmentStorage` no MVP, troca p/ S3 sem refactor (ADR-012)
 
 ### Schema
 

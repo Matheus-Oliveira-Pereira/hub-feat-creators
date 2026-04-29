@@ -96,8 +96,13 @@ Permitir que assessora crie, atribua e acompanhe tarefas com prazo, vinculadas (
 
 ## Technical Decisions
 
-- **Reusa**: ADRs 001/002/003/008/009; PRD-004 (e-mail) consumido pelo digest
-- **Scheduler**: Spring `@Scheduled` em `apps/api`. Para escalar horizontalmente sem duplicar jobs, usar **ShedLock** (Postgres-backed lock) — adicionar dependência no pom
+- **Reusa**:
+  - [[adr-001-monorepo]], [[adr-002-stack-base]], [[adr-003-flyway-migrations]]
+  - [[adr-008-auth-jwt]] (auth), [[adr-009-multi-tenant-strategy]] (`assessoria_id` em todas tabelas + RLS)
+  - [[adr-005-email-smtp-multi-conta]] + [[adr-010-async-jobs-postgres-queue]] (digest enfileira `EMAIL_DIGEST` no `job` Postgres)
+  - [[adr-011-lgpd-baseline]] (retenção tarefas + comentários; pseudonimização em log)
+  - [[adr-013-observability-stack]] (métricas + alerta de digest falho)
+- **Scheduler**: Spring `@Scheduled` em `apps/api` com **ShedLock** (Postgres lock provider — formalizado em ADR-010); cron por timezone da assessoria
 - **Vínculo polimórfico**: `entidade_tipo` (enum) + `entidade_id` (UUID, sem FK declarada). Validação em service layer; preferir simplicidade a tabela-por-tipo no MVP
 - **Timezone**: armazenar prazos em UTC; converter na borda usando `assessorias.timezone` (default `America/Sao_Paulo`)
 

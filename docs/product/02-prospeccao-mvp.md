@@ -97,7 +97,7 @@ Permitir que assessora crie, acompanhe e feche oportunidades de campanha vincula
 
 ## Technical Decisions
 
-- **Reusa**: [[adr-001-monorepo]], [[adr-002-stack-base]], [[adr-003-flyway-migrations]], [[adr-008-auth-jwt]], [[adr-009-multi-tenant-strategy]]
+- **Reusa**: [[adr-001-monorepo]], [[adr-002-stack-base]], [[adr-003-flyway-migrations]], [[adr-008-auth-jwt]], [[adr-009-multi-tenant-strategy]], [[adr-011-lgpd-baseline]] (retenção/soft-delete), [[adr-013-observability-stack]] (métricas + MDC)
 - **Não exige novo ADR**: enum de status é detalhe de domínio; máquina de estados validada em service layer (Java enum + matriz de transições). Documentar no spec do módulo.
 
 ### Schema (alto nível — refinar em implementação)
