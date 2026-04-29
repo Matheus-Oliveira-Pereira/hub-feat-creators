@@ -8,6 +8,7 @@
 # =============================================================================
 # Obsidian (docs/ é um vault)
 # =============================================================================
+/.obsidian/
 docs/.obsidian/workspace.json
 docs/.obsidian/workspace-mobile.json
 docs/.obsidian/graph.json
