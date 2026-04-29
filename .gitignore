@@ -49,6 +49,7 @@ apps/api/.spring-boot-devtools.properties
 # =============================================================================
 # Node / Next.js (apps/web)
 # =============================================================================
+node_modules/
 apps/web/node_modules/
 apps/web/.next/
 apps/web/out/
@@ -61,6 +62,8 @@ apps/web/playwright-report/
 apps/web/test-results/
 apps/web/blob-report/
 apps/web/.swc/
+apps/web/tsconfig.tsbuildinfo
+apps/web/next-env.d.ts.bak
 
 # =============================================================================
 # Python (memory/ scripts)
