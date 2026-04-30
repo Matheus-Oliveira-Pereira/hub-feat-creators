@@ -1,140 +1,465 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Plus,
+  Download,
+  Globe,
+  MoreHorizontal,
+  Trash2,
+  Eye,
+  Building2,
+  ExternalLink,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { marcas, Marca } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { PageHeader } from '@/components/app/page-header';
+import { FilterBar } from '@/components/app/filter-bar';
+import { EntityFormModal } from '@/components/app/entity-form-modal';
+import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+
+function initials(nome: string) {
+  return nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(s => s[0]?.toUpperCase())
+    .join('');
+}
+
+function hostname(url: string | null) {
+  if (!url) return null;
+  try {
+    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
 
 export default function MarcasPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <MarcasInner />
+    </React.Suspense>
+  );
+}
+
+function MarcasInner() {
   const router = useRouter();
-  const [data, setData] = useState<Marca[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: '', segmento: '', site: '' });
-  const [saving, setSaving] = useState(false);
+  const searchParams = useSearchParams();
+  const [data, setData] = React.useState<Marca[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [search, setSearch] = React.useState('');
+  const [view, setView] = React.useState<'cards' | 'table'>('cards');
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [form, setForm] = React.useState({ nome: '', segmento: '', site: '' });
+  const [saving, setSaving] = React.useState(false);
+  const [detail, setDetail] = React.useState<Marca | null>(null);
 
-  async function load(nome?: string) {
-    setLoading(true);
-    try {
-      const res = await marcas.list({ nome: nome || undefined });
-      setData(res.data);
-    } catch {
-      router.push('/login');
-    } finally {
-      setLoading(false);
+  React.useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setFormOpen(true);
+      router.replace('/marcas');
     }
-  }
+  }, [searchParams, router]);
 
-  useEffect(() => { load(); }, []);
+  const load = React.useCallback(
+    async (nome?: string) => {
+      setLoading(true);
+      try {
+        const res = await marcas.list({ nome: nome || undefined });
+        setData(res.data);
+      } catch {
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router]
+  );
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => load(search || undefined), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await marcas.create({ nome: form.nome, segmento: form.segmento || null, site: form.site || null, tags: [] });
-      setShowForm(false);
+      await marcas.create({
+        nome: form.nome,
+        segmento: form.segmento || null,
+        site: form.site || null,
+        tags: [],
+      });
+      toast.success('Marca criada.');
+      setFormOpen(false);
       setForm({ nome: '', segmento: '', site: '' });
       load();
+    } catch (err: any) {
+      toast.error(err?.error?.message ?? 'Erro ao criar.');
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Remover marca?')) return;
-    await marcas.delete(id);
-    load(search || undefined);
+  async function handleDelete(id: string, nome: string) {
+    if (!confirm(`Remover "${nome}"?`)) return;
+    try {
+      await marcas.delete(id);
+      toast.success('Removida.');
+      setDetail(null);
+      load(search || undefined);
+    } catch (err: any) {
+      toast.error(err?.error?.message ?? 'Erro ao remover.');
+    }
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Marcas</h1>
-        <div className="flex gap-2">
-          <a
-            href="http://localhost:8080/api/v1/marcas/export.csv"
-            className="px-3 py-2 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            Exportar CSV
-          </a>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            + Adicionar
-          </button>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-12">
+      <PageHeader
+        eyebrow="Cadastros"
+        title="Marcas"
+        description="Empresas e parceiros que você atende ou prospecta."
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <a href={`${API_URL}/api/v1/marcas/export.csv`}>
+                <Download className="h-4 w-4" /> Exportar CSV
+              </a>
+            </Button>
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4" /> Adicionar
+            </Button>
+          </>
+        }
+      />
 
-      {showForm && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 bg-white border border-slate-200 rounded-xl space-y-3">
-          <h2 className="font-medium text-slate-800">Nova marca</h2>
-          <input type="text" placeholder="Nome *" required value={form.nome}
-            onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input type="text" placeholder="Segmento" value={form.segmento}
-            onChange={e => setForm(p => ({ ...p, segmento: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input type="url" placeholder="Site" value={form.site}
-            onChange={e => setForm(p => ({ ...p, site: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <div className="flex gap-2">
-            <button type="submit" disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-50">
-              {saving ? 'Salvando…' : 'Salvar'}
-            </button>
-            <button type="button" onClick={() => setShowForm(false)}
-              className="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg">
-              Cancelar
-            </button>
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por nome…"
+        view={view}
+        onViewChange={setView}
+        count={data.length}
+        countLabel={data.length === 1 ? 'marca' : 'marcas'}
+      />
+
+      {loading ? (
+        view === 'cards' ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            ))}
           </div>
-        </form>
+        ) : (
+          <Skeleton className="h-96 w-full rounded-xl" />
+        )
+      ) : data.length === 0 ? (
+        <EmptyState
+          illustration={<EmptyIllustration variant="sparkles" />}
+          title={search ? 'Nada encontrado' : 'Nenhuma marca ainda'}
+          description={
+            search
+              ? `Sem resultados para "${search}". Tente outro termo.`
+              : 'Cadastre a primeira marca para organizar a operação.'
+          }
+          action={
+            !search && (
+              <Button onClick={() => setFormOpen(true)}>
+                <Plus className="h-4 w-4" /> Adicionar marca
+              </Button>
+            )
+          }
+        />
+      ) : view === 'cards' ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {data.map((marca, i) => (
+              <motion.div
+                key={marca.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.2, delay: i * 0.02 }}
+              >
+                <Card
+                  className="group cursor-pointer p-5 transition-all hover:border-border-strong hover:shadow-md"
+                  onClick={() => setDetail(marca)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-11 w-11 shrink-0 rounded-lg">
+                        <AvatarFallback className="rounded-lg bg-primary/10 text-foreground font-semibold">
+                          {initials(marca.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-display font-semibold truncate">{marca.nome}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {marca.segmento ?? 'Sem segmento'}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={() => setDetail(marca)}>
+                          <Eye className="h-4 w-4" /> Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(marca.id, marca.nome)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" /> Remover
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+                    {marca.site && (
+                      <Badge variant="outline" className="font-mono">
+                        <Globe className="h-3 w-3 mr-1" />
+                        {hostname(marca.site)}
+                      </Badge>
+                    )}
+                    {marca.tags.slice(0, 2).map(t => (
+                      <Badge key={t} variant="secondary">{t}</Badge>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 border-b border-border">
+                <tr>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Nome</th>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Segmento</th>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Site</th>
+                  <th className="px-5 py-3 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.map(marca => (
+                  <tr
+                    key={marca.id}
+                    className="cursor-pointer transition-colors hover:bg-accent/50"
+                    onClick={() => setDetail(marca)}
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-7 w-7 rounded-md">
+                          <AvatarFallback className="rounded-md bg-primary/10 text-foreground text-xs font-semibold">
+                            {initials(marca.nome)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{marca.nome}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">{marca.segmento ?? '—'}</td>
+                    <td className="px-5 py-3">
+                      {marca.site ? (
+                        <a
+                          href={marca.site.startsWith('http') ? marca.site : `https://${marca.site}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-primary hover:underline font-mono text-xs"
+                        >
+                          {hostname(marca.site)} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon-sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => setDetail(marca)}>
+                            <Eye className="h-4 w-4" /> Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(marca.id, marca.nome)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" /> Remover
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="mb-4">
-        <input type="text" placeholder="Buscar por nome…" value={search}
-          onChange={e => { setSearch(e.target.value); load(e.target.value || undefined); }}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      </div>
+      <EntityFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title="Nova marca"
+        description="Empresa, agência ou parceiro."
+        onSubmit={handleCreate}
+        submitLabel="Criar"
+        saving={saving}
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="nome">Nome *</Label>
+          <Input
+            id="nome"
+            required
+            value={form.nome}
+            onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
+            placeholder="Nome da marca"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="segmento">Segmento</Label>
+          <Input
+            id="segmento"
+            value={form.segmento}
+            onChange={e => setForm(p => ({ ...p, segmento: e.target.value }))}
+            placeholder="Ex: moda, beleza, tech"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="site">Site</Label>
+          <Input
+            id="site"
+            type="url"
+            value={form.site}
+            onChange={e => setForm(p => ({ ...p, site: e.target.value }))}
+            placeholder="https://exemplo.com"
+          />
+        </div>
+      </EntityFormModal>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-sm text-slate-400">Carregando…</div>
-        ) : data.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-400">Nenhuma marca encontrada.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Nome</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Segmento</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Site</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.map(marca => (
-                <tr key={marca.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{marca.nome}</td>
-                  <td className="px-4 py-3 text-slate-500">{marca.segmento ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    {marca.site ? (
-                      <a href={marca.site} target="_blank" rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline truncate max-w-xs block">{marca.site}</a>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(marca.id)}
-                      className="text-red-500 hover:text-red-700 text-xs">
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Sheet open={!!detail} onOpenChange={open => !open && setDetail(null)}>
+        <SheetContent>
+          {detail && (
+            <>
+              <SheetHeader>
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-14 w-14 rounded-xl">
+                    <AvatarFallback className="rounded-xl bg-primary/10 text-foreground text-lg font-bold">
+                      {initials(detail.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <SheetTitle>{detail.nome}</SheetTitle>
+                    <SheetDescription>
+                      {detail.segmento ?? 'Sem segmento definido'}
+                    </SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-5">
+                {detail.site && (
+                  <section>
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                      Site
+                    </h4>
+                    <a
+                      href={detail.site.startsWith('http') ? detail.site : `https://${detail.site}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm font-mono hover:bg-muted hover:text-primary transition-colors"
+                    >
+                      {hostname(detail.site)}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </section>
+                )}
+
+                <section>
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                    Tags
+                  </h4>
+                  {detail.tags.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sem tags.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {detail.tags.map(t => (
+                        <Badge key={t} variant="secondary">{t}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {detail.observacoes && (
+                  <section>
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                      Observações
+                    </h4>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {detail.observacoes}
+                    </p>
+                  </section>
+                )}
+
+                <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Criada em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(detail.id, detail.nome)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" /> Remover
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
