@@ -3,14 +3,12 @@ package com.hubfeatcreators.config;
 import com.hubfeatcreators.infra.log.MdcFilter;
 import com.hubfeatcreators.infra.security.JwtAuthFilter;
 import com.hubfeatcreators.infra.security.JwtService;
-import com.hubfeatcreators.infra.tenant.TenantFilter;
-import org.hibernate.SessionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -24,19 +22,17 @@ public class SecurityConfig {
 
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder();
   }
 
   @Bean
-  public SecurityFilterChain filterChain(
-      HttpSecurity http, JwtService jwtService, SessionFactory sessionFactory)
+  public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService)
       throws Exception {
     http.csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(new MdcFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new MdcFilter(), UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
-        .addFilterAfter(new TenantFilter(sessionFactory), UsernamePasswordAuthenticationFilter.class)
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(

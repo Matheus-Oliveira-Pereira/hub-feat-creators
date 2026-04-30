@@ -1,6 +1,6 @@
 package com.hubfeatcreators.infra.log;
 
-import com.hubfeatcreators.infra.security.JwtService;
+import com.hubfeatcreators.infra.security.AuthPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,11 +14,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class MdcFilter extends OncePerRequestFilter {
-  private final JwtService jwtService;
-
-  public MdcFilter(JwtService jwtService) {
-    this.jwtService = jwtService;
-  }
 
   @Override
   protected void doFilterInternal(
@@ -34,20 +29,9 @@ public class MdcFilter extends OncePerRequestFilter {
       MDC.put("request_id", requestId);
 
       Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-      if (auth != null && auth.isAuthenticated()) {
-        UUID assessoriaId = (UUID) auth.getPrincipal();
-        MDC.put("assessoria_id", assessoriaId.toString());
-      }
-
-      String authHeader = request.getHeader("Authorization");
-      if (authHeader != null && authHeader.startsWith("Bearer ")) {
-        try {
-          String token = authHeader.substring(7);
-          UUID usuarioId = jwtService.getUsuarioId(token);
-          MDC.put("usuario_id", usuarioId.toString());
-        } catch (Exception e) {
-          logger.debug("Could not extract usuario_id from token", e);
-        }
+      if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof AuthPrincipal p) {
+        MDC.put("usuario_id", p.usuarioId().toString());
+        MDC.put("assessoria_id", p.assessoriaId().toString());
       }
 
       filterChain.doFilter(request, response);

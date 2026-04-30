@@ -1,16 +1,16 @@
 package com.hubfeatcreators.infra.security;
 
+import com.hubfeatcreators.infra.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -35,14 +35,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (jwtService.isTokenValid(token)) {
           Claims claims = jwtService.parseToken(token);
           UUID usuarioId = UUID.fromString(claims.getSubject());
-          UUID assessoriaId = UUID.fromString((String) claims.get("ass"));
-          String role = (String) claims.get("role");
+          UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
+          String role = claims.get("role", String.class);
 
-          var authorities = new ArrayList<SimpleGrantedAuthority>();
-          authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+          AuthPrincipal principal = new AuthPrincipal(usuarioId, assessoriaId, role);
+          TenantContext.setAssessoriaId(assessoriaId);
 
-          Authentication auth =
-              new UsernamePasswordAuthenticationToken(assessoriaId, null, authorities);
+          var auth =
+              new UsernamePasswordAuthenticationToken(
+                  principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
           SecurityContextHolder.getContext().setAuthentication(auth);
         }
       }
@@ -50,6 +51,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       logger.debug("JWT validation failed", e);
     }
 
-    filterChain.doFilter(request, response);
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      TenantContext.clear();
+    }
   }
 }
