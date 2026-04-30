@@ -1,19 +1,61 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Inter, Bricolage_Grotesque, JetBrains_Mono } from 'next/font/google';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from '@/components/theme-provider';
+import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-bricolage',
+  display: 'swap',
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: "HUB Feat Creators",
-  description: "Centralização operacional para assessorias de creators",
+  title: 'feat. creators — HUB para assessorias',
+  description:
+    'Centralização operacional para assessorias de creators: prospecção, tarefas, e-mail e cadastros.',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body className="bg-background text-foreground antialiased">{children}</body>
+    <html
+      lang="pt-BR"
+      suppressHydrationWarning
+      className={`${inter.variable} ${bricolage.variable} ${jetbrains.variable}`}
+    >
+      <body className="font-sans bg-background text-foreground antialiased">
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster
+            position="bottom-right"
+            theme="system"
+            richColors
+            closeButton
+            toastOptions={{
+              classNames: {
+                toast: 'font-sans',
+              },
+            }}
+          />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

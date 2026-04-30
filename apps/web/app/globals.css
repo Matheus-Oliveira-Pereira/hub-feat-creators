@@ -2,18 +2,143 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
+    /* Surfaces */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --elevated: 0 0% 99%;
+
+    /* Brand — lime */
+    --primary: 68 100% 44%;
+    --primary-foreground: 0 0% 8%;
+    --primary-hover: 68 100% 38%;
+
+    /* Secondary surfaces */
+    --secondary: 60 5% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 60 5% 96%;
+    --muted-foreground: 25 5% 35%;
+    --accent: 60 5% 95%;
+    --accent-foreground: 0 0% 12%;
+
+    /* States */
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 8%;
+
+    /* Borders + focus */
+    --border: 30 6% 90%;
+    --border-strong: 30 6% 82%;
+    --input: 30 6% 90%;
+    --ring: 68 100% 44%;
+    --shadow: 0 0% 8%;
+
+    --ink: 0 0% 8%;
+    --subtle: 25 5% 65%;
+
+    --radius: 0.625rem;
+  }
+
+  [data-theme='dark'] {
+    --background: 0 0% 8%;
+    --foreground: 60 9% 98%;
+    --card: 0 0% 11%;
+    --card-foreground: 60 9% 98%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 60 9% 98%;
+    --elevated: 0 0% 12%;
+
+    --primary: 68 100% 44%;
+    --primary-foreground: 0 0% 8%;
+    --primary-hover: 68 100% 50%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 60 9% 98%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 30 5% 65%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 60 9% 98%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 65% 45%;
+    --success-foreground: 0 0% 8%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 8%;
+
+    --border: 0 0% 16%;
+    --border-strong: 0 0% 22%;
+    --input: 0 0% 16%;
+    --ring: 68 100% 44%;
+    --shadow: 0 0% 0%;
+
+    --ink: 60 9% 98%;
+    --subtle: 30 5% 45%;
   }
 }
 
-html, body {
-  height: 100%;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.3);
+    color: hsl(var(--ink));
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .heading-display {
+    @apply font-display tracking-tight;
+    font-feature-settings: 'ss01', 'ss02';
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border-strong)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-strong));
+    border-radius: 4px;
+  }
+  .gradient-mesh {
+    background-image:
+      radial-gradient(at 0% 0%, hsl(var(--primary) / 0.18) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsl(var(--primary) / 0.10) 0px, transparent 50%);
+  }
 }
