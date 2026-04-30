@@ -31,11 +31,12 @@ iat, exp
 ```
 
 ### Library
-- **`io.jsonwebtoken:jjwt`** (versão 0.12+) — API moderna, não-reflexiva, mantida ativamente
+- **`io.jsonwebtoken:jjwt`** (versão **0.11.5**) — API estável; 0.12.x quebrou compatibilidade de API (`parserBuilder()` removido) durante impl → pinado em 0.11.5
 - Descartado `auth0/java-jwt`: API mais antiga, menos opinião sobre claims types
 
 ### Hashing de senha
-- **Argon2id** (Spring Security `Argon2PasswordEncoder`) — parâmetros default OWASP (m=19MiB, t=2, p=1)
+- **BCrypt** (`BCryptPasswordEncoder`, fator 12) — **Argon2id descartado na implementação**: `de.mkammerer:argon2-jvm` não existe no Maven Central sem binários nativos; Spring Security's `Argon2PasswordEncoder` requer Bouncy Castle com binding nativo indisponível em Railway (JVM pura). BCrypt com fator 12 atende OWASP para MVP (min 100ms em hardware moderno).
+- Reavaliar Argon2id quando tiver infra dedicada ou lib pura consolidada.
 
 ### Revogação
 - Logout: revoga refresh family
@@ -86,9 +87,11 @@ iat, exp
 **Riscos**:
 - HS256 escolhido por simplicidade no MVP. Se múltiplos serviços precisarem validar token, migrar para RS256 (par chave pública/privada). Rastreado como tech debt.
 - `JWT_SECRET` em variável de ambiente — vazamento implica re-emissão de todos tokens. Mitigação: rotacionar trimestralmente; alarme em logs `auth_failed_signature_invalid`.
+- JJWT pinado em 0.11.5 — migração para 0.12+ exige refactor da API de parsing (`getBody()` → `getPayload()`, builders). Rastreado como tech debt.
+- BCrypt (em lugar de Argon2id) é adequado para MVP mas menos resistente a ASIC que Argon2id. Migrar em versão futura se performance do servidor permitir Bouncy Castle nativo.
 
 ## Impact on specs
-- **security**: definir parâmetros Argon2id, denylist policy, rotação de segredo
+- **security**: definir parâmetros BCrypt (fator 12), denylist policy, rotação de segredo
 - **api**: endpoints `/auth/*`, header `Authorization: Bearer <jwt>`
 - **observability**: métricas `auth_login_total`, `auth_refresh_total`, `auth_revoked_total`; log de tentativa falha (sem PII)
 - **data-architecture**: tabela `refresh_token` + índice `(token_hash)` UNIQUE, `(usuario_id, family_id)`, `(expires_at)` para purga
