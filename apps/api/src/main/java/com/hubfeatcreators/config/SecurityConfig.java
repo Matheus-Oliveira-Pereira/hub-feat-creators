@@ -1,32 +1,70 @@
 package com.hubfeatcreators.config;
 
+import com.hubfeatcreators.infra.log.MdcFilter;
+import com.hubfeatcreators.infra.security.JwtAuthFilter;
+import com.hubfeatcreators.infra.security.JwtService;
+import com.hubfeatcreators.infra.tenant.TenantFilter;
+import org.hibernate.SessionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Stub security config. Expanded in PRD-001 (JWT + multi-tenant filter). Permits actuator health +
- * openapi until auth wired.
- */
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(
-                        auth ->
-                                auth.requestMatchers(
-                                                "/actuator/health/**",
-                                                "/v3/api-docs/**",
-                                                "/swagger-ui/**",
-                                                "/swagger-ui.html")
-                                        .permitAll()
-                                        .anyRequest()
-                                        .permitAll());
-        return http.build();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public SecurityFilterChain filterChain(
+      HttpSecurity http, JwtService jwtService, SessionFactory sessionFactory)
+      throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(new MdcFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(new TenantFilter(sessionFactory), UsernamePasswordAuthenticationFilter.class)
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(
+                        "/actuator/health/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/api/v1/auth/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated());
+    return http.build();
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(java.util.List.of("http://localhost:3000"));
+    configuration.setAllowedMethods(
+        java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(java.util.List.of("*"));
+    configuration.setExposedHeaders(
+        java.util.List.of(
+            "Content-Length", "X-Request-Id", "X-Total-Count", "X-Has-More", "Location"));
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
 }
