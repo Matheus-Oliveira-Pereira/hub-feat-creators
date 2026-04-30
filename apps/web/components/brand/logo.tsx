@@ -4,6 +4,7 @@ interface LogoProps {
   className?: string;
   variant?: 'full' | 'mark' | 'wordmark';
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  tone?: 'default' | 'invert';
 }
 
 const SIZES = {
@@ -13,10 +14,13 @@ const SIZES = {
   xl: { mark: 56, text: 'text-4xl' },
 };
 
-function Mark({ size }: { size: number }) {
+function Mark({ size, tone }: { size: number; tone: 'default' | 'invert' }) {
   return (
     <span
-      className="relative inline-flex shrink-0 items-center justify-center rounded-lg bg-foreground"
+      className={cn(
+        'relative inline-flex shrink-0 items-center justify-center rounded-lg',
+        tone === 'invert' ? 'bg-background' : 'bg-foreground'
+      )}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
@@ -37,11 +41,18 @@ function Mark({ size }: { size: number }) {
   );
 }
 
-function Wordmark({ size }: { size: keyof typeof SIZES }) {
+function Wordmark({
+  size,
+  tone,
+}: {
+  size: keyof typeof SIZES;
+  tone: 'default' | 'invert';
+}) {
   return (
     <span
       className={cn(
-        'font-display font-bold tracking-tight text-foreground leading-none',
+        'font-display font-bold tracking-tight leading-none',
+        tone === 'invert' ? 'text-background' : 'text-foreground',
         SIZES[size].text
       )}
     >
@@ -50,14 +61,14 @@ function Wordmark({ size }: { size: keyof typeof SIZES }) {
   );
 }
 
-export function Logo({ className, variant = 'full', size = 'md' }: LogoProps) {
+export function Logo({ className, variant = 'full', size = 'md', tone = 'default' }: LogoProps) {
   const config = SIZES[size];
-  if (variant === 'mark') return <Mark size={config.mark} />;
-  if (variant === 'wordmark') return <Wordmark size={size} />;
+  if (variant === 'mark') return <Mark size={config.mark} tone={tone} />;
+  if (variant === 'wordmark') return <Wordmark size={size} tone={tone} />;
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
-      <Mark size={config.mark} />
-      <Wordmark size={size} />
+      <Mark size={config.mark} tone={tone} />
+      <Wordmark size={size} tone={tone} />
     </span>
   );
 }
