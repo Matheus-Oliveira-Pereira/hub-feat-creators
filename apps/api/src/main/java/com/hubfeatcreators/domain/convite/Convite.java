@@ -5,14 +5,9 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 @Entity
 @Table(name = "convites")
-@FilterDef(
-    name = "tenant_filter",
-    parameters = {@ParamDef(name = "assessoriaId", type = java.util.UUID.class)})
 @Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class Convite {
   @Id private UUID id = UUID.randomUUID();
@@ -43,10 +38,7 @@ public class Convite {
   @JoinColumn(name = "created_by")
   private Usuario createdBy;
 
-  public enum Role {
-    OWNER,
-    ASSESSOR
-  }
+  public enum Role { OWNER, ASSESSOR }
 
   public Convite() {}
 
@@ -58,47 +50,18 @@ public class Convite {
     this.expiresAt = expiresAt;
   }
 
-  public UUID getId() {
-    return id;
-  }
+  public UUID getId() { return id; }
+  public UUID getAssessoriaId() { return assessoriaId; }
+  public String getEmail() { return email; }
+  public String getToken() { return token; }
+  public Role getRole() { return role; }
+  public Instant getExpiresAt() { return expiresAt; }
+  public Instant getUsedAt() { return usedAt; }
+  public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
+  public Instant getCreatedAt() { return createdAt; }
+  public Usuario getCreatedBy() { return createdBy; }
+  public void setCreatedBy(Usuario createdBy) { this.createdBy = createdBy; }
 
-  public UUID getAssessoriaId() {
-    return assessoriaId;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public String getToken() {
-    return token;
-  }
-
-  public Role getRole() {
-    return role;
-  }
-
-  public Instant getExpiresAt() {
-    return expiresAt;
-  }
-
-  public Instant getUsedAt() {
-    return usedAt;
-  }
-
-  public void setUsedAt(Instant usedAt) {
-    this.usedAt = usedAt;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
-
-  public Usuario getCreatedBy() {
-    return createdBy;
-  }
-
-  public void setCreatedBy(Usuario createdBy) {
-    this.createdBy = createdBy;
-  }
+  public boolean isExpired() { return Instant.now().isAfter(expiresAt); }
+  public boolean isUsed() { return usedAt != null; }
 }

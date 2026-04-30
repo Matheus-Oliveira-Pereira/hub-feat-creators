@@ -1,4 +1,4 @@
-package com.hubfeatcreators.domain.usuario;
+package com.hubfeatcreators.domain.contato;
 
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -6,29 +6,30 @@ import java.util.UUID;
 import org.hibernate.annotations.Filter;
 
 @Entity
-@Table(name = "usuarios", uniqueConstraints = @UniqueConstraint(columnNames = {"assessoria_id", "email"}))
+@Table(name = "contatos")
 @Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
-public class Usuario {
+public class Contato {
+
   @Id private UUID id = UUID.randomUUID();
+
+  @Column(name = "marca_id", nullable = false)
+  private UUID marcaId;
 
   @Column(name = "assessoria_id", nullable = false)
   private UUID assessoriaId;
 
-  @Column(nullable = false, columnDefinition = "CITEXT")
+  @Column(nullable = false)
+  private String nome;
+
+  @Column(columnDefinition = "CITEXT")
   private String email;
 
-  @Column(name = "senha_hash", nullable = false)
-  private String senhaHash;
+  @Column private String telefone;
 
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  private Role role = Role.ASSESSOR;
+  @Column private String cargo;
 
-  @Column(name = "mfa_secret")
-  private String mfaSecret;
-
-  @Column(name = "ultimo_login_em")
-  private Instant ultimoLoginEm;
+  @Column(name = "email_invalido", nullable = false)
+  private boolean emailInvalido = false;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
@@ -39,27 +40,27 @@ public class Usuario {
   @Column(name = "deleted_at")
   private Instant deletedAt;
 
-  public enum Role { OWNER, ASSESSOR }
+  public Contato() {}
 
-  public Usuario() {}
-
-  public Usuario(UUID assessoriaId, String email, String senhaHash, Role role) {
+  public Contato(UUID marcaId, UUID assessoriaId, String nome) {
+    this.marcaId = marcaId;
     this.assessoriaId = assessoriaId;
-    this.email = email;
-    this.senhaHash = senhaHash;
-    this.role = role;
+    this.nome = nome;
   }
 
   public UUID getId() { return id; }
+  public UUID getMarcaId() { return marcaId; }
   public UUID getAssessoriaId() { return assessoriaId; }
+  public String getNome() { return nome; }
+  public void setNome(String nome) { this.nome = nome; }
   public String getEmail() { return email; }
   public void setEmail(String email) { this.email = email; }
-  public String getSenhaHash() { return senhaHash; }
-  public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
-  public Role getRole() { return role; }
-  public void setRole(Role role) { this.role = role; }
-  public Instant getUltimoLoginEm() { return ultimoLoginEm; }
-  public void setUltimoLoginEm(Instant ultimoLoginEm) { this.ultimoLoginEm = ultimoLoginEm; }
+  public String getTelefone() { return telefone; }
+  public void setTelefone(String telefone) { this.telefone = telefone; }
+  public String getCargo() { return cargo; }
+  public void setCargo(String cargo) { this.cargo = cargo; }
+  public boolean isEmailInvalido() { return emailInvalido; }
+  public void setEmailInvalido(boolean emailInvalido) { this.emailInvalido = emailInvalido; }
   public Instant getCreatedAt() { return createdAt; }
   public Instant getUpdatedAt() { return updatedAt; }
   public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
