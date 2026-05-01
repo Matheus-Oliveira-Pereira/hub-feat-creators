@@ -71,3 +71,20 @@ export const marcaSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20),
 });
 export type MarcaInput = z.infer<typeof marcaSchema>;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Contato (de Marca)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const contatoSchema = z.object({
+  nome: z.string().trim().min(1, 'Nome obrigatório').max(120),
+  email: z
+    .string()
+    .max(160)
+    .refine(v => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), {
+      message: 'E-mail inválido',
+    }),
+  telefone: z.string().max(40),
+  cargo: z.string().max(80),
+});
+export type ContatoInput = z.infer<typeof contatoSchema>;

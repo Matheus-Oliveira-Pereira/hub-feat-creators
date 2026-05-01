@@ -7,8 +7,23 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query';
-import { auth, influenciadores, marcas, Influenciador, Marca, PageResponse } from '@/lib/api';
-import type { InfluenciadorInput, MarcaInput, LoginInput, SignupInput } from '@/lib/schemas';
+import {
+  auth,
+  influenciadores,
+  marcas,
+  contatos,
+  Influenciador,
+  Marca,
+  Contato,
+  PageResponse,
+} from '@/lib/api';
+import type {
+  InfluenciadorInput,
+  MarcaInput,
+  ContatoInput,
+  LoginInput,
+  SignupInput,
+} from '@/lib/schemas';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Query keys
@@ -24,6 +39,9 @@ export const qk = {
     all: ['marcas'] as const,
     list: (filter: { nome?: string }) => ['marcas', 'list', filter] as const,
     detail: (id: string) => ['marcas', 'detail', id] as const,
+  },
+  contatos: {
+    byMarca: (marcaId: string) => ['contatos', 'marca', marcaId] as const,
   },
 };
 
@@ -168,5 +186,69 @@ export function useDeleteMarca() {
   return useMutation({
     mutationFn: (id: string) => marcas.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.marcas.all }),
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Contatos
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useContatosByMarca(marcaId: string | null | undefined) {
+  return useQuery<Contato[]>({
+    queryKey: marcaId ? qk.contatos.byMarca(marcaId) : ['contatos', 'none'],
+    queryFn: () => contatos.listByMarca(marcaId!),
+    enabled: !!marcaId,
+  });
+}
+
+function inputToContatoPayload(marcaId: string, input: ContatoInput) {
+  const email = input.email.trim();
+  const telefone = input.telefone.trim();
+  const cargo = input.cargo.trim();
+  return {
+    marcaId,
+    nome: input.nome.trim(),
+    email: email ? email : null,
+    telefone: telefone ? telefone : null,
+    cargo: cargo ? cargo : null,
+  };
+}
+
+export function useCreateContato() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ marcaId, input }: { marcaId: string; input: ContatoInput }) =>
+      contatos.create(inputToContatoPayload(marcaId, input)),
+    onSuccess: (_data, { marcaId }) => {
+      qc.invalidateQueries({ queryKey: qk.contatos.byMarca(marcaId) });
+    },
+  });
+}
+
+export function useUpdateContato() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      marcaId,
+      input,
+    }: {
+      id: string;
+      marcaId: string;
+      input: ContatoInput;
+    }) => contatos.update(id, inputToContatoPayload(marcaId, input)),
+    onSuccess: (_data, { marcaId }) => {
+      qc.invalidateQueries({ queryKey: qk.contatos.byMarca(marcaId) });
+    },
+  });
+}
+
+export function useDeleteContato() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string; marcaId: string }) => contatos.delete(id),
+    onSuccess: (_data, { marcaId }) => {
+      qc.invalidateQueries({ queryKey: qk.contatos.byMarca(marcaId) });
+    },
   });
 }

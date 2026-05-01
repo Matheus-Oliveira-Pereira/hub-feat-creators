@@ -11,11 +11,20 @@ import {
   Eye,
   Pencil,
   ExternalLink,
+  Mail,
+  Phone,
+  Briefcase,
+  AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { Marca } from '@/lib/api';
-import { useMarcas, useDeleteMarca } from '@/lib/queries';
+import { Marca, Contato } from '@/lib/api';
+import {
+  useMarcas,
+  useDeleteMarca,
+  useContatosByMarca,
+  useDeleteContato,
+} from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -38,6 +47,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { FilterBar } from '@/components/app/filter-bar';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { MarcaFormModal } from '@/components/forms/marca-form-modal';
+import { ContatoFormModal } from '@/components/forms/contato-form-modal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -78,6 +88,10 @@ function MarcasInner() {
     item: null,
   });
   const [detail, setDetail] = React.useState<Marca | null>(null);
+  const [contatoForm, setContatoForm] = React.useState<{
+    open: boolean;
+    contato: Contato | null;
+  }>({ open: false, contato: null });
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 250);
@@ -356,6 +370,15 @@ function MarcasInner() {
         marca={formState.item}
       />
 
+      {detail && (
+        <ContatoFormModal
+          open={contatoForm.open}
+          onOpenChange={open => setContatoForm(prev => ({ ...prev, open }))}
+          marcaId={detail.id}
+          contato={contatoForm.contato}
+        />
+      )}
+
       <Sheet open={!!detail} onOpenChange={open => !open && setDetail(null)}>
         <SheetContent>
           {detail && (
@@ -393,6 +416,12 @@ function MarcasInner() {
                     </a>
                   </section>
                 )}
+
+                <ContatosSection
+                  marcaId={detail.id}
+                  onAdd={() => setContatoForm({ open: true, contato: null })}
+                  onEdit={c => setContatoForm({ open: true, contato: c })}
+                />
 
                 <section>
                   <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
@@ -444,5 +473,117 @@ function MarcasInner() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+interface ContatosSectionProps {
+  marcaId: string;
+  onAdd: () => void;
+  onEdit: (c: Contato) => void;
+}
+
+function ContatosSection({ marcaId, onAdd, onEdit }: ContatosSectionProps) {
+  const query = useContatosByMarca(marcaId);
+  const del = useDeleteContato();
+
+  async function handleDelete(c: Contato) {
+    if (!confirm(`Remover contato "${c.nome}"?`)) return;
+    try {
+      await del.mutateAsync({ id: c.id, marcaId });
+      toast.success('Contato removido.');
+    } catch (err: any) {
+      toast.error(err?.error?.message ?? 'Erro ao remover.');
+    }
+  }
+
+  const contatos = query.data ?? [];
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Contatos {contatos.length > 0 && (
+            <span className="ml-1 tabular-nums normal-case">({contatos.length})</span>
+          )}
+        </h4>
+        <Button variant="ghost" size="sm" onClick={onAdd} className="h-7">
+          <Plus className="h-3.5 w-3.5" /> Adicionar
+        </Button>
+      </div>
+
+      {query.isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-16 w-full rounded-md" />
+          <Skeleton className="h-16 w-full rounded-md" />
+        </div>
+      ) : contatos.length === 0 ? (
+        <p className="text-sm text-muted-foreground rounded-md border border-dashed border-border bg-muted/30 px-3 py-4 text-center">
+          Nenhum contato cadastrado.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {contatos.map(c => (
+            <div
+              key={c.id}
+              className="group rounded-md border border-border bg-muted/30 px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate flex items-center gap-1.5">
+                    {c.nome}
+                    {c.emailInvalido && (
+                      <AlertCircle
+                        className="h-3.5 w-3.5 text-warning"
+                        aria-label="E-mail marcado como inválido"
+                      />
+                    )}
+                  </p>
+                  {c.cargo && (
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                      <Briefcase className="h-3 w-3" />
+                      {c.cargo}
+                    </p>
+                  )}
+                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {c.email && (
+                      <a
+                        href={`mailto:${c.email}`}
+                        className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <Mail className="h-3 w-3" />
+                        {c.email}
+                      </a>
+                    )}
+                    {c.telefone && (
+                      <a
+                        href={`tel:${c.telefone}`}
+                        className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <Phone className="h-3 w-3" />
+                        {c.telefone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon-sm" onClick={() => onEdit(c)} aria-label="Editar contato">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => handleDelete(c)}
+                    className="text-destructive hover:text-destructive"
+                    aria-label="Remover contato"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

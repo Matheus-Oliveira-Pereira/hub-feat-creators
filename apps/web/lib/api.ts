@@ -113,3 +113,33 @@ export const marcas = {
   update: (id: string, data: Partial<Marca>) => api.put<Marca>(`/api/v1/marcas/${id}`, data),
   delete: (id: string) => api.delete(`/api/v1/marcas/${id}`),
 };
+
+// Contatos (de marca)
+export interface Contato {
+  id: string;
+  marcaId: string;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  cargo: string | null;
+  emailInvalido: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContatoPayload {
+  marcaId: string;
+  nome: string;
+  email?: string | null;
+  telefone?: string | null;
+  cargo?: string | null;
+}
+
+export const contatos = {
+  listByMarca: (marcaId: string) =>
+    api.get<Contato[]>(`/api/v1/contatos?marcaId=${marcaId}`),
+  create: (data: ContatoPayload) => api.post<Contato>('/api/v1/contatos', data),
+  update: (id: string, data: ContatoPayload) =>
+    api.put<Contato>(`/api/v1/contatos/${id}`, data),
+  delete: (id: string) => api.delete(`/api/v1/contatos/${id}`),
+};
