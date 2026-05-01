@@ -47,12 +47,15 @@ export function useSignupMutation() {
 // Influenciadores
 // ────────────────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 30;
+
 export function useInfluenciadores(filter: { nome?: string } = {}) {
   return useInfiniteQuery<PageResponse<Influenciador>>({
     queryKey: qk.influenciadores.list(filter),
     queryFn: ({ pageParam }) =>
       influenciadores.list({
         nome: filter.nome,
+        size: PAGE_SIZE,
         cursor: pageParam as string | undefined,
       }),
     initialPageParam: undefined,
@@ -115,7 +118,11 @@ export function useMarcas(filter: { nome?: string } = {}) {
   return useInfiniteQuery<PageResponse<Marca>>({
     queryKey: qk.marcas.list(filter),
     queryFn: ({ pageParam }) =>
-      marcas.list({ nome: filter.nome, cursor: pageParam as string | undefined }),
+      marcas.list({
+        nome: filter.nome,
+        size: PAGE_SIZE,
+        cursor: pageParam as string | undefined,
+      }),
     initialPageParam: undefined,
     getNextPageParam: last => (last.pagination.hasMore ? last.pagination.cursor : undefined),
     placeholderData: keepPreviousData,

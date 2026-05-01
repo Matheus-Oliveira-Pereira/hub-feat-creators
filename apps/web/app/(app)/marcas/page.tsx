@@ -150,7 +150,15 @@ function MarcasInner() {
         view={view}
         onViewChange={setView}
         count={data.length}
-        countLabel={data.length === 1 ? 'marca' : 'marcas'}
+        countLabel={
+          query.hasNextPage
+            ? data.length === 1
+              ? 'marca carregada'
+              : 'marcas carregadas'
+            : data.length === 1
+              ? 'marca'
+              : 'marcas'
+        }
       />
 
       {loading ? (

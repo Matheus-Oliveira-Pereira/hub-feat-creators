@@ -140,7 +140,15 @@ function InfluenciadoresInner() {
         view={view}
         onViewChange={setView}
         count={data.length}
-        countLabel={data.length === 1 ? 'creator' : 'creators'}
+        countLabel={
+          query.hasNextPage
+            ? data.length === 1
+              ? 'creator carregado'
+              : 'creators carregados'
+            : data.length === 1
+              ? 'creator'
+              : 'creators'
+        }
       />
 
       {loading ? (
