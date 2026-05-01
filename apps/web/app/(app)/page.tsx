@@ -51,7 +51,7 @@ export default function DashboardPage() {
       try {
         const [inf, mar] = await Promise.all([
           influenciadores.list({ size: 100 }),
-          marcas.list({ page: 0 }),
+          marcas.list({ size: 100 }),
         ]);
         if (!alive) return;
         setStats({ influenciadores: inf.data.length, marcas: mar.data.length });

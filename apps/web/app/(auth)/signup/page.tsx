@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { auth, setTokens } from '@/lib/api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { setTokens } from '@/lib/api';
+import { signupSchema, type SignupInput } from '@/lib/schemas';
+import { useSignupMutation } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,27 +27,37 @@ function autoSlug(nome: string) {
 
 export default function SignupPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ assessoriaNome: '', slug: '', email: '', senha: '' });
-  const [loading, setLoading] = useState(false);
-  const [slugTouched, setSlugTouched] = useState(false);
+  const signup = useSignupMutation();
 
-  function set<K extends keyof typeof form>(field: K) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
-  }
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting, dirtyFields },
+  } = useForm<SignupInput>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { assessoriaNome: '', slug: '', email: '', senha: '' },
+  });
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  const assessoriaNome = watch('assessoriaNome');
+  const slugTouched = !!dirtyFields.slug;
+
+  // auto-fill slug enquanto não foi tocado manualmente
+  React.useEffect(() => {
+    if (!slugTouched) {
+      setValue('slug', autoSlug(assessoriaNome ?? ''), { shouldValidate: false });
+    }
+  }, [assessoriaNome, slugTouched, setValue]);
+
+  async function onSubmit(values: SignupInput) {
     try {
-      const tokens = await auth.signup(form);
+      const tokens = await signup.mutateAsync(values);
       setTokens(tokens.accessToken, tokens.refreshToken);
       toast.success('Workspace criado!');
       router.push('/');
     } catch (err: any) {
       toast.error(err?.error?.message ?? 'Erro ao criar conta.');
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -62,73 +76,85 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="assessoriaNome">Nome da assessoria</Label>
           <Input
             id="assessoriaNome"
-            required
-            value={form.assessoriaNome}
-            onChange={e => {
-              const nome = e.target.value;
-              setForm(prev => ({
-                ...prev,
-                assessoriaNome: nome,
-                slug: slugTouched ? prev.slug : autoSlug(nome),
-              }));
-            }}
             placeholder="Ex: Constellation Talent"
+            aria-invalid={!!errors.assessoriaNome}
+            {...register('assessoriaNome')}
           />
+          {errors.assessoriaNome && (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.assessoriaNome.message}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="slug">Slug do workspace</Label>
           <div className="flex items-center rounded-md border border-input bg-background shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-ring">
-            <span className="pl-3 text-xs text-muted-foreground font-mono select-none">hub.app/</span>
+            <span className="pl-3 text-xs text-muted-foreground font-mono select-none">
+              hub.app/
+            </span>
             <input
               id="slug"
-              required
-              minLength={3}
-              pattern="[a-z0-9-]+"
-              value={form.slug}
-              onChange={e => {
-                setSlugTouched(true);
-                setForm(prev => ({ ...prev, slug: e.target.value }));
-              }}
               className="flex-1 h-10 px-2 bg-transparent text-sm font-mono outline-none placeholder:text-muted-foreground"
               placeholder="constellation"
+              aria-invalid={!!errors.slug}
+              {...register('slug')}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Apenas letras minúsculas, números e hífens.
-          </p>
+          {errors.slug ? (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.slug.message}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Apenas letras minúsculas, números e hífens.
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Seu e-mail</Label>
           <Input
             id="email"
             type="email"
-            required
             autoComplete="email"
-            value={form.email}
-            onChange={set('email')}
             placeholder="voce@assessoria.com"
+            aria-invalid={!!errors.email}
+            {...register('email')}
           />
+          {errors.email && (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.email.message}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="senha">Senha</Label>
           <Input
             id="senha"
             type="password"
-            required
-            minLength={8}
             autoComplete="new-password"
-            value={form.senha}
-            onChange={set('senha')}
             placeholder="Mínimo de 8 caracteres"
+            aria-invalid={!!errors.senha}
+            {...register('senha')}
           />
+          {errors.senha && (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.senha.message}
+            </p>
+          )}
         </div>
-        <Button type="submit" disabled={loading} size="lg" className="w-full mt-2">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Criar workspace <ArrowRight className="h-4 w-4" /></>}
+        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full mt-2">
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              Criar workspace <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </form>
 

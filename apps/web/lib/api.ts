@@ -71,11 +71,11 @@ export interface PageResponse<T> {
 }
 
 export const influenciadores = {
-  list: (params?: { nome?: string; nicho?: string; page?: number; size?: number }) => {
+  list: (params?: { nome?: string; nicho?: string; cursor?: string; size?: number }) => {
     const q = new URLSearchParams();
     if (params?.nome) q.set('nome', params.nome);
     if (params?.nicho) q.set('nicho', params.nicho);
-    if (params?.page !== undefined) q.set('page', String(params.page));
+    if (params?.cursor) q.set('page', params.cursor);
     if (params?.size) q.set('size', String(params.size));
     return api.get<PageResponse<Influenciador>>(`/api/v1/influenciadores?${q}`);
   },
@@ -100,11 +100,12 @@ export interface Marca {
 }
 
 export const marcas = {
-  list: (params?: { nome?: string; segmento?: string; page?: number }) => {
+  list: (params?: { nome?: string; segmento?: string; cursor?: string; size?: number }) => {
     const q = new URLSearchParams();
     if (params?.nome) q.set('nome', params.nome);
     if (params?.segmento) q.set('segmento', params.segmento);
-    if (params?.page !== undefined) q.set('page', String(params.page));
+    if (params?.cursor) q.set('page', params.cursor);
+    if (params?.size) q.set('size', String(params.size));
     return api.get<PageResponse<Marca>>(`/api/v1/marcas?${q}`);
   },
   get: (id: string) => api.get<Marca>(`/api/v1/marcas/${id}`),

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Bricolage_Grotesque, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/components/theme-provider';
+import { Providers } from '@/components/providers';
 import './globals.css';
 
 const inter = Inter({
@@ -36,12 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${bricolage.variable} ${jetbrains.variable}`}
     >
       <body className="font-sans bg-background text-foreground antialiased">
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <Providers>
           {children}
           <Toaster
             position="bottom-right"
@@ -54,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
             }}
           />
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

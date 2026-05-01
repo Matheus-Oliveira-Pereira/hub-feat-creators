@@ -1,34 +1,39 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { auth, setTokens } from '@/lib/api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { setTokens } from '@/lib/api';
+import { loginSchema, type LoginInput } from '@/lib/schemas';
+import { useLoginMutation } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(false);
+  const login = useLoginMutation();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', senha: '' },
+  });
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function onSubmit(values: LoginInput) {
     try {
-      const tokens = await auth.login({ email, senha });
+      const tokens = await login.mutateAsync(values);
       setTokens(tokens.accessToken, tokens.refreshToken);
       toast.success('Bem-vindo de volta!');
       router.push('/');
     } catch (err: any) {
       toast.error(err?.error?.message ?? 'Credenciais inválidas.');
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -45,33 +50,47 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="email">E-mail</Label>
           <Input
             id="email"
             type="email"
-            required
             autoComplete="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
             placeholder="voce@assessoria.com"
+            aria-invalid={!!errors.email}
+            {...register('email')}
           />
+          {errors.email && (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.email.message}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="senha">Senha</Label>
           <Input
             id="senha"
             type="password"
-            required
             autoComplete="current-password"
-            value={senha}
-            onChange={e => setSenha(e.target.value)}
             placeholder="••••••••"
+            aria-invalid={!!errors.senha}
+            {...register('senha')}
           />
+          {errors.senha && (
+            <p className="text-xs text-destructive" role="alert">
+              {errors.senha.message}
+            </p>
+          )}
         </div>
-        <Button type="submit" disabled={loading} size="lg" className="w-full mt-2">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Entrar <ArrowRight className="h-4 w-4" /></>}
+        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full mt-2">
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              Entrar <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </form>
 
