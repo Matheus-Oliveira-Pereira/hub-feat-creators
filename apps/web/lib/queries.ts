@@ -62,12 +62,16 @@ export function useInfluenciadores(filter: { nome?: string } = {}) {
 }
 
 function inputToInfluenciadorPayload(input: InfluenciadorInput): Partial<Influenciador> {
+  const ig = input.instagram.replace(/^@/, '').trim();
+  const audiencia = input.audienciaTotal.trim();
+  const observ = input.observacoes.trim();
+  const nicho = input.nicho.trim();
   return {
-    nome: input.nome,
-    nicho: input.nicho ?? null,
-    handles: input.instagram ? { instagram: input.instagram } : {},
-    audienciaTotal: input.audienciaTotal ?? null,
-    observacoes: input.observacoes ?? null,
+    nome: input.nome.trim(),
+    nicho: nicho ? nicho : null,
+    handles: ig ? { instagram: ig } : {},
+    audienciaTotal: audiencia ? Number(audiencia) : null,
+    observacoes: observ ? observ : null,
     tags: input.tags,
   };
 }
@@ -119,11 +123,15 @@ export function useMarcas(filter: { nome?: string } = {}) {
 }
 
 function inputToMarcaPayload(input: MarcaInput): Partial<Marca> {
+  const segmento = input.segmento.trim();
+  const observ = input.observacoes.trim();
+  const siteRaw = input.site.trim();
+  const site = siteRaw && !/^https?:\/\//i.test(siteRaw) ? `https://${siteRaw}` : siteRaw;
   return {
-    nome: input.nome,
-    segmento: input.segmento ?? null,
-    site: input.site ?? null,
-    observacoes: input.observacoes ?? null,
+    nome: input.nome.trim(),
+    segmento: segmento ? segmento : null,
+    site: site ? site : null,
+    observacoes: observ ? observ : null,
     tags: input.tags,
   };
 }

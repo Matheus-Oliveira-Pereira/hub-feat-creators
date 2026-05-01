@@ -1,0 +1,129 @@
+'use client';
+
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { Marca } from '@/lib/api';
+import { marcaSchema, type MarcaInput } from '@/lib/schemas';
+import { useCreateMarca, useUpdateMarca } from '@/lib/queries';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { EntityFormModal } from '@/components/app/entity-form-modal';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  marca?: Marca | null;
+}
+
+function toFormDefaults(m?: Marca | null): MarcaInput {
+  return {
+    nome: m?.nome ?? '',
+    segmento: m?.segmento ?? '',
+    site: m?.site ?? '',
+    observacoes: m?.observacoes ?? '',
+    tags: m?.tags ?? [],
+  };
+}
+
+export function MarcaFormModal({ open, onOpenChange, marca }: Props) {
+  const isEdit = !!marca;
+  const create = useCreateMarca();
+  const update = useUpdateMarca();
+
+  const form = useForm<MarcaInput>({
+    resolver: zodResolver(marcaSchema),
+    defaultValues: toFormDefaults(marca),
+  });
+
+  React.useEffect(() => {
+    if (open) form.reset(toFormDefaults(marca));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, marca?.id]);
+
+  const saving = create.isPending || update.isPending || form.formState.isSubmitting;
+
+  async function onSubmit(values: MarcaInput) {
+    try {
+      if (isEdit && marca) {
+        await update.mutateAsync({ id: marca.id, input: values });
+        toast.success('Marca atualizada.');
+      } else {
+        await create.mutateAsync(values);
+        toast.success('Marca criada.');
+      }
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.error?.message ?? 'Erro ao salvar.');
+    }
+  }
+
+  const { register, handleSubmit, formState } = form;
+  const { errors } = formState;
+
+  return (
+    <EntityFormModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? 'Editar marca' : 'Nova marca'}
+      description={
+        isEdit
+          ? 'Atualize as informações da marca.'
+          : 'Empresa, agência ou parceiro.'
+      }
+      onSubmit={handleSubmit(onSubmit)}
+      submitLabel={isEdit ? 'Salvar alterações' : 'Criar'}
+      saving={saving}
+    >
+      <div className="space-y-1.5">
+        <Label htmlFor="nome">Nome *</Label>
+        <Input
+          id="nome"
+          placeholder="Nome da marca"
+          aria-invalid={!!errors.nome}
+          {...register('nome')}
+        />
+        {errors.nome && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.nome.message}
+          </p>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="segmento">Segmento</Label>
+        <Input
+          id="segmento"
+          placeholder="Ex: moda, beleza, tech"
+          aria-invalid={!!errors.segmento}
+          {...register('segmento')}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="site">Site</Label>
+        <Input
+          id="site"
+          placeholder="exemplo.com"
+          aria-invalid={!!errors.site}
+          {...register('site')}
+        />
+        {errors.site && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.site.message}
+          </p>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="observacoes">Observações</Label>
+        <textarea
+          id="observacoes"
+          rows={3}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+          placeholder="Notas internas sobre a marca…"
+          aria-invalid={!!errors.observacoes}
+          {...register('observacoes')}
+        />
+      </div>
+    </EntityFormModal>
+  );
+}

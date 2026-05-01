@@ -9,15 +9,14 @@ import {
   MoreHorizontal,
   Trash2,
   Eye,
-  Building2,
+  Pencil,
   ExternalLink,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { marcas, Marca } from '@/lib/api';
+import { Marca } from '@/lib/api';
+import { useMarcas, useDeleteMarca } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +36,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PageHeader } from '@/components/app/page-header';
 import { FilterBar } from '@/components/app/filter-bar';
-import { EntityFormModal } from '@/components/app/entity-form-modal';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
+import { MarcaFormModal } from '@/components/forms/marca-form-modal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -71,79 +70,58 @@ export default function MarcasPage() {
 function MarcasInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [data, setData] = React.useState<Marca[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
+  const [debounced, setDebounced] = React.useState('');
   const [view, setView] = React.useState<'cards' | 'table'>('cards');
-  const [formOpen, setFormOpen] = React.useState(false);
-  const [form, setForm] = React.useState({ nome: '', segmento: '', site: '' });
-  const [saving, setSaving] = React.useState(false);
+  const [formState, setFormState] = React.useState<{ open: boolean; item: Marca | null }>({
+    open: false,
+    item: null,
+  });
   const [detail, setDetail] = React.useState<Marca | null>(null);
 
   React.useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const query = useMarcas({ nome: debounced || undefined });
+  const data = React.useMemo(
+    () => query.data?.pages.flatMap(p => p.data) ?? [],
+    [query.data]
+  );
+
+  React.useEffect(() => {
+    if (query.error) router.push('/login');
+  }, [query.error, router]);
+
+  React.useEffect(() => {
     if (searchParams.get('new') === '1') {
-      setFormOpen(true);
+      setFormState({ open: true, item: null });
       router.replace('/marcas');
     }
   }, [searchParams, router]);
 
-  const load = React.useCallback(
-    async (nome?: string) => {
-      setLoading(true);
-      try {
-        const res = await marcas.list({ nome: nome || undefined });
-        setData(res.data);
-      } catch {
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [router]
-  );
-
-  React.useEffect(() => {
-    load();
-  }, [load]);
-
-  React.useEffect(() => {
-    const t = setTimeout(() => load(search || undefined), 250);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await marcas.create({
-        nome: form.nome,
-        segmento: form.segmento || null,
-        site: form.site || null,
-        tags: [],
-      });
-      toast.success('Marca criada.');
-      setFormOpen(false);
-      setForm({ nome: '', segmento: '', site: '' });
-      load();
-    } catch (err: any) {
-      toast.error(err?.error?.message ?? 'Erro ao criar.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
+  const del = useDeleteMarca();
   async function handleDelete(id: string, nome: string) {
     if (!confirm(`Remover "${nome}"?`)) return;
     try {
-      await marcas.delete(id);
+      await del.mutateAsync(id);
       toast.success('Removida.');
       setDetail(null);
-      load(search || undefined);
     } catch (err: any) {
       toast.error(err?.error?.message ?? 'Erro ao remover.');
     }
   }
+
+  function openCreate() {
+    setFormState({ open: true, item: null });
+  }
+  function openEdit(item: Marca) {
+    setDetail(null);
+    setFormState({ open: true, item });
+  }
+
+  const loading = query.isLoading;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-12">
@@ -158,7 +136,7 @@ function MarcasInner() {
                 <Download className="h-4 w-4" /> Exportar CSV
               </a>
             </Button>
-            <Button onClick={() => setFormOpen(true)}>
+            <Button onClick={openCreate}>
               <Plus className="h-4 w-4" /> Adicionar
             </Button>
           </>
@@ -188,15 +166,15 @@ function MarcasInner() {
       ) : data.length === 0 ? (
         <EmptyState
           illustration={<EmptyIllustration variant="sparkles" />}
-          title={search ? 'Nada encontrado' : 'Nenhuma marca ainda'}
+          title={debounced ? 'Nada encontrado' : 'Nenhuma marca ainda'}
           description={
-            search
-              ? `Sem resultados para "${search}". Tente outro termo.`
+            debounced
+              ? `Sem resultados para "${debounced}". Tente outro termo.`
               : 'Cadastre a primeira marca para organizar a operação.'
           }
           action={
-            !search && (
-              <Button onClick={() => setFormOpen(true)}>
+            !debounced && (
+              <Button onClick={openCreate}>
                 <Plus className="h-4 w-4" /> Adicionar marca
               </Button>
             )
@@ -212,7 +190,7 @@ function MarcasInner() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.2, delay: i * 0.02 }}
+                transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.2) }}
               >
                 <Card
                   className="group cursor-pointer p-5 transition-all hover:border-border-strong hover:shadow-md"
@@ -234,13 +212,20 @@ function MarcasInner() {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                         <DropdownMenuItem onClick={() => setDetail(marca)}>
                           <Eye className="h-4 w-4" /> Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(marca)}>
+                          <Pencil className="h-4 w-4" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(marca.id, marca.nome)}
@@ -259,7 +244,9 @@ function MarcasInner() {
                       </Badge>
                     )}
                     {marca.tags.slice(0, 2).map(t => (
-                      <Badge key={t} variant="secondary">{t}</Badge>
+                      <Badge key={t} variant="secondary">
+                        {t}
+                      </Badge>
                     ))}
                   </div>
                 </Card>
@@ -323,6 +310,9 @@ function MarcasInner() {
                           <DropdownMenuItem onClick={() => setDetail(marca)}>
                             <Eye className="h-4 w-4" /> Detalhes
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEdit(marca)}>
+                            <Pencil className="h-4 w-4" /> Editar
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDelete(marca.id, marca.nome)}
                             className="text-destructive focus:text-destructive"
@@ -340,45 +330,23 @@ function MarcasInner() {
         </Card>
       )}
 
-      <EntityFormModal
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        title="Nova marca"
-        description="Empresa, agência ou parceiro."
-        onSubmit={handleCreate}
-        submitLabel="Criar"
-        saving={saving}
-      >
-        <div className="space-y-1.5">
-          <Label htmlFor="nome">Nome *</Label>
-          <Input
-            id="nome"
-            required
-            value={form.nome}
-            onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
-            placeholder="Nome da marca"
-          />
+      {query.hasNextPage && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => query.fetchNextPage()}
+            disabled={query.isFetchingNextPage}
+          >
+            {query.isFetchingNextPage ? 'Carregando…' : 'Carregar mais'}
+          </Button>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="segmento">Segmento</Label>
-          <Input
-            id="segmento"
-            value={form.segmento}
-            onChange={e => setForm(p => ({ ...p, segmento: e.target.value }))}
-            placeholder="Ex: moda, beleza, tech"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="site">Site</Label>
-          <Input
-            id="site"
-            type="url"
-            value={form.site}
-            onChange={e => setForm(p => ({ ...p, site: e.target.value }))}
-            placeholder="https://exemplo.com"
-          />
-        </div>
-      </EntityFormModal>
+      )}
+
+      <MarcaFormModal
+        open={formState.open}
+        onOpenChange={open => setFormState(prev => ({ ...prev, open }))}
+        marca={formState.item}
+      />
 
       <Sheet open={!!detail} onOpenChange={open => !open && setDetail(null)}>
         <SheetContent>
@@ -427,7 +395,9 @@ function MarcasInner() {
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {detail.tags.map(t => (
-                        <Badge key={t} variant="secondary">{t}</Badge>
+                        <Badge key={t} variant="secondary">
+                          {t}
+                        </Badge>
                       ))}
                     </div>
                   )}
@@ -446,14 +416,19 @@ function MarcasInner() {
 
                 <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
                   <span>Criada em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(detail.id, detail.nome)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" /> Remover
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(detail)}>
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(detail.id, detail.nome)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" /> Remover
+                    </Button>
+                  </div>
                 </div>
               </div>
             </>
