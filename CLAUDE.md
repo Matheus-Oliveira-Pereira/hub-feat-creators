@@ -6,7 +6,7 @@ Vision completa: `docs/product/vision.md`.
 
 ## Tech Stack
 - Backend: Java 21 (LTS) + Spring Boot 3.x
-- Frontend: Next.js 14+ (App Router) + TypeScript (`strict: true`) + Tailwind CSS
+- Frontend: Next.js 14+ (App Router) + TypeScript (`strict: true`) + Tailwind CSS + shadcn/ui (Radix) + Framer Motion + Recharts
 - Mobile: React Native + Expo (SDK 50+) + TypeScript (`strict: true`) — usuário final apenas
 - Database: PostgreSQL 16
 - E-mail: Jakarta Mail (Spring Mail) via SMTP relay externo (multi-conta cadastrada pelo usuário)
@@ -117,7 +117,25 @@ Detalhes em ADR-004 e `docs/specs/code-review-gates.md`.
 - Conflito: PRD > CLAUDE.md > PROMPT.md (PROMPT.md nunca sobrescreve convenção em silêncio)
 - Tokens em `docs/specs/design-system/`
 
-> **Como usar**: app.claude.com → Design → conecta repo → gera DS a partir de assets/código → botão "Send to Claude Code" exporta PROMPT.md.
+> **Como usar**: claude.ai (ícone paleta na sidebar) → Design → conecta repo → gera DS a partir de assets/código → botão "Send to Claude Code" exporta PROMPT.md. Requer plano Pro/Max/Team/Enterprise.
+
+### Brand
+- Cores: `#C2E000` (lime/primary) + `#141414` (ink/foreground) + `#FFFFFF` (background)
+- Tipo: Bricolage Grotesque (display) + Inter (body) + JetBrains Mono — todas Google Fonts via `next/font`
+- Logo: wordmark "feat. creators" + mark com símbolo grafema lime sobre quadrado escuro
+- Tema dark/light com toggle + auto-detect (`next-themes`, atributo `data-theme`)
+
+### Web architecture (`apps/web`)
+- `app/(auth)/` → login, signup (layout duo-painel hero+form)
+- `app/(app)/` → rotas autenticadas com AppShell (sidebar colapsável + topbar + Cmd+K)
+- `app/(app)/page.tsx` → dashboard home com KPIs + funil chart
+- `app/(app)/influenciadores`, `app/(app)/marcas` → listagens cards/tabela toggle + drawer detalhe + modal create
+- `components/ui/` → primitives shadcn (button, input, dialog, sheet, dropdown-menu, command, etc.)
+- `components/app/` → shell e blocos compostos (sidebar, topbar, command-palette, page-header, filter-bar, entity-form-modal, stat-card, empty-state)
+- `components/brand/` → logo
+- `components/theme-provider.tsx`, `theme-toggle.tsx` → next-themes
+- `lib/api.ts` → fetch client + tipos
+- `lib/utils.ts` → `cn()` helper
 
 ## Modular Specifications
 Detalhes em `docs/specs/<modulo>/README.md`.
@@ -174,6 +192,11 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **Mobile auth**: token JWT em SecureStore (iOS Keychain / Android Keystore) — nunca AsyncStorage
 - **CORS Vercel↔Railway**: `CORS_ALLOWED_ORIGINS` explícito; cuidado com preview URLs do Vercel
 - **Migrations**: Flyway versionado em `apps/api/src/main/resources/db/migration` — nunca editar V já aplicada, criar nova
+- **Next 14 + `useSearchParams`**: páginas client que usam `useSearchParams()` precisam de `<Suspense>` boundary acima — sem isso, `pnpm build` falha em prerender com "useSearchParams should be wrapped in a suspense boundary". Padrão: exportar wrapper `Page` com Suspense, conteúdo real em `Inner`
+- **lucide-react**: ícone `Instagram` foi removido em versões recentes — usar `AtSign` (ou texto "@") para handles
+- **typedRoutes**: `next.config.mjs` tem `experimental.typedRoutes: true` — `href` exige `Route` (`import { type Route } from 'next'` + cast `'/path' as Route`); rotas com querystring também
+- **Tailwind tokens via HSL**: cores em `globals.css` armazenam HSL components sem prefixo `hsl()` (ex: `--primary: 68 100% 44%`); `tailwind.config.ts` aplica `hsl(var(--primary))` — nunca hardcodear hex em componente
+- **Recharts SSR**: warning "width/height -1" no prerender é benigno (container tem 0px no momento da geração estática) — chart hidrata correto no cliente
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:
