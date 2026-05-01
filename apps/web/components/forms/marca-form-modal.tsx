@@ -7,8 +7,10 @@ import { toast } from 'sonner';
 import { Marca } from '@/lib/api';
 import { marcaSchema, type MarcaInput } from '@/lib/schemas';
 import { useCreateMarca, useUpdateMarca } from '@/lib/queries';
+import { Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TagsInput } from '@/components/ui/tags-input';
 import { EntityFormModal } from '@/components/app/entity-form-modal';
 
 interface Props {
@@ -59,8 +61,9 @@ export function MarcaFormModal({ open, onOpenChange, marca }: Props) {
     }
   }
 
-  const { register, handleSubmit, formState } = form;
+  const { register, handleSubmit, control, watch, formState } = form;
   const { errors } = formState;
+  const observacoesWatch = watch('observacoes');
 
   return (
     <EntityFormModal
@@ -114,7 +117,33 @@ export function MarcaFormModal({ open, onOpenChange, marca }: Props) {
         )}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="observacoes">Observações</Label>
+        <Label htmlFor="tags">Tags</Label>
+        <Controller
+          control={control}
+          name="tags"
+          render={({ field }) => (
+            <TagsInput
+              id="tags"
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="Digite e Enter para adicionar"
+              aria-invalid={!!errors.tags}
+            />
+          )}
+        />
+        {errors.tags && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.tags.message as string}
+          </p>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="observacoes">Observações</Label>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {observacoesWatch?.length ?? 0}/2000
+          </span>
+        </div>
         <textarea
           id="observacoes"
           rows={3}
@@ -123,6 +152,11 @@ export function MarcaFormModal({ open, onOpenChange, marca }: Props) {
           aria-invalid={!!errors.observacoes}
           {...register('observacoes')}
         />
+        {errors.observacoes && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.observacoes.message}
+          </p>
+        )}
       </div>
     </EntityFormModal>
   );

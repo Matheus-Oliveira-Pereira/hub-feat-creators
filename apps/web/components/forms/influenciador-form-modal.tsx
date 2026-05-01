@@ -7,8 +7,10 @@ import { toast } from 'sonner';
 import { Influenciador } from '@/lib/api';
 import { influenciadorSchema, type InfluenciadorInput } from '@/lib/schemas';
 import { useCreateInfluenciador, useUpdateInfluenciador } from '@/lib/queries';
+import { Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TagsInput } from '@/components/ui/tags-input';
 import { EntityFormModal } from '@/components/app/entity-form-modal';
 
 interface Props {
@@ -61,8 +63,14 @@ export function InfluenciadorFormModal({ open, onOpenChange, influenciador }: Pr
     }
   }
 
-  const { register, handleSubmit, formState } = form;
+  const { register, handleSubmit, control, watch, formState } = form;
   const { errors } = formState;
+  const audienciaWatch = watch('audienciaTotal');
+  const audienciaFormatted = (() => {
+    const n = Number(audienciaWatch);
+    return Number.isFinite(n) && n > 0 ? n.toLocaleString('pt-BR') : null;
+  })();
+  const observacoesWatch = watch('observacoes');
 
   return (
     <EntityFormModal
@@ -128,14 +136,44 @@ export function InfluenciadorFormModal({ open, onOpenChange, influenciador }: Pr
           aria-invalid={!!errors.audienciaTotal}
           {...register('audienciaTotal')}
         />
-        {errors.audienciaTotal && (
+        {errors.audienciaTotal ? (
           <p className="text-xs text-destructive" role="alert">
             {errors.audienciaTotal.message}
+          </p>
+        ) : audienciaFormatted ? (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {audienciaFormatted} seguidores
+          </p>
+        ) : null}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="tags">Tags</Label>
+        <Controller
+          control={control}
+          name="tags"
+          render={({ field }) => (
+            <TagsInput
+              id="tags"
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="Digite e Enter para adicionar"
+              aria-invalid={!!errors.tags}
+            />
+          )}
+        />
+        {errors.tags && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.tags.message as string}
           </p>
         )}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="observacoes">Observações</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="observacoes">Observações</Label>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {observacoesWatch?.length ?? 0}/2000
+          </span>
+        </div>
         <textarea
           id="observacoes"
           rows={3}
@@ -144,6 +182,11 @@ export function InfluenciadorFormModal({ open, onOpenChange, influenciador }: Pr
           aria-invalid={!!errors.observacoes}
           {...register('observacoes')}
         />
+        {errors.observacoes && (
+          <p className="text-xs text-destructive" role="alert">
+            {errors.observacoes.message}
+          </p>
+        )}
       </div>
     </EntityFormModal>
   );
