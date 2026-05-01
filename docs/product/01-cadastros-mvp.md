@@ -216,3 +216,51 @@ audit_log (
 - [ ] Paywall em `usuarios` por plano? (ex: free = 1 OWNER + 2 ASSESSOR; pro = ilimitado) — definir antes de cobrar
 - [ ] Tags são livres ou catálogo controlado? — propor livres com sugestões baseadas em uso (autocomplete)
 - [ ] Campo "instagram handle" valida formato (`@nome` sem espaços) ou aceita texto livre? — validar formato; permitir multi-handle no futuro
+
+---
+
+## Notas de implementação (post-mortem da feature)
+
+> Adicionado em 2026-04-30, após implementação completa (commits `9aef…62a96` fases A–F + redesign `e9bdaf…ffa0b8` fases G1–G6).
+
+### O que foi entregue
+- Backend: signup/login/refresh com rotation + family detection (BCrypt, JJWT 0.11.5), CRUD influenciadores/marcas/contatos com soft-delete, multi-tenant via Hibernate `@Filter` + Postgres RLS (`SET LOCAL`), audit log async, job worker com Postgres queue, LGPD notify job.
+- Frontend: AppShell (sidebar colapsável + topbar + Cmd+K), dashboard com 4 KPIs e funil (Recharts placeholder), listagens com toggle cards/tabela + drawer detalhe + modal create reutilizável, dark/light mode com toggle.
+
+### Padrões de UI estabelecidos (contrato pra PRDs seguintes)
+PRDs 002/003/004 herdam estes componentes em `apps/web/components/app/`:
+- `PageHeader` — eyebrow + h1 display + description + actions (sempre nessa ordem)
+- `FilterBar` — search debounced + count + toggle cards/tabela
+- `EntityFormModal` — Dialog reutilizável; cada PRD provê os fields como children
+- `Sheet` (drawer lateral) — padrão para detalhe rápido sem perder contexto
+- `EmptyState` + `EmptyIllustration` — sempre com CTA quando vazio inicial; sem CTA quando busca vazia
+- Skeletons em listagens (cards: 6 placeholders; tabela: 1 grande)
+
+### Contrato Cmd+K ↔ querystring `?new=1`
+A command palette navega para `/<entidade>?new=1` para abrir o modal de criação. Toda página de listagem deve:
+1. Ler `searchParams.get('new')` em `useEffect`
+2. Se `=== '1'`, abrir o modal e fazer `router.replace('/<entidade>')` para limpar a URL
+
+Esse contrato vale para PRDs futuros (Cmd+K já lista atalhos para "Nova prospecção", "Nova tarefa" etc. quando esses módulos chegarem).
+
+### Pendências (não bloqueiam MVP, registrar como tech debt)
+- **Edição (PUT)** — modal/drawer de edit ainda não existe; só create/delete. Adicionar antes do release.
+- **Paginação real** — listagens carregam até 100 itens via `size=100`; quando volume crescer, integrar com cursor da API (`pagination.cursor` já existe).
+- **Contatos UI** — gerenciados só via API hoje. Adicionar seção em `Influenciador.detalhe` Sheet (lista de contatos) + sub-modal create.
+- **TanStack Query** — `lib/api.ts` é fetch cru. Migrar quando PRD-002 trouxer mutations frequentes (ver ADR-014).
+- **react-hook-form + zod** — auth e create-modals usam state local. Migrar para schemas zod compartilhados em `lib/schemas.ts` antes de PRDs com forms complexos.
+- **Edição de tags** — UI mostra tags mas não permite editar; backend já aceita. Adicionar input de tags com chips.
+- **Audiência total** — campo existe mas não é editável no form atual. Adicionar.
+- **Observações** — mesmo caso.
+
+### Desvios das decisões originais
+- **Argon2id → BCrypt**: `de.mkammerer:argon2-jvm` indisponível no Maven Central sem binários nativos. Documentado em ADR-008.
+- **JJWT 0.12+ → 0.11.5**: API `parserBuilder()` mudou em 0.12.x; pinado em 0.11.5. Documentado em ADR-008.
+- **Brand**: lime `#C2E000` + ink `#141414` + Bricolage Grotesque (substituindo PP Right Grotesk paga). Documentado em ADR-014.
+- **TanStack Query**: adiado (ADR-014 supersede ADR-002 nesse ponto).
+
+### Métricas de implementação
+- Backend: 36+ arquivos Java, 9 commits (fases A–F)
+- Frontend: 27 componentes shadcn + 8 compostos + 3 páginas autenticadas + 2 auth, 6 commits (fases G1–G6)
+- Build limpo: `pnpm build` ✓ / `./mvnw verify` ✓
+- Testes: integration tests escritos (require Docker — Testcontainers); unit suite passa
