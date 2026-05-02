@@ -3,6 +3,7 @@ package com.hubfeatcreators.infra.security;
 import com.hubfeatcreators.domain.assessoria.Assessoria;
 import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
 import com.hubfeatcreators.domain.rbac.Perfil;
+import com.hubfeatcreators.domain.rbac.PerfilRepository;
 import com.hubfeatcreators.domain.rbac.RbacBootstrap;
 import com.hubfeatcreators.domain.usuario.Usuario;
 import com.hubfeatcreators.domain.usuario.UsuarioRepository;
@@ -13,6 +14,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class AuthService {
   private final JwtService jwtService;
   private final PasswordEncoder passwordEncoder;
   private final RbacBootstrap rbacBootstrap;
+  private final PerfilRepository perfilRepo;
 
   public AuthService(
       AssessoriaRepository assessoriaRepo,
@@ -36,13 +39,15 @@ public class AuthService {
       RefreshTokenRepository refreshRepo,
       JwtService jwtService,
       PasswordEncoder passwordEncoder,
-      RbacBootstrap rbacBootstrap) {
+      RbacBootstrap rbacBootstrap,
+      PerfilRepository perfilRepo) {
     this.assessoriaRepo = assessoriaRepo;
     this.usuarioRepo = usuarioRepo;
     this.refreshRepo = refreshRepo;
     this.jwtService = jwtService;
     this.passwordEncoder = passwordEncoder;
     this.rbacBootstrap = rbacBootstrap;
+    this.perfilRepo = perfilRepo;
   }
 
   @Transactional
@@ -127,7 +132,10 @@ public class AuthService {
 
     String accessToken =
         jwtService.generateAccessToken(
-            usuario.getId(), stored.getAssessoriaId(), usuario.getRole().name());
+            usuario.getId(),
+            stored.getAssessoriaId(),
+            usuario.getRole().name(),
+            permissionsOf(usuario));
 
     return new TokenPair(accessToken, newRaw);
   }
@@ -157,9 +165,18 @@ public class AuthService {
     refreshRepo.save(refreshToken);
 
     String accessToken =
-        jwtService.generateAccessToken(usuario.getId(), assessoriaId, usuario.getRole().name());
+        jwtService.generateAccessToken(
+            usuario.getId(), assessoriaId, usuario.getRole().name(), permissionsOf(usuario));
 
     return new TokenPair(accessToken, rawRefresh);
+  }
+
+  private Set<String> permissionsOf(Usuario usuario) {
+    if (usuario.getProfileId() == null) return Set.of();
+    return perfilRepo
+        .findById(usuario.getProfileId())
+        .map(Perfil::rolesAsSet)
+        .orElse(Set.of());
   }
 
   static String sha256(String input) {

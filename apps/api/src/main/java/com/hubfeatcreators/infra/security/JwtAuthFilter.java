@@ -7,7 +7,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,8 +39,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
           UUID usuarioId = UUID.fromString(claims.getSubject());
           UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
           String role = claims.get("role", String.class);
+          Set<String> permissions = readPerms(claims);
 
-          AuthPrincipal principal = new AuthPrincipal(usuarioId, assessoriaId, role);
+          AuthPrincipal principal =
+              new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
           TenantContext.setAssessoriaId(assessoriaId);
 
           var auth =
@@ -56,5 +60,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     } finally {
       TenantContext.clear();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<String> readPerms(Claims claims) {
+    Object raw = claims.get("perms");
+    if (raw instanceof List<?> list) {
+      Set<String> out = new LinkedHashSet<>();
+      for (Object o : list) {
+        if (o != null) out.add(o.toString());
+      }
+      return out;
+    }
+    return Set.of();
   }
 }
