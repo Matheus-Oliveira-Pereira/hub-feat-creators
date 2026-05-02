@@ -49,6 +49,8 @@ export const api = {
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
+  patch: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: (path: string) => request<void>(path, { method: 'DELETE' }),
 };
 
@@ -121,6 +123,34 @@ export const marcas = {
   create: (data: Partial<Marca>) => api.post<Marca>('/api/v1/marcas', data),
   update: (id: string, data: Partial<Marca>) => api.put<Marca>(`/api/v1/marcas/${id}`, data),
   delete: (id: string) => api.delete(`/api/v1/marcas/${id}`),
+};
+
+// Perfis (RBAC)
+export interface Perfil {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  roles: string[];
+  isSystem: boolean;
+  usuariosCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerfilPayload {
+  nome: string;
+  descricao?: string | null;
+  roles: string[];
+}
+
+export const perfis = {
+  list: () => api.get<Perfil[]>('/api/v1/perfis'),
+  get: (id: string) => api.get<Perfil>(`/api/v1/perfis/${id}`),
+  create: (data: PerfilPayload) => api.post<Perfil>('/api/v1/perfis', data),
+  update: (id: string, data: PerfilPayload) => api.put<Perfil>(`/api/v1/perfis/${id}`, data),
+  delete: (id: string) => api.delete(`/api/v1/perfis/${id}`),
+  atribuir: (usuarioId: string, profileId: string) =>
+    api.patch<void>(`/api/v1/usuarios/${usuarioId}/profile`, { profileId }),
 };
 
 // Contatos (de marca)

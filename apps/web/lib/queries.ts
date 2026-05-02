@@ -12,15 +12,18 @@ import {
   influenciadores,
   marcas,
   contatos,
+  perfis,
   Influenciador,
   Marca,
   Contato,
+  Perfil,
   PageResponse,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
   MarcaInput,
   ContatoInput,
+  PerfilInput,
   LoginInput,
   SignupInput,
 } from '@/lib/schemas';
@@ -42,6 +45,9 @@ export const qk = {
   },
   contatos: {
     byMarca: (marcaId: string) => ['contatos', 'marca', marcaId] as const,
+  },
+  perfis: {
+    all: ['perfis'] as const,
   },
 };
 
@@ -250,5 +256,49 @@ export function useDeleteContato() {
     onSuccess: (_data, { marcaId }) => {
       qc.invalidateQueries({ queryKey: qk.contatos.byMarca(marcaId) });
     },
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Perfis (RBAC)
+// ────────────────────────────────────────────────────────────────────────────
+
+export function usePerfis() {
+  return useQuery<Perfil[]>({
+    queryKey: qk.perfis.all,
+    queryFn: () => perfis.list(),
+  });
+}
+
+function inputToPerfilPayload(input: PerfilInput) {
+  return {
+    nome: input.nome.trim(),
+    descricao: input.descricao.trim() || null,
+    roles: input.roles,
+  };
+}
+
+export function useCreatePerfil() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PerfilInput) => perfis.create(inputToPerfilPayload(input)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.perfis.all }),
+  });
+}
+
+export function useUpdatePerfil() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: PerfilInput }) =>
+      perfis.update(id, inputToPerfilPayload(input)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.perfis.all }),
+  });
+}
+
+export function useDeletePerfil() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => perfis.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.perfis.all }),
   });
 }

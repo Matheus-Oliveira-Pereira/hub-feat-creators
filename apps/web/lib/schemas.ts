@@ -88,3 +88,14 @@ export const contatoSchema = z.object({
   cargo: z.string().max(80),
 });
 export type ContatoInput = z.infer<typeof contatoSchema>;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Perfil (RBAC)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const perfilSchema = z.object({
+  nome: z.string().trim().min(2, 'Nome muito curto').max(80, 'Máx 80 caracteres'),
+  descricao: z.string().max(240, 'Máx 240 caracteres'),
+  roles: z.array(z.string()).min(1, 'Selecione ao menos uma permissão'),
+});
+export type PerfilInput = z.infer<typeof perfilSchema>;
