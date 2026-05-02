@@ -24,6 +24,9 @@ public class Usuario {
   @Enumerated(EnumType.STRING)
   private Role role = Role.ASSESSOR;
 
+  @Column(name = "profile_id")
+  private UUID profileId;
+
   @Column(name = "mfa_secret")
   private String mfaSecret;
 
@@ -58,6 +61,8 @@ public class Usuario {
   public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
   public Role getRole() { return role; }
   public void setRole(Role role) { this.role = role; }
+  public UUID getProfileId() { return profileId; }
+  public void setProfileId(UUID profileId) { this.profileId = profileId; }
   public Instant getUltimoLoginEm() { return ultimoLoginEm; }
   public void setUltimoLoginEm(Instant ultimoLoginEm) { this.ultimoLoginEm = ultimoLoginEm; }
   public Instant getCreatedAt() { return createdAt; }

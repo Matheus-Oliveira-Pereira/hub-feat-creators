@@ -1,6 +1,8 @@
 package com.hubfeatcreators.domain.convite;
 
 import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
+import com.hubfeatcreators.domain.rbac.Perfil;
+import com.hubfeatcreators.domain.rbac.RbacBootstrap;
 import com.hubfeatcreators.domain.usuario.Usuario;
 import com.hubfeatcreators.domain.usuario.UsuarioRepository;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
@@ -19,16 +21,19 @@ public class ConviteService {
   private final UsuarioRepository usuarioRepo;
   private final AssessoriaRepository assessoriaRepo;
   private final PasswordEncoder passwordEncoder;
+  private final RbacBootstrap rbacBootstrap;
 
   public ConviteService(
       ConviteRepository conviteRepo,
       UsuarioRepository usuarioRepo,
       AssessoriaRepository assessoriaRepo,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      RbacBootstrap rbacBootstrap) {
     this.conviteRepo = conviteRepo;
     this.usuarioRepo = usuarioRepo;
     this.assessoriaRepo = assessoriaRepo;
     this.passwordEncoder = passwordEncoder;
+    this.rbacBootstrap = rbacBootstrap;
   }
 
   @Transactional
@@ -72,13 +77,18 @@ public class ConviteService {
         .findById(convite.getAssessoriaId())
         .orElseThrow(() -> BusinessException.notFound("ASSESSORIA"));
 
-    Usuario usuario =
-        usuarioRepo.save(
-            new Usuario(
-                convite.getAssessoriaId(),
-                convite.getEmail(),
-                passwordEncoder.encode(senha),
-                Usuario.Role.valueOf(convite.getRole().name())));
+    Usuario.Role coarseRole = Usuario.Role.valueOf(convite.getRole().name());
+    Usuario novo =
+        new Usuario(
+            convite.getAssessoriaId(),
+            convite.getEmail(),
+            passwordEncoder.encode(senha),
+            coarseRole);
+
+    Perfil seed = rbacBootstrap.seedFor(convite.getAssessoriaId(), coarseRole);
+    novo.setProfileId(seed.getId());
+
+    Usuario usuario = usuarioRepo.save(novo);
 
     convite.setUsedAt(Instant.now());
     conviteRepo.save(convite);

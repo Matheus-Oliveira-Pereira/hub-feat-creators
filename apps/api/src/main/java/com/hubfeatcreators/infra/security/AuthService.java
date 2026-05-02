@@ -2,6 +2,8 @@ package com.hubfeatcreators.infra.security;
 
 import com.hubfeatcreators.domain.assessoria.Assessoria;
 import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
+import com.hubfeatcreators.domain.rbac.Perfil;
+import com.hubfeatcreators.domain.rbac.RbacBootstrap;
 import com.hubfeatcreators.domain.usuario.Usuario;
 import com.hubfeatcreators.domain.usuario.UsuarioRepository;
 import com.hubfeatcreators.infra.web.BusinessException;
@@ -26,18 +28,21 @@ public class AuthService {
   private final RefreshTokenRepository refreshRepo;
   private final JwtService jwtService;
   private final PasswordEncoder passwordEncoder;
+  private final RbacBootstrap rbacBootstrap;
 
   public AuthService(
       AssessoriaRepository assessoriaRepo,
       UsuarioRepository usuarioRepo,
       RefreshTokenRepository refreshRepo,
       JwtService jwtService,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      RbacBootstrap rbacBootstrap) {
     this.assessoriaRepo = assessoriaRepo;
     this.usuarioRepo = usuarioRepo;
     this.refreshRepo = refreshRepo;
     this.jwtService = jwtService;
     this.passwordEncoder = passwordEncoder;
+    this.rbacBootstrap = rbacBootstrap;
   }
 
   @Transactional
@@ -51,13 +56,17 @@ public class AuthService {
     }
 
     Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
-    Usuario owner =
-        usuarioRepo.save(
-            new Usuario(
-                assessoria.getId(),
-                email,
-                passwordEncoder.encode(senha),
-                Usuario.Role.OWNER));
+
+    // Seed perfis (Owner, Assessor, Leitor) e atribui Owner ao usuário recém-criado.
+    Perfil ownerProfile = rbacBootstrap.seedAssessoria(assessoria.getId());
+
+    Usuario owner = new Usuario(
+        assessoria.getId(),
+        email,
+        passwordEncoder.encode(senha),
+        Usuario.Role.OWNER);
+    owner.setProfileId(ownerProfile.getId());
+    owner = usuarioRepo.save(owner);
 
     return issueTokenPair(owner, assessoria.getId(), req);
   }

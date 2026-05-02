@@ -50,6 +50,9 @@ public class Influenciador {
   @Column(name = "created_by")
   private UUID createdBy;
 
+  @Column(name = "assessor_responsavel_id")
+  private UUID assessorResponsavelId;
+
   public Influenciador() {}
 
   public Influenciador(UUID assessoriaId, String nome, UUID createdBy) {
@@ -78,4 +81,8 @@ public class Influenciador {
   public Instant getDeletedAt() { return deletedAt; }
   public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
   public UUID getCreatedBy() { return createdBy; }
+  public UUID getAssessorResponsavelId() { return assessorResponsavelId; }
+  public void setAssessorResponsavelId(UUID assessorResponsavelId) {
+    this.assessorResponsavelId = assessorResponsavelId;
+  }
 }
