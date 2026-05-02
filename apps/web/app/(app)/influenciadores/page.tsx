@@ -37,6 +37,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { FilterBar } from '@/components/app/filter-bar';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { InfluenciadorFormModal } from '@/components/forms/influenciador-form-modal';
+import { Can } from '@/components/auth/can';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -121,14 +122,18 @@ function InfluenciadoresInner() {
         description="Gerencie os creators do seu workspace, com nicho, handles e tags."
         actions={
           <>
-            <Button asChild variant="outline">
-              <a href={`${API_URL}/api/v1/influenciadores/export.csv`}>
-                <Download className="h-4 w-4" /> Exportar CSV
-              </a>
-            </Button>
-            <Button onClick={openCreate}>
-              <Plus className="h-4 w-4" /> Adicionar
-            </Button>
+            <Can role="EXPT">
+              <Button asChild variant="outline">
+                <a href={`${API_URL}/api/v1/influenciadores/export.csv`}>
+                  <Download className="h-4 w-4" /> Exportar CSV
+                </a>
+              </Button>
+            </Can>
+            <Can role="CINF">
+              <Button onClick={openCreate}>
+                <Plus className="h-4 w-4" /> Adicionar
+              </Button>
+            </Can>
           </>
         }
       />

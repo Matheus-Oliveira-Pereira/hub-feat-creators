@@ -15,9 +15,11 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/logo';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useAuth } from '@/lib/auth';
 
 interface NavItem {
   href: Route;
@@ -25,15 +27,18 @@ interface NavItem {
   icon: React.ElementType;
   badge?: string;
   disabled?: boolean;
+  /** Permissão necessária pra exibir item (any-of). Vazio = sempre exibir. */
+  requires?: string[];
 }
 
 const NAV: NavItem[] = [
-  { href: '/' as Route, label: 'Visão geral', icon: LayoutDashboard },
-  { href: '/influenciadores' as Route, label: 'Influenciadores', icon: Users },
-  { href: '/marcas' as Route, label: 'Marcas', icon: Building2 },
-  { href: '/prospeccao' as Route, label: 'Prospecção', icon: Search, badge: 'em breve', disabled: true },
-  { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, badge: 'em breve', disabled: true },
-  { href: '/email' as Route, label: 'E-mail', icon: Mail, badge: 'em breve', disabled: true },
+  { href: '/' as Route, label: 'Visão geral', icon: LayoutDashboard, requires: ['BREL'] },
+  { href: '/influenciadores' as Route, label: 'Influenciadores', icon: Users, requires: ['BINF'] },
+  { href: '/marcas' as Route, label: 'Marcas', icon: Building2, requires: ['BMAR'] },
+  { href: '/prospeccao' as Route, label: 'Prospecção', icon: Search, badge: 'em breve', disabled: true, requires: ['BPRO'] },
+  { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, badge: 'em breve', disabled: true, requires: ['BTAR'] },
+  { href: '/email' as Route, label: 'E-mail', icon: Mail, badge: 'em breve', disabled: true, requires: ['BEML'] },
+  { href: '/perfis' as Route, label: 'Perfis', icon: ShieldCheck, requires: ['BPRF'] },
 ];
 
 interface SidebarProps {
@@ -44,6 +49,8 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, onCommandOpen }: SidebarProps) {
   const pathname = usePathname();
+  const { hasPermission } = useAuth();
+  const visibleNav = NAV.filter(item => !item.requires || hasPermission(item.requires));
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -81,7 +88,7 @@ export function Sidebar({ collapsed, onToggle, onCommandOpen }: SidebarProps) {
         </button>
 
         <nav className={cn('flex-1 space-y-1 mt-4', collapsed ? 'px-2' : 'px-3')}>
-          {NAV.map(item => {
+          {visibleNav.map(item => {
             const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
             const Icon = item.icon;
             const content = (

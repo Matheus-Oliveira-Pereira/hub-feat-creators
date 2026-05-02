@@ -48,6 +48,7 @@ import { FilterBar } from '@/components/app/filter-bar';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { MarcaFormModal } from '@/components/forms/marca-form-modal';
 import { ContatoFormModal } from '@/components/forms/contato-form-modal';
+import { Can } from '@/components/auth/can';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -145,14 +146,18 @@ function MarcasInner() {
         description="Empresas e parceiros que você atende ou prospecta."
         actions={
           <>
-            <Button asChild variant="outline">
-              <a href={`${API_URL}/api/v1/marcas/export.csv`}>
-                <Download className="h-4 w-4" /> Exportar CSV
-              </a>
-            </Button>
-            <Button onClick={openCreate}>
-              <Plus className="h-4 w-4" /> Adicionar
-            </Button>
+            <Can role="EXPT">
+              <Button asChild variant="outline">
+                <a href={`${API_URL}/api/v1/marcas/export.csv`}>
+                  <Download className="h-4 w-4" /> Exportar CSV
+                </a>
+              </Button>
+            </Can>
+            <Can role="CMAR">
+              <Button onClick={openCreate}>
+                <Plus className="h-4 w-4" /> Adicionar
+              </Button>
+            </Can>
           </>
         }
       />

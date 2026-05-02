@@ -5,14 +5,23 @@ function getToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+function notifyTokenChange(key: 'accessToken' | 'refreshToken', value: string | null) {
+  if (typeof window === 'undefined') return;
+  // dispatch manual: eventos `storage` só disparam entre abas; precisamos disparar
+  // sintético na própria aba pra AuthProvider re-decodar o JWT após login/logout.
+  window.dispatchEvent(new StorageEvent('storage', { key, newValue: value }));
+}
+
 export function setTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem('accessToken', accessToken);
   localStorage.setItem('refreshToken', refreshToken);
+  notifyTokenChange('accessToken', accessToken);
 }
 
 export function clearTokens() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
+  notifyTokenChange('accessToken', null);
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
