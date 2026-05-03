@@ -28,6 +28,10 @@ public class BusinessException extends RuntimeException {
     return new BusinessException("UNAUTHORIZED", message, HttpStatus.UNAUTHORIZED);
   }
 
+  public static BusinessException unprocessable(String code, String message) {
+    return new BusinessException(code, message, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
   public String getCode() { return code; }
   public HttpStatus getStatus() { return status; }
 }
