@@ -90,6 +90,61 @@ export const contatoSchema = z.object({
 export type ContatoInput = z.infer<typeof contatoSchema>;
 
 // ────────────────────────────────────────────────────────────────────────────
+// Prospecção
+// ────────────────────────────────────────────────────────────────────────────
+
+export const prospeccaoSchema = z.object({
+  marcaId: z.string().uuid('Marca obrigatória'),
+  influenciadorId: z.string().uuid().or(z.literal('')),
+  assessorResponsavelId: z.string().uuid().or(z.literal('')),
+  titulo: z.string().trim().min(1, 'Título obrigatório').max(160),
+  valorEstimado: z.string().regex(/^\d*([.,]\d{0,2})?$/, 'Valor inválido'),
+  proximaAcao: z.string().max(240),
+  proximaAcaoEm: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Data inválida'),
+  observacoes: z.string().max(2000),
+  tags: z.array(z.string().min(1).max(40)).max(20),
+});
+export type ProspeccaoInput = z.infer<typeof prospeccaoSchema>;
+
+const motivoPerdaSchema = z.enum([
+  'SEM_FIT',
+  'ORCAMENTO',
+  'TIMING',
+  'CONCORRENTE',
+  'SEM_RESPOSTA',
+  'OUTRO',
+]);
+
+export const statusChangeSchema = z
+  .object({
+    status: z.enum(['NOVA', 'CONTATADA', 'NEGOCIANDO', 'FECHADA_GANHA', 'FECHADA_PERDIDA']),
+    motivoPerda: motivoPerdaSchema.or(z.literal('')),
+    motivoPerdaDetalhe: z.string().max(500),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === 'FECHADA_PERDIDA' && !data.motivoPerda) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['motivoPerda'],
+        message: 'Selecione o motivo da perda',
+      });
+    }
+    if (data.motivoPerda === 'OUTRO' && !data.motivoPerdaDetalhe.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['motivoPerdaDetalhe'],
+        message: 'Detalhe obrigatório quando motivo = OUTRO',
+      });
+    }
+  });
+export type StatusChangeInput = z.infer<typeof statusChangeSchema>;
+
+export const comentarioSchema = z.object({
+  texto: z.string().trim().min(1, 'Texto obrigatório').max(2000),
+});
+export type ComentarioInput = z.infer<typeof comentarioSchema>;
+
+// ────────────────────────────────────────────────────────────────────────────
 // Perfil (RBAC)
 // ────────────────────────────────────────────────────────────────────────────
 

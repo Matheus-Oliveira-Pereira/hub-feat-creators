@@ -125,6 +125,97 @@ export const marcas = {
   delete: (id: string) => api.delete(`/api/v1/marcas/${id}`),
 };
 
+// Prospecções
+export type ProspeccaoStatus =
+  | 'NOVA'
+  | 'CONTATADA'
+  | 'NEGOCIANDO'
+  | 'FECHADA_GANHA'
+  | 'FECHADA_PERDIDA';
+
+export type MotivoPerda =
+  | 'SEM_FIT'
+  | 'ORCAMENTO'
+  | 'TIMING'
+  | 'CONCORRENTE'
+  | 'SEM_RESPOSTA'
+  | 'OUTRO';
+
+export type EventoTipo = 'STATUS_CHANGE' | 'COMMENT' | 'EMAIL_SENT' | 'TASK_LINKED';
+
+export interface Prospeccao {
+  id: string;
+  marcaId: string;
+  influenciadorId: string | null;
+  assessorResponsavelId: string;
+  titulo: string;
+  status: ProspeccaoStatus;
+  valorEstimadoCentavos: number | null;
+  proximaAcao: string | null;
+  proximaAcaoEm: string | null;
+  observacoes: string | null;
+  tags: string[];
+  motivoPerda: MotivoPerda | null;
+  motivoPerdaDetalhe: string | null;
+  fechadaEm: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+}
+
+export interface ProspeccaoPayload {
+  marcaId: string;
+  influenciadorId?: string | null;
+  assessorResponsavelId?: string | null;
+  titulo: string;
+  valorEstimadoCentavos?: number | null;
+  proximaAcao?: string | null;
+  proximaAcaoEm?: string | null;
+  observacoes?: string | null;
+  tags?: string[];
+}
+
+export interface ProspeccaoEventoResponse {
+  id: string;
+  tipo: EventoTipo;
+  payload: Record<string, unknown>;
+  autorId: string | null;
+  createdAt: string;
+}
+
+export interface ProspeccaoFiltros {
+  status?: ProspeccaoStatus;
+  assessorId?: string;
+  marcaId?: string;
+  nome?: string;
+}
+
+export const prospeccoes = {
+  list: (params: ProspeccaoFiltros & { cursor?: string; size?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.status) q.set('status', params.status);
+    if (params.assessorId) q.set('assessorId', params.assessorId);
+    if (params.marcaId) q.set('marcaId', params.marcaId);
+    if (params.nome) q.set('nome', params.nome);
+    if (params.cursor) q.set('page', params.cursor);
+    if (params.size) q.set('size', String(params.size));
+    return api.get<PageResponse<Prospeccao>>(`/api/v1/prospeccoes?${q}`);
+  },
+  get: (id: string) => api.get<Prospeccao>(`/api/v1/prospeccoes/${id}`),
+  eventos: (id: string) =>
+    api.get<ProspeccaoEventoResponse[]>(`/api/v1/prospeccoes/${id}/eventos`),
+  create: (data: ProspeccaoPayload) => api.post<Prospeccao>('/api/v1/prospeccoes', data),
+  update: (id: string, data: ProspeccaoPayload) =>
+    api.put<Prospeccao>(`/api/v1/prospeccoes/${id}`, data),
+  mudarStatus: (
+    id: string,
+    payload: { status: ProspeccaoStatus; motivoPerda?: MotivoPerda; motivoPerdaDetalhe?: string }
+  ) => api.patch<Prospeccao>(`/api/v1/prospeccoes/${id}/status`, payload),
+  comentar: (id: string, texto: string) =>
+    api.post<ProspeccaoEventoResponse>(`/api/v1/prospeccoes/${id}/comentarios`, { texto }),
+  delete: (id: string) => api.delete(`/api/v1/prospeccoes/${id}`),
+};
+
 // Perfis (RBAC)
 export interface Perfil {
   id: string;

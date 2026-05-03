@@ -13,10 +13,16 @@ import {
   marcas,
   contatos,
   perfis,
+  prospeccoes,
   Influenciador,
   Marca,
   Contato,
   Perfil,
+  Prospeccao,
+  ProspeccaoEventoResponse,
+  ProspeccaoFiltros,
+  ProspeccaoStatus,
+  MotivoPerda,
   PageResponse,
 } from '@/lib/api';
 import type {
@@ -24,6 +30,7 @@ import type {
   MarcaInput,
   ContatoInput,
   PerfilInput,
+  ProspeccaoInput,
   LoginInput,
   SignupInput,
 } from '@/lib/schemas';
@@ -48,6 +55,12 @@ export const qk = {
   },
   perfis: {
     all: ['perfis'] as const,
+  },
+  prospeccoes: {
+    all: ['prospeccoes'] as const,
+    list: (filtros: ProspeccaoFiltros) => ['prospeccoes', 'list', filtros] as const,
+    detail: (id: string) => ['prospeccoes', 'detail', id] as const,
+    eventos: (id: string) => ['prospeccoes', 'eventos', id] as const,
   },
 };
 
@@ -300,5 +313,111 @@ export function useDeletePerfil() {
   return useMutation({
     mutationFn: (id: string) => perfis.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.perfis.all }),
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Prospecções
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useProspeccoes(filtros: ProspeccaoFiltros = {}) {
+  return useInfiniteQuery<PageResponse<Prospeccao>>({
+    queryKey: qk.prospeccoes.list(filtros),
+    queryFn: ({ pageParam }) =>
+      prospeccoes.list({
+        ...filtros,
+        size: PAGE_SIZE,
+        cursor: pageParam as string | undefined,
+      }),
+    initialPageParam: undefined,
+    getNextPageParam: last => (last.pagination.hasMore ? last.pagination.cursor : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useProspeccaoEventos(id: string | null | undefined) {
+  return useQuery<ProspeccaoEventoResponse[]>({
+    queryKey: id ? qk.prospeccoes.eventos(id) : ['prospeccoes', 'eventos', 'none'],
+    queryFn: () => prospeccoes.eventos(id!),
+    enabled: !!id,
+  });
+}
+
+function inputToProspeccaoPayload(input: ProspeccaoInput) {
+  const valor = input.valorEstimado.replace(/\./g, '').replace(',', '.').trim();
+  const valorCentavos = valor ? Math.round(Number(valor) * 100) : null;
+  const proxima = input.proximaAcao.trim();
+  const observ = input.observacoes.trim();
+  return {
+    marcaId: input.marcaId,
+    influenciadorId: input.influenciadorId || null,
+    assessorResponsavelId: input.assessorResponsavelId || null,
+    titulo: input.titulo.trim(),
+    valorEstimadoCentavos: valorCentavos,
+    proximaAcao: proxima || null,
+    proximaAcaoEm: input.proximaAcaoEm || null,
+    observacoes: observ || null,
+    tags: input.tags,
+  };
+}
+
+export function useCreateProspeccao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ProspeccaoInput) =>
+      prospeccoes.create(inputToProspeccaoPayload(input)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.prospeccoes.all }),
+  });
+}
+
+export function useUpdateProspeccao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ProspeccaoInput }) =>
+      prospeccoes.update(id, inputToProspeccaoPayload(input)),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.prospeccoes.all });
+      qc.invalidateQueries({ queryKey: qk.prospeccoes.detail(id) });
+    },
+  });
+}
+
+export function useMudarStatusProspeccao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      id: string;
+      status: ProspeccaoStatus;
+      motivoPerda?: MotivoPerda;
+      motivoPerdaDetalhe?: string;
+    }) =>
+      prospeccoes.mudarStatus(vars.id, {
+        status: vars.status,
+        motivoPerda: vars.motivoPerda,
+        motivoPerdaDetalhe: vars.motivoPerdaDetalhe,
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: qk.prospeccoes.all });
+      qc.invalidateQueries({ queryKey: qk.prospeccoes.eventos(vars.id) });
+    },
+  });
+}
+
+export function useComentarProspeccao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, texto }: { id: string; texto: string }) =>
+      prospeccoes.comentar(id, texto),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.prospeccoes.eventos(id) });
+    },
+  });
+}
+
+export function useDeleteProspeccao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => prospeccoes.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.prospeccoes.all }),
   });
 }
