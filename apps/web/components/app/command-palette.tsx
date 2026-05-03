@@ -12,6 +12,7 @@ import {
   Moon,
   Monitor,
   LogOut,
+  Search,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
@@ -53,10 +54,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     };
   }
 
-  function newEntity(type: 'influenciador' | 'marca') {
+  function newEntity(type: 'influenciador' | 'marca' | 'prospeccao') {
     return () => {
       onOpenChange(false);
-      const path = type === 'influenciador' ? '/influenciadores' : '/marcas';
+      const path =
+        type === 'influenciador'
+          ? '/influenciadores'
+          : type === 'marca'
+            ? '/marcas'
+            : '/prospeccao';
       router.push(`${path}?new=1` as Route);
     };
   }
@@ -89,9 +95,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Building2 /> Marcas
             <CommandShortcut>G M</CommandShortcut>
           </CommandItem>
+          <CommandItem onSelect={go('/prospeccao' as Route)}>
+            <Search /> Prospecção
+            <CommandShortcut>G P</CommandShortcut>
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Criar">
+          <CommandItem onSelect={newEntity('prospeccao')}>
+            <Plus /> Nova prospecção
+          </CommandItem>
           <CommandItem onSelect={newEntity('influenciador')}>
             <Plus /> Novo influenciador
           </CommandItem>
