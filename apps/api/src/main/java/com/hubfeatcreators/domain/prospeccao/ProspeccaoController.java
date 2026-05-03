@@ -4,13 +4,18 @@ import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import com.hubfeatcreators.infra.web.PageResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -172,6 +177,76 @@ public class ProspeccaoController {
   @RequirePermission(PermissionCodes.D_PRO)
   public void deletar(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
     service.deletar(principal, id);
+  }
+
+  @GetMapping(value = "/export.csv", produces = "text/csv; charset=UTF-8")
+  @RequirePermission(PermissionCodes.EXPT)
+  public void exportCsv(
+      @AuthenticationPrincipal AuthPrincipal principal,
+      @RequestParam(required = false) ProspeccaoStatus status,
+      @RequestParam(required = false) UUID assessorId,
+      @RequestParam(required = false) UUID marcaId,
+      @RequestParam(required = false) String nome,
+      HttpServletResponse response) throws IOException {
+    response.setContentType("text/csv; charset=UTF-8");
+    response.setHeader(
+        "Content-Disposition",
+        "attachment; filename=\"prospeccoes-" + Instant.now().getEpochSecond() + ".csv\"");
+
+    int pageSize = 500;
+    int max = 10_000;
+    int written = 0;
+
+    try (OutputStream os = response.getOutputStream();
+        Writer w = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+      // BOM pra Excel reconhecer UTF-8
+      w.write('﻿');
+      w.write("id,titulo,status,marca_id,influenciador_id,assessor_id,"
+          + "valor_estimado_centavos,proxima_acao,proxima_acao_em,tags,"
+          + "motivo_perda,fechada_em,created_at\n");
+
+      int page = 0;
+      while (written < max) {
+        Page<Prospeccao> chunk =
+            service.listar(principal, status, assessorId, marcaId, nome, page, pageSize);
+        if (chunk.isEmpty()) break;
+        for (Prospeccao p : chunk.getContent()) {
+          if (written >= max) break;
+          w.write(toCsvRow(p));
+          w.write('\n');
+          written++;
+        }
+        if (!chunk.hasNext()) break;
+        page++;
+        w.flush();
+      }
+    }
+  }
+
+  private String toCsvRow(Prospeccao p) {
+    return String.join(
+        ",",
+        csv(p.getId().toString()),
+        csv(p.getTitulo()),
+        csv(p.getStatus().name()),
+        csv(p.getMarcaId().toString()),
+        csv(p.getInfluenciadorId() != null ? p.getInfluenciadorId().toString() : ""),
+        csv(p.getAssessorResponsavelId().toString()),
+        csv(p.getValorEstimadoCentavos() != null ? p.getValorEstimadoCentavos().toString() : ""),
+        csv(p.getProximaAcao() != null ? p.getProximaAcao() : ""),
+        csv(p.getProximaAcaoEm() != null ? p.getProximaAcaoEm().toString() : ""),
+        csv(String.join(";", p.getTags())),
+        csv(p.getMotivoPerda() != null ? p.getMotivoPerda().name() : ""),
+        csv(p.getFechadaEm() != null ? p.getFechadaEm().toString() : ""),
+        csv(p.getCreatedAt().toString()));
+  }
+
+  private String csv(String s) {
+    if (s == null) return "";
+    if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
+      return "\"" + s.replace("\"", "\"\"") + "\"";
+    }
+    return s;
   }
 
   private ProspeccaoResponse toResponse(Prospeccao p) {
