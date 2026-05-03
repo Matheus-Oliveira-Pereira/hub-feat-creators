@@ -21,6 +21,7 @@ import {
   useDeleteProspeccao,
   useMudarStatusProspeccao,
   useMarcas,
+  useInfluenciadores,
 } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +39,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/app/page-header';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { ProspeccaoKanban } from '@/components/app/prospeccao-kanban';
+import { ProspeccaoDetailSheet } from '@/components/app/prospeccao-detail-sheet';
 import { ProspeccaoFormModal } from '@/components/forms/prospeccao-form-modal';
 import { FecharPerdidaModal } from '@/components/forms/fechar-perdida-modal';
 import { Can } from '@/components/auth/can';
@@ -74,6 +76,7 @@ function ProspeccaoInner() {
     item: null,
   });
   const [perdidaTarget, setPerdidaTarget] = React.useState<string | null>(null);
+  const [detail, setDetail] = React.useState<Prospeccao | null>(null);
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 250);
@@ -96,6 +99,20 @@ function ProspeccaoInner() {
     return map;
   }, [marcasQ.data]);
 
+  const influQ = useInfluenciadores();
+  const influNomeById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    (influQ.data?.pages.flatMap(p => p.data) ?? []).forEach(i => map.set(i.id, i.nome));
+    return map;
+  }, [influQ.data]);
+
+  // mantém detail sincronizado com lista (após edit/move)
+  React.useEffect(() => {
+    if (!detail) return;
+    const fresh = data.find(p => p.id === detail.id);
+    if (fresh && fresh !== detail) setDetail(fresh);
+  }, [data, detail]);
+
   React.useEffect(() => {
     if (query.error) router.push('/login');
   }, [query.error, router]);
@@ -114,10 +131,16 @@ function ProspeccaoInner() {
     if (!confirm(`Remover "${p.titulo}"?`)) return;
     try {
       await del.mutateAsync(p.id);
+      setDetail(null);
       toast.success('Removida.');
     } catch (err: any) {
       toast.error(err?.error?.message ?? 'Erro ao remover.');
     }
+  }
+
+  function openEdit(p: Prospeccao) {
+    setDetail(null);
+    setFormState({ open: true, item: p });
   }
 
   async function handleMove(p: Prospeccao, novo: ProspeccaoStatus) {
@@ -258,7 +281,7 @@ function ProspeccaoInner() {
         <ProspeccaoKanban
           items={data}
           marcaNomeById={marcaNomeById}
-          onCardClick={p => setFormState({ open: true, item: p })}
+          onCardClick={p => setDetail(p)}
           onMove={handleMove}
         />
       ) : (
@@ -287,7 +310,7 @@ function ProspeccaoInner() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="cursor-pointer transition-colors hover:bg-accent/50"
-                        onClick={() => setFormState({ open: true, item: p })}
+                        onClick={() => setDetail(p)}
                       >
                         <td className="px-5 py-3 font-medium">{p.titulo}</td>
                         <td className="px-5 py-3">
@@ -317,7 +340,8 @@ function ProspeccaoInner() {
                         <td className="px-5 py-3 text-right">
                           <RowMenu
                             p={p}
-                            onEdit={() => setFormState({ open: true, item: p })}
+                            onView={() => setDetail(p)}
+                            onEdit={() => openEdit(p)}
                             onMove={handleMove}
                             onDelete={() => handleDelete(p)}
                           />
@@ -357,17 +381,29 @@ function ProspeccaoInner() {
           prospeccaoId={perdidaTarget}
         />
       )}
+
+      <ProspeccaoDetailSheet
+        prospeccao={detail}
+        onOpenChange={open => !open && setDetail(null)}
+        marcaNomeById={marcaNomeById}
+        influNomeById={influNomeById}
+        onEdit={openEdit}
+        onDelete={handleDelete}
+        onMove={handleMove}
+      />
     </div>
   );
 }
 
 function RowMenu({
   p,
+  onView,
   onEdit,
   onMove,
   onDelete,
 }: {
   p: Prospeccao;
+  onView: () => void;
   onEdit: () => void;
   onMove: (p: Prospeccao, novo: ProspeccaoStatus) => void;
   onDelete: () => void;
@@ -381,8 +417,11 @@ function RowMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+        <DropdownMenuItem onClick={onView}>
+          <Eye className="h-4 w-4" /> Detalhes
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onEdit}>
-          <Eye className="h-4 w-4" /> Ver / editar
+          <Pencil className="h-4 w-4" /> Editar
         </DropdownMenuItem>
         {proximas.length > 0 && (
           <>
