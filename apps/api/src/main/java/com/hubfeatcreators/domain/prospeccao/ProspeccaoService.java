@@ -1,5 +1,7 @@
 package com.hubfeatcreators.domain.prospeccao;
 
+import com.hubfeatcreators.infra.audit.AuditLog;
+import com.hubfeatcreators.infra.audit.AuditLogService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.web.BusinessException;
 import io.micrometer.core.instrument.Counter;
@@ -25,14 +27,17 @@ public class ProspeccaoService {
   private final ProspeccaoRepository repo;
   private final ProspeccaoEventoRepository eventoRepo;
   private final MeterRegistry meterRegistry;
+  private final AuditLogService auditLog;
 
   public ProspeccaoService(
       ProspeccaoRepository repo,
       ProspeccaoEventoRepository eventoRepo,
-      MeterRegistry meterRegistry) {
+      MeterRegistry meterRegistry,
+      AuditLogService auditLog) {
     this.repo = repo;
     this.eventoRepo = eventoRepo;
     this.meterRegistry = meterRegistry;
+    this.auditLog = auditLog;
   }
 
   // ─── Read ───────────────────────────────────────────────────────────────
@@ -107,6 +112,14 @@ public class ProspeccaoService {
             Map.of("para", salvo.getStatus().name()),
             principal.usuarioId()));
 
+    auditLog.log(
+        principal.assessoriaId(),
+        principal.usuarioId(),
+        "PROSPECCAO",
+        salvo.getId(),
+        AuditLog.Acao.CREATE,
+        Map.of("titulo", salvo.getTitulo(), "marcaId", salvo.getMarcaId().toString()));
+
     return salvo;
   }
 
@@ -135,7 +148,17 @@ public class ProspeccaoService {
     p.setObservacoes(observacoes);
     if (tags != null) p.setTags(tags);
     p.setUpdatedAt(Instant.now());
-    return repo.save(p);
+    Prospeccao saved = repo.save(p);
+
+    auditLog.log(
+        principal.assessoriaId(),
+        principal.usuarioId(),
+        "PROSPECCAO",
+        saved.getId(),
+        AuditLog.Acao.UPDATE,
+        Map.of("titulo", saved.getTitulo()));
+
+    return saved;
   }
 
   @Transactional
@@ -221,6 +244,14 @@ public class ProspeccaoService {
     p.setDeletedAt(Instant.now());
     p.setUpdatedAt(Instant.now());
     repo.save(p);
+
+    auditLog.log(
+        principal.assessoriaId(),
+        principal.usuarioId(),
+        "PROSPECCAO",
+        p.getId(),
+        AuditLog.Acao.DELETE,
+        Map.of("titulo", p.getTitulo()));
   }
 
   // ─── Comentários ────────────────────────────────────────────────────────
