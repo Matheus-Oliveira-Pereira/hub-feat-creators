@@ -45,7 +45,8 @@ public class SecurityConfig {
                                                 "/api/v1/auth/**",
                                                 "/api/v1/email/track/**",
                                                 "/api/v1/email/unsubscribe",
-                                                "/api/v1/dsr/**")
+                                                "/api/v1/dsr/**",
+                                                "/api/v1/whatsapp/webhook")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated());

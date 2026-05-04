@@ -29,6 +29,7 @@ export const ROLE_GROUPS: RoleGroup[] = [
   { key: 'CON', label: 'Contatos', roles: crud('CON', 'contatos') },
   { key: 'TAR', label: 'Tarefas', roles: crud('TAR', 'tarefas') },
   { key: 'EML', label: 'E-mail', roles: crud('EML', 'e-mails') },
+  { key: 'WAP', label: 'WhatsApp', roles: crud('WAP', 'WhatsApp') },
   { key: 'USU', label: 'Usuários', roles: crud('USU', 'usuários') },
   { key: 'PRF', label: 'Perfis (RBAC)', roles: crud('PRF', 'perfis') },
   {

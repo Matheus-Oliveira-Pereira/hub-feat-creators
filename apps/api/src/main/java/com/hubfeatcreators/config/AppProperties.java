@@ -45,6 +45,7 @@ public class AppProperties {
 
     public static class Secrets {
         private String emailKey = "dev-only-not-for-prod-32-byte-aes-key";
+        private String whatsappKey = "dev-only-not-for-prod-whatsapp-32b!";
 
         public String getEmailKey() {
             return emailKey;
@@ -52,6 +53,14 @@ public class AppProperties {
 
         public void setEmailKey(String emailKey) {
             this.emailKey = emailKey;
+        }
+
+        public String getWhatsappKey() {
+            return whatsappKey;
+        }
+
+        public void setWhatsappKey(String whatsappKey) {
+            this.whatsappKey = whatsappKey;
         }
     }
 
@@ -95,11 +104,14 @@ public class AppProperties {
     public static class Features {
         private boolean complianceStrict = true;
         private boolean signupEnabled = true;
+        private boolean whatsappEnabled = false;
 
         public boolean isComplianceStrict() { return complianceStrict; }
         public void setComplianceStrict(boolean complianceStrict) { this.complianceStrict = complianceStrict; }
         public boolean isSignupEnabled() { return signupEnabled; }
         public void setSignupEnabled(boolean signupEnabled) { this.signupEnabled = signupEnabled; }
+        public boolean isWhatsappEnabled() { return whatsappEnabled; }
+        public void setWhatsappEnabled(boolean whatsappEnabled) { this.whatsappEnabled = whatsappEnabled; }
     }
 
     public Features getFeatures() { return features; }

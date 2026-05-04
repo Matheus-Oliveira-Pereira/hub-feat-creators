@@ -13,6 +13,7 @@ import {
   Search,
   Mail,
   CheckSquare,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
@@ -39,6 +40,7 @@ const NAV: NavItem[] = [
   { href: '/prospeccao' as Route, label: 'Prospecção', icon: Search, requires: ['BPRO'] },
   { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, requires: ['BTAR'] },
   { href: '/email' as Route, label: 'E-mail', icon: Mail, requires: ['BEML'] },
+  { href: '/whatsapp' as Route, label: 'WhatsApp', icon: MessageCircle, requires: ['BWAP'] },
   { href: '/perfis' as Route, label: 'Perfis', icon: ShieldCheck, requires: ['BPRF'] },
 ];
 

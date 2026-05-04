@@ -69,6 +69,12 @@ public final class PermissionCodes {
     public static final String E_EML = "EEML";
     public static final String D_EML = "DEML";
 
+    // WhatsApp (PRD-008)
+    public static final String B_WAP = "BWAP";
+    public static final String C_WAP = "CWAP";
+    public static final String E_WAP = "EWAP";
+    public static final String D_WAP = "DWAP";
+
     // Relatórios / dashboard
     public static final String B_REL = "BREL";
 
@@ -79,7 +85,8 @@ public final class PermissionCodes {
                             OWNR, INVT, EXPT, BLLG, B_PRO, C_PRO, E_PRO, D_PRO, B_MAR, C_MAR, E_MAR,
                             D_MAR, B_INF, C_INF, E_INF, D_INF, B_CON, C_CON, E_CON, D_CON, B_USU,
                             C_USU, E_USU, D_USU, B_PRF, C_PRF, E_PRF, D_PRF, B_TAR, C_TAR, E_TAR,
-                            D_TAR, B_EML, C_EML, E_EML, D_EML, B_REL));
+                            D_TAR, B_EML, C_EML, E_EML, D_EML,
+                            B_WAP, C_WAP, E_WAP, D_WAP, B_REL));
 
     /** Default roles dos perfis seed (idêntico ao backfill da V3). */
     public static final Set<String> OWNER_DEFAULT = Set.copyOf(ALL);
@@ -87,8 +94,8 @@ public final class PermissionCodes {
     public static final Set<String> ASSESSOR_DEFAULT =
             Set.of(
                     B_PRO, C_PRO, E_PRO, B_MAR, B_INF, B_CON, C_CON, E_CON, B_USU, B_REL, B_TAR,
-                    C_TAR, E_TAR, B_EML, C_EML, E_EML);
+                    C_TAR, E_TAR, B_EML, C_EML, E_EML, B_WAP, C_WAP);
 
     public static final Set<String> LEITOR_DEFAULT =
-            Set.of(B_PRO, B_MAR, B_INF, B_CON, B_USU, B_REL, B_TAR, B_EML);
+            Set.of(B_PRO, B_MAR, B_INF, B_CON, B_USU, B_REL, B_TAR, B_EML, B_WAP);
 }

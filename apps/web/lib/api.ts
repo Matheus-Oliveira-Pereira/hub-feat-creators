@@ -540,6 +540,94 @@ export interface EmailEvento {
   createdAt: string;
 }
 
+// ─── WhatsApp ────────────────────────────────────────────────────────────────
+
+export type WaAccountStatus = 'ATIVO' | 'INATIVO' | 'ERRO';
+export type WaTemplateStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAUSED';
+export type WaTemplateCategoria = 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
+export type WaEnvioStatus = 'ENFILEIRADO' | 'ENVIADO' | 'ENTREGUE' | 'LIDO' | 'FALHOU';
+export type WaEnvioTipo = 'TEMPLATE' | 'FREEFORM' | 'MIDIA';
+
+export interface WaAccount {
+  id: string;
+  wabaId: string;
+  phoneNumberId: string;
+  phoneE164: string;
+  displayName: string;
+  status: WaAccountStatus;
+  dailyLimit: number;
+  dailySent: number;
+}
+
+export interface WaAccountPayload {
+  wabaId: string;
+  phoneNumberId: string;
+  phoneE164: string;
+  displayName: string;
+  accessToken: string;
+  appSecret: string;
+}
+
+export interface WaTemplate {
+  id: string;
+  accountId: string;
+  nome: string;
+  idioma: string;
+  categoria: WaTemplateCategoria;
+  corpo: string;
+  variaveis: string[];
+  status: WaTemplateStatus;
+  metaTemplateId: string | null;
+  motivoRejeicao: string | null;
+}
+
+export interface WaTemplatePayload {
+  accountId: string;
+  nome: string;
+  idioma?: string;
+  categoria: WaTemplateCategoria;
+  corpo: string;
+  variaveis?: string[];
+}
+
+export interface WaEnvio {
+  id: string;
+  tipo: WaEnvioTipo;
+  destinatarioE164: string;
+  status: WaEnvioStatus;
+  wamid: string | null;
+}
+
+export const whatsapp = {
+  accounts: {
+    list: () => api.get<WaAccount[]>('/api/v1/whatsapp/accounts'),
+    create: (data: WaAccountPayload) => api.post<WaAccount>('/api/v1/whatsapp/accounts', data),
+    update: (id: string, data: Partial<Pick<WaAccountPayload, 'displayName' | 'accessToken' | 'appSecret'>>) =>
+      api.patch<WaAccount>(`/api/v1/whatsapp/accounts/${id}`, data),
+    delete: (id: string) => api.delete(`/api/v1/whatsapp/accounts/${id}`),
+  },
+  templates: {
+    list: () => api.get<WaTemplate[]>('/api/v1/whatsapp/templates'),
+    create: (data: WaTemplatePayload) => api.post<WaTemplate>('/api/v1/whatsapp/templates', data),
+    submit: (id: string) => api.post<WaTemplate>(`/api/v1/whatsapp/templates/${id}/submit`, {}),
+  },
+  envios: {
+    sendTemplate: (data: {
+      accountId: string;
+      templateId: string;
+      destinatarioE164: string;
+      components?: Record<string, unknown>[];
+      idempotencyKey?: string;
+    }) => api.post<WaEnvio>('/api/v1/whatsapp/envios/template', data),
+    sendFreeform: (data: {
+      accountId: string;
+      destinatarioE164: string;
+      text: string;
+      idempotencyKey?: string;
+    }) => api.post<WaEnvio>('/api/v1/whatsapp/envios/freeform', data),
+  },
+};
+
 export const email = {
   accounts: {
     list: () => api.get<EmailAccount[]>('/api/v1/email/accounts'),

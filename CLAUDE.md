@@ -169,7 +169,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `tarefas/` → CRUD + scheduler digest + alertas in-app (PRD-003, ADR-010)
 - ✅ `email/` → SMTP relay multi-conta (Jakarta Mail, AES-GCM, Mustache templates, opt-out, tracking) — PRD-004, ADR-005
 - ✅ `onboarding/` → signup self-service, email verify, lockout, MFA TOTP, convites, membros, Argon2id (PRD-006)
-- ⏳ `whatsapp/` → Cloud API oficial Meta — ADR-006
+- ✅ `whatsapp/` → Cloud API oficial Meta, HMAC webhook, AES-GCM tokens, janela 24h, opt-out — PRD-008, ADR-006
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
@@ -236,6 +236,14 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **MFA TOTP secret em claro (MVP)**: `mfa_secret_enc` armazena o secret sem AES-GCM por ora. Criptografia real: fase 2 usando `EmailCipherService` padrão
 - **`/api/v1/auth/aceitar-convite` público**: convites marcam `email_verificado_em = now()` — e-mail considerado verificado por ter recebido o convite
 - **Convite 7 dias vs 72h anterior**: V8 altera validade de convites para 7d (era 72h no ConviteService pré-PRD-006)
+- **WhatsApp tokens cifrados AES-GCM**: `access_token_enc/token_nonce` + `app_secret_enc/app_secret_nonce` em `whatsapp_accounts`. Chave = `WHATSAPP_KEY` (separada de `EMAIL_KEY`). Nunca logar tokens em claro
+- **Webhook signature obrigatória**: `/api/v1/whatsapp/webhook` é público (sem JWT). Valida `X-Hub-Signature-256` = `HMAC-SHA256(app_secret, raw_body)`. Endpoint em `SecurityConfig.permitAll()`
+- **Janela 24h em `whatsapp_window_cache`**: `last_inbound_at + 24h`. Mensagem FREEFORM fora da janela → 422 `JANELA_FECHADA`. Template sempre permitido (se APPROVED)
+- **Opt-out perpétuo**: `whatsapp_optouts` usa CITEXT — case-insensitive. Keywords: "parar"/"sair"/"stop" (case-insensitive, qualquer aparição no payload)
+- **Idempotência envio WA**: `idempotency_key UNIQUE` em `whatsapp_envios`. POST repetido com mesmo key retorna envio existente sem re-enfileirar
+- **Template polling automático**: `WhatsappTemplateService.pollPendingTemplates()` roda a cada 15min. Templates sem `meta_template_id` (não submetidos) são ignorados no poll
+- **`/api/v1/whatsapp/webhook` scan por phoneNumberId**: busca todas contas para encontrar a certa pelo `phone_number_id` do evento — pode ser otimizado com índice em tabela quando escalar
+- **FEATURE_WHATSAPP_ENABLED**: flag em `AppProperties.Features.whatsappEnabled`. Checar no controller antes de cadastrar conta se quiser hard-block. Atualmente usada apenas como feature flag documental
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:

@@ -17,6 +17,10 @@ public class BusinessException extends RuntimeException {
                 entity + "_NOT_FOUND", entity + " não encontrado.", HttpStatus.NOT_FOUND);
     }
 
+    public static BusinessException notFound() {
+        return new BusinessException("NOT_FOUND", "Recurso não encontrado.", HttpStatus.NOT_FOUND);
+    }
+
     public static BusinessException conflict(String code, String message) {
         return new BusinessException(code, message, HttpStatus.CONFLICT);
     }
