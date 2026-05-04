@@ -107,6 +107,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Mustache templating for email bodies -->
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>0.9.11</version>
+        </dependency>
+
         <!-- Password hashing: BCrypt (built into spring-security) -->
 
         <!-- Async jobs / ShedLock -->
@@ -163,6 +170,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>2.1.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

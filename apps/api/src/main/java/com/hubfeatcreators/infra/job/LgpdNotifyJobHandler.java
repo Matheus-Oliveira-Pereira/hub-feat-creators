@@ -8,36 +8,37 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 /**
- * Envia notificação LGPD ao influenciador informando que seus dados foram cadastrados
- * em um sistema de assessoria (base legal: legítimo interesse do controlador).
- * Idempotente: job com mesma chave não é reenfileirado.
+ * Envia notificação LGPD ao influenciador informando que seus dados foram cadastrados em um sistema
+ * de assessoria (base legal: legítimo interesse do controlador). Idempotente: job com mesma chave
+ * não é reenfileirado.
  */
 @Component("INFLUENCIADOR_LGPD_NOTIFY")
 public class LgpdNotifyJobHandler implements JobHandler {
 
-  private static final Logger log = LoggerFactory.getLogger(LgpdNotifyJobHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(LgpdNotifyJobHandler.class);
 
-  private final JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
 
-  public LgpdNotifyJobHandler(JavaMailSender mailSender) {
-    this.mailSender = mailSender;
-  }
-
-  @Override
-  public void handle(Job job) {
-    Map<String, Object> payload = job.getPayload();
-    String email = (String) payload.get("email");
-    String influenciadorId = (String) payload.get("influenciadorId");
-
-    if (email == null || email.isBlank()) {
-      log.info("lgpd.notify.skip influenciadorId={} motivo=sem_email", influenciadorId);
-      return;
+    public LgpdNotifyJobHandler(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
     }
 
-    SimpleMailMessage msg = new SimpleMailMessage();
-    msg.setTo(email);
-    msg.setSubject("Informação sobre tratamento dos seus dados");
-    msg.setText("""
+    @Override
+    public void handle(Job job) {
+        Map<String, Object> payload = job.getPayload();
+        String email = (String) payload.get("email");
+        String influenciadorId = (String) payload.get("influenciadorId");
+
+        if (email == null || email.isBlank()) {
+            log.info("lgpd.notify.skip influenciadorId={} motivo=sem_email", influenciadorId);
+            return;
+        }
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(email);
+        msg.setSubject("Informação sobre tratamento dos seus dados");
+        msg.setText(
+                """
         Olá,
 
         Seus dados profissionais (nome, perfis em redes sociais, nicho de atuação)
@@ -57,7 +58,7 @@ public class LgpdNotifyJobHandler implements JobHandler {
         HUB Feat Creator
         """);
 
-    mailSender.send(msg);
-    log.info("lgpd.notify.sent email={} influenciadorId={}", email, influenciadorId);
-  }
+        mailSender.send(msg);
+        log.info("lgpd.notify.sent email={} influenciadorId={}", email, influenciadorId);
+    }
 }

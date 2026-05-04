@@ -38,7 +38,7 @@ const NAV: NavItem[] = [
   { href: '/marcas' as Route, label: 'Marcas', icon: Building2, requires: ['BMAR'] },
   { href: '/prospeccao' as Route, label: 'Prospecção', icon: Search, requires: ['BPRO'] },
   { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, requires: ['BTAR'] },
-  { href: '/email' as Route, label: 'E-mail', icon: Mail, badge: 'em breve', disabled: true, requires: ['BEML'] },
+  { href: '/email' as Route, label: 'E-mail', icon: Mail, requires: ['BEML'] },
   { href: '/perfis' as Route, label: 'Perfis', icon: ShieldCheck, requires: ['BPRF'] },
 ];
 

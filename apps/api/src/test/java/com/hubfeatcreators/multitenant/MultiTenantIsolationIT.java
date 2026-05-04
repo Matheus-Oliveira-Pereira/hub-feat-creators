@@ -11,80 +11,95 @@ import org.springframework.http.*;
 
 class MultiTenantIsolationIT extends IntegrationTestBase {
 
-  @Autowired TestRestTemplate rest;
+    @Autowired TestRestTemplate rest;
 
-  record SignupRequest(String assessoriaNome, String slug, String email, String senha) {}
-  record TokenResponse(String accessToken, String refreshToken) {}
-  record InfluenciadorRequest(String nome, java.util.Map<String, String> handles, String nicho,
-    Long audienciaTotal, String observacoes, java.util.List<String> tags) {}
-  record InfluenciadorResponse(java.util.UUID id, String nome) {}
-  record PageResponse(java.util.List<InfluenciadorResponse> data) {}
+    record SignupRequest(String assessoriaNome, String slug, String email, String senha) {}
 
-  String tokenA;
-  String tokenB;
+    record TokenResponse(String accessToken, String refreshToken) {}
 
-  @BeforeEach
-  void setup() {
-    long ts = System.nanoTime();
-    tokenA = signup("Assessoria A", "slug-a-" + ts, "a" + ts + "@test.com");
-    tokenB = signup("Assessoria B", "slug-b-" + ts, "b" + ts + "@test.com");
-  }
+    record InfluenciadorRequest(
+            String nome,
+            java.util.Map<String, String> handles,
+            String nicho,
+            Long audienciaTotal,
+            String observacoes,
+            java.util.List<String> tags) {}
 
-  @Test
-  void assessoria_A_nao_ve_influenciadores_da_assessoria_B() {
-    // Assessoria B cria influenciador
-    criarInfluenciador(tokenB, "Influenciador da B");
+    record InfluenciadorResponse(java.util.UUID id, String nome) {}
 
-    // Assessoria A lista — não deve ver influenciadores da B
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(tokenA);
-    ResponseEntity<PageResponse> resp = rest.exchange(
-        baseUrl("/api/v1/influenciadores"),
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        PageResponse.class);
+    record PageResponse(java.util.List<InfluenciadorResponse> data) {}
 
-    assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(resp.getBody()).isNotNull();
-    assertThat(resp.getBody().data()).isEmpty();
-  }
+    String tokenA;
+    String tokenB;
 
-  @Test
-  void assessoria_A_nao_acessa_influenciador_da_B_por_id() {
-    InfluenciadorResponse inf = criarInfluenciador(tokenB, "Influenciador privado da B");
+    @BeforeEach
+    void setup() {
+        long ts = System.nanoTime();
+        tokenA = signup("Assessoria A", "slug-a-" + ts, "a" + ts + "@test.com");
+        tokenB = signup("Assessoria B", "slug-b-" + ts, "b" + ts + "@test.com");
+    }
 
-    // Assessoria A tenta buscar pelo ID
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(tokenA);
-    ResponseEntity<Object> resp = rest.exchange(
-        baseUrl("/api/v1/influenciadores/" + inf.id()),
-        HttpMethod.GET,
-        new HttpEntity<>(headers),
-        Object.class);
+    @Test
+    void assessoria_A_nao_ve_influenciadores_da_assessoria_B() {
+        // Assessoria B cria influenciador
+        criarInfluenciador(tokenB, "Influenciador da B");
 
-    assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-  }
+        // Assessoria A lista — não deve ver influenciadores da B
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(tokenA);
+        ResponseEntity<PageResponse> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/influenciadores"),
+                        HttpMethod.GET,
+                        new HttpEntity<>(headers),
+                        PageResponse.class);
 
-  // ---- helpers ----
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().data()).isEmpty();
+    }
 
-  private String signup(String nome, String slug, String email) {
-    record Req(String assessoriaNome, String slug, String email, String senha) {}
-    var resp = rest.postForEntity(
-        baseUrl("/api/v1/auth/signup"),
-        new Req(nome, slug, email, "senha123456"),
-        TokenResponse.class);
-    return resp.getBody().accessToken();
-  }
+    @Test
+    void assessoria_A_nao_acessa_influenciador_da_B_por_id() {
+        InfluenciadorResponse inf = criarInfluenciador(tokenB, "Influenciador privado da B");
 
-  private InfluenciadorResponse criarInfluenciador(String token, String nome) {
-    var req = new InfluenciadorRequest(nome, java.util.Map.of(), null, null, null, java.util.List.of());
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(token);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return rest.exchange(
-        baseUrl("/api/v1/influenciadores"),
-        HttpMethod.POST,
-        new HttpEntity<>(req, headers),
-        InfluenciadorResponse.class).getBody();
-  }
+        // Assessoria A tenta buscar pelo ID
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(tokenA);
+        ResponseEntity<Object> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/influenciadores/" + inf.id()),
+                        HttpMethod.GET,
+                        new HttpEntity<>(headers),
+                        Object.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ---- helpers ----
+
+    private String signup(String nome, String slug, String email) {
+        record Req(String assessoriaNome, String slug, String email, String senha) {}
+        var resp =
+                rest.postForEntity(
+                        baseUrl("/api/v1/auth/signup"),
+                        new Req(nome, slug, email, "senha123456"),
+                        TokenResponse.class);
+        return resp.getBody().accessToken();
+    }
+
+    private InfluenciadorResponse criarInfluenciador(String token, String nome) {
+        var req =
+                new InfluenciadorRequest(
+                        nome, java.util.Map.of(), null, null, null, java.util.List.of());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return rest.exchange(
+                        baseUrl("/api/v1/influenciadores"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(req, headers),
+                        InfluenciadorResponse.class)
+                .getBody();
+    }
 }

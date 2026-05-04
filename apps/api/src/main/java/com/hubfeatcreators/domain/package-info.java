@@ -1,7 +1,7 @@
 @FilterDefs({
-  @FilterDef(
-      name = "tenant_filter",
-      parameters = {@ParamDef(name = "assessoriaId", type = UUID.class)})
+    @FilterDef(
+            name = "tenant_filter",
+            parameters = {@ParamDef(name = "assessoriaId", type = UUID.class)})
 })
 package com.hubfeatcreators.domain;
 

@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 public record InfluenciadorRequest(
-    @NotBlank String nome,
-    Map<String, String> handles,
-    String nicho,
-    Long audienciaTotal,
-    String observacoes,
-    List<String> tags) {}
+        @NotBlank String nome,
+        Map<String, String> handles,
+        String nicho,
+        Long audienciaTotal,
+        String observacoes,
+        List<String> tags) {}

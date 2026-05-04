@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ContatoRepository extends JpaRepository<Contato, UUID> {
-  Optional<Contato> findByIdAndDeletedAtIsNull(UUID id);
-  List<Contato> findByMarcaIdAndDeletedAtIsNull(UUID marcaId);
+    Optional<Contato> findByIdAndDeletedAtIsNull(UUID id);
+
+    List<Contato> findByMarcaIdAndDeletedAtIsNull(UUID marcaId);
 }

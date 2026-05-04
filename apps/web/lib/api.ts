@@ -385,3 +385,147 @@ export const tarefas = {
   updatePreferencias: (digestDiarioEnabled: boolean) =>
     api.patch<UsuarioPreferencia>('/api/v1/tarefas/preferencias', { digestDiarioEnabled }),
 };
+
+// ─── Email ────────────────────────────────────────────────────────────────────
+
+export type EmailAccountStatus = 'ATIVA' | 'PAUSADA' | 'FALHA_AUTH';
+export type TlsMode = 'STARTTLS' | 'SSL';
+export type EmailEnvioStatus = 'ENFILEIRADO' | 'ENVIADO' | 'FALHOU' | 'BOUNCED';
+export type EmailEventoTipo = 'ABERTO' | 'CLICADO' | 'BOUNCE' | 'COMPLAINT' | 'UNSUBSCRIBE';
+
+export interface EmailAccount {
+  id: string;
+  nome: string;
+  host: string;
+  port: number;
+  username: string;
+  fromAddress: string;
+  fromName: string;
+  tlsMode: TlsMode;
+  dailyQuota: number;
+  status: EmailAccountStatus;
+  falhasAuthCount: number;
+  updatedAt: string;
+}
+
+export interface EmailAccountPayload {
+  nome: string;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  fromAddress: string;
+  fromName: string;
+  tlsMode?: TlsMode;
+  dailyQuota?: number;
+}
+
+export interface EmailAccountUpdatePayload {
+  nome?: string;
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  fromAddress?: string;
+  fromName?: string;
+  tlsMode?: TlsMode;
+  dailyQuota?: number;
+}
+
+export interface EmailTemplate {
+  id: string;
+  nome: string;
+  assunto: string;
+  corpoHtml: string;
+  corpoTexto?: string | null;
+  variaveis: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailTemplatePayload {
+  nome: string;
+  assunto: string;
+  corpoHtml: string;
+  corpoTexto?: string | null;
+  variaveis?: string[];
+}
+
+export interface EmailLayout {
+  id: string;
+  headerHtml: string;
+  footerHtml: string;
+  updatedAt: string;
+}
+
+export interface EmailEnvio {
+  id: string;
+  accountId: string;
+  templateId: string;
+  destinatarioEmail: string;
+  destinatarioNome?: string | null;
+  assunto: string;
+  status: EmailEnvioStatus;
+  tentativas: number;
+  smtpMessageId?: string | null;
+  enviadoEm?: string | null;
+  createdAt: string;
+}
+
+export interface EmailEnvioPayload {
+  accountId: string;
+  templateId: string;
+  destinatarioEmail: string;
+  destinatarioNome?: string;
+  vars?: Record<string, unknown>;
+  contexto?: Record<string, unknown>;
+  idempotencyKey?: string;
+  trackingEnabled?: boolean;
+}
+
+export interface EmailEvento {
+  id: string;
+  tipo: EmailEventoTipo;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export const email = {
+  accounts: {
+    list: () => api.get<EmailAccount[]>('/api/v1/email/accounts'),
+    get: (id: string) => api.get<EmailAccount>(`/api/v1/email/accounts/${id}`),
+    create: (data: EmailAccountPayload) => api.post<EmailAccount>('/api/v1/email/accounts', data),
+    update: (id: string, data: EmailAccountUpdatePayload) =>
+      api.patch<EmailAccount>(`/api/v1/email/accounts/${id}`, data),
+    delete: (id: string) => api.delete(`/api/v1/email/accounts/${id}`),
+    test: (id: string) => api.post<void>(`/api/v1/email/accounts/${id}/test`, {}),
+  },
+  templates: {
+    list: () => api.get<EmailTemplate[]>('/api/v1/email/templates'),
+    get: (id: string) => api.get<EmailTemplate>(`/api/v1/email/templates/${id}`),
+    create: (data: EmailTemplatePayload) => api.post<EmailTemplate>('/api/v1/email/templates', data),
+    update: (id: string, data: Partial<EmailTemplatePayload>) =>
+      api.patch<EmailTemplate>(`/api/v1/email/templates/${id}`, data),
+    delete: (id: string) => api.delete(`/api/v1/email/templates/${id}`),
+    preview: (id: string, vars: Record<string, unknown>) =>
+      api.post<{ html: string }>(`/api/v1/email/templates/${id}/preview`, { vars }),
+  },
+  layout: {
+    get: () => api.get<EmailLayout>('/api/v1/email/layout'),
+    save: (data: Partial<Pick<EmailLayout, 'headerHtml' | 'footerHtml'>>) =>
+      api.put<EmailLayout>('/api/v1/email/layout', data),
+  },
+  envios: {
+    list: (params?: { contexto?: string; page?: number; size?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.contexto) qs.set('contexto', params.contexto);
+      if (params?.page !== undefined) qs.set('page', String(params.page));
+      if (params?.size !== undefined) qs.set('size', String(params.size));
+      const q = qs.toString();
+      return api.get<PageResponse<EmailEnvio>>(`/api/v1/email/envios${q ? `?${q}` : ''}`);
+    },
+    get: (id: string) => api.get<EmailEnvio>(`/api/v1/email/envios/${id}`),
+    send: (data: EmailEnvioPayload) => api.post<EmailEnvio>('/api/v1/email/envios', data),
+    eventos: (id: string) => api.get<EmailEvento[]>(`/api/v1/email/envios/${id}/eventos`),
+  },
+};

@@ -15,28 +15,30 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class MdcFilter extends OncePerRequestFilter {
 
-  @Override
-  protected void doFilterInternal(
-      @NonNull HttpServletRequest request,
-      @NonNull HttpServletResponse response,
-      @NonNull FilterChain filterChain)
-      throws ServletException, IOException {
-    try {
-      String requestId = request.getHeader("X-Request-Id");
-      if (requestId == null || requestId.isEmpty()) {
-        requestId = UUID.randomUUID().toString();
-      }
-      MDC.put("request_id", requestId);
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
+        try {
+            String requestId = request.getHeader("X-Request-Id");
+            if (requestId == null || requestId.isEmpty()) {
+                requestId = UUID.randomUUID().toString();
+            }
+            MDC.put("request_id", requestId);
 
-      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-      if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof AuthPrincipal p) {
-        MDC.put("usuario_id", p.usuarioId().toString());
-        MDC.put("assessoria_id", p.assessoriaId().toString());
-      }
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null
+                    && auth.isAuthenticated()
+                    && auth.getPrincipal() instanceof AuthPrincipal p) {
+                MDC.put("usuario_id", p.usuarioId().toString());
+                MDC.put("assessoria_id", p.assessoriaId().toString());
+            }
 
-      filterChain.doFilter(request, response);
-    } finally {
-      MDC.clear();
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.clear();
+        }
     }
-  }
 }

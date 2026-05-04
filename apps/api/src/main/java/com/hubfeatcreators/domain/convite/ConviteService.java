@@ -17,82 +17,88 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ConviteService {
 
-  private final ConviteRepository conviteRepo;
-  private final UsuarioRepository usuarioRepo;
-  private final AssessoriaRepository assessoriaRepo;
-  private final PasswordEncoder passwordEncoder;
-  private final RbacBootstrap rbacBootstrap;
+    private final ConviteRepository conviteRepo;
+    private final UsuarioRepository usuarioRepo;
+    private final AssessoriaRepository assessoriaRepo;
+    private final PasswordEncoder passwordEncoder;
+    private final RbacBootstrap rbacBootstrap;
 
-  public ConviteService(
-      ConviteRepository conviteRepo,
-      UsuarioRepository usuarioRepo,
-      AssessoriaRepository assessoriaRepo,
-      PasswordEncoder passwordEncoder,
-      RbacBootstrap rbacBootstrap) {
-    this.conviteRepo = conviteRepo;
-    this.usuarioRepo = usuarioRepo;
-    this.assessoriaRepo = assessoriaRepo;
-    this.passwordEncoder = passwordEncoder;
-    this.rbacBootstrap = rbacBootstrap;
-  }
-
-  @Transactional
-  public Convite convidar(AuthPrincipal principal, String email, Convite.Role role) {
-    if (usuarioRepo.findActiveByAssessoriaIdAndEmail(principal.assessoriaId(), email).isPresent()) {
-      throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já é membro da assessoria.");
+    public ConviteService(
+            ConviteRepository conviteRepo,
+            UsuarioRepository usuarioRepo,
+            AssessoriaRepository assessoriaRepo,
+            PasswordEncoder passwordEncoder,
+            RbacBootstrap rbacBootstrap) {
+        this.conviteRepo = conviteRepo;
+        this.usuarioRepo = usuarioRepo;
+        this.assessoriaRepo = assessoriaRepo;
+        this.passwordEncoder = passwordEncoder;
+        this.rbacBootstrap = rbacBootstrap;
     }
 
-    Convite convite =
-        new Convite(
-            principal.assessoriaId(),
-            email,
-            UUID.randomUUID().toString(),
-            role,
-            Instant.now().plus(72, ChronoUnit.HOURS));
+    @Transactional
+    public Convite convidar(AuthPrincipal principal, String email, Convite.Role role) {
+        if (usuarioRepo
+                .findActiveByAssessoriaIdAndEmail(principal.assessoriaId(), email)
+                .isPresent()) {
+            throw BusinessException.conflict(
+                    "EMAIL_IN_USE", "Este e-mail já é membro da assessoria.");
+        }
 
-    Usuario criador =
-        usuarioRepo
-            .findById(principal.usuarioId())
-            .orElseThrow(() -> BusinessException.notFound("USUARIO"));
-    convite.setCreatedBy(criador);
+        Convite convite =
+                new Convite(
+                        principal.assessoriaId(),
+                        email,
+                        UUID.randomUUID().toString(),
+                        role,
+                        Instant.now().plus(72, ChronoUnit.HOURS));
 
-    return conviteRepo.save(convite);
-  }
+        Usuario criador =
+                usuarioRepo
+                        .findById(principal.usuarioId())
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        convite.setCreatedBy(criador);
 
-  @Transactional
-  public Usuario aceitarConvite(String token, String senha) {
-    Convite convite =
-        conviteRepo
-            .findByToken(token)
-            .orElseThrow(() -> BusinessException.badRequest("CONVITE_INVALIDO", "Convite inválido."));
-
-    if (convite.isUsed()) {
-      throw BusinessException.badRequest("CONVITE_USADO", "Este convite já foi utilizado.");
-    }
-    if (convite.isExpired()) {
-      throw BusinessException.badRequest("CONVITE_EXPIRADO", "Este convite expirou.");
+        return conviteRepo.save(convite);
     }
 
-    assessoriaRepo
-        .findById(convite.getAssessoriaId())
-        .orElseThrow(() -> BusinessException.notFound("ASSESSORIA"));
+    @Transactional
+    public Usuario aceitarConvite(String token, String senha) {
+        Convite convite =
+                conviteRepo
+                        .findByToken(token)
+                        .orElseThrow(
+                                () ->
+                                        BusinessException.badRequest(
+                                                "CONVITE_INVALIDO", "Convite inválido."));
 
-    Usuario.Role coarseRole = Usuario.Role.valueOf(convite.getRole().name());
-    Usuario novo =
-        new Usuario(
-            convite.getAssessoriaId(),
-            convite.getEmail(),
-            passwordEncoder.encode(senha),
-            coarseRole);
+        if (convite.isUsed()) {
+            throw BusinessException.badRequest("CONVITE_USADO", "Este convite já foi utilizado.");
+        }
+        if (convite.isExpired()) {
+            throw BusinessException.badRequest("CONVITE_EXPIRADO", "Este convite expirou.");
+        }
 
-    Perfil seed = rbacBootstrap.seedFor(convite.getAssessoriaId(), coarseRole);
-    novo.setProfileId(seed.getId());
+        assessoriaRepo
+                .findById(convite.getAssessoriaId())
+                .orElseThrow(() -> BusinessException.notFound("ASSESSORIA"));
 
-    Usuario usuario = usuarioRepo.save(novo);
+        Usuario.Role coarseRole = Usuario.Role.valueOf(convite.getRole().name());
+        Usuario novo =
+                new Usuario(
+                        convite.getAssessoriaId(),
+                        convite.getEmail(),
+                        passwordEncoder.encode(senha),
+                        coarseRole);
 
-    convite.setUsedAt(Instant.now());
-    conviteRepo.save(convite);
+        Perfil seed = rbacBootstrap.seedFor(convite.getAssessoriaId(), coarseRole);
+        novo.setProfileId(seed.getId());
 
-    return usuario;
-  }
+        Usuario usuario = usuarioRepo.save(novo);
+
+        convite.setUsedAt(Instant.now());
+        conviteRepo.save(convite);
+
+        return usuario;
+    }
 }

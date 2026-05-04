@@ -15,178 +15,244 @@ import org.springframework.http.*;
 /** I5 — IT smoke do CRUD + state machine + visibility de prospecção. */
 class ProspeccaoIT extends IntegrationTestBase {
 
-  @Autowired TestRestTemplate rest;
+    @Autowired TestRestTemplate rest;
 
-  String token;
+    String token;
 
-  record SignupReq(String assessoriaNome, String slug, String email, String senha) {}
-  record TokenResp(String accessToken, String refreshToken) {}
+    record SignupReq(String assessoriaNome, String slug, String email, String senha) {}
 
-  record MarcaReq(String nome, String segmento, String site, String observacoes, List<String> tags) {}
-  record MarcaResp(UUID id, String nome) {}
+    record TokenResp(String accessToken, String refreshToken) {}
 
-  record ProspReq(
-      UUID marcaId,
-      UUID influenciadorId,
-      UUID assessorResponsavelId,
-      String titulo,
-      Long valorEstimadoCentavos,
-      String proximaAcao,
-      String proximaAcaoEm,
-      String observacoes,
-      String[] tags) {}
+    record MarcaReq(
+            String nome, String segmento, String site, String observacoes, List<String> tags) {}
 
-  record ProspResp(UUID id, UUID marcaId, String titulo, String status) {}
+    record MarcaResp(UUID id, String nome) {}
 
-  record StatusReq(String status, String motivoPerda, String motivoPerdaDetalhe) {}
+    record ProspReq(
+            UUID marcaId,
+            UUID influenciadorId,
+            UUID assessorResponsavelId,
+            String titulo,
+            Long valorEstimadoCentavos,
+            String proximaAcao,
+            String proximaAcaoEm,
+            String observacoes,
+            String[] tags) {}
 
-  record PageResp(List<ProspResp> data) {}
+    record ProspResp(UUID id, UUID marcaId, String titulo, String status) {}
 
-  @BeforeEach
-  void setup() {
-    long ts = System.nanoTime();
-    token = rest.postForEntity(
-        baseUrl("/api/v1/auth/signup"),
-        new SignupReq("Prospec IT", "prospec-it-" + ts, "p" + ts + "@test.com", "senha123456"),
-        TokenResp.class).getBody().accessToken();
-  }
+    record StatusReq(String status, String motivoPerda, String motivoPerdaDetalhe) {}
 
-  HttpHeaders h() {
-    HttpHeaders h = new HttpHeaders();
-    h.setBearerAuth(token);
-    h.setContentType(MediaType.APPLICATION_JSON);
-    return h;
-  }
+    record PageResp(List<ProspResp> data) {}
 
-  UUID criarMarca() {
-    var req = new MarcaReq("Marca " + UUID.randomUUID(), null, null, null, List.of());
-    return rest.exchange(
-        baseUrl("/api/v1/marcas"), HttpMethod.POST,
-        new HttpEntity<>(req, h()), MarcaResp.class).getBody().id();
-  }
+    @BeforeEach
+    void setup() {
+        long ts = System.nanoTime();
+        token =
+                rest.postForEntity(
+                                baseUrl("/api/v1/auth/signup"),
+                                new SignupReq(
+                                        "Prospec IT",
+                                        "prospec-it-" + ts,
+                                        "p" + ts + "@test.com",
+                                        "senha123456"),
+                                TokenResp.class)
+                        .getBody()
+                        .accessToken();
+    }
 
-  ProspResp criarProsp(UUID marcaId, String titulo) {
-    var req = new ProspReq(marcaId, null, null, titulo, 100_000L, null, null, null, new String[0]);
-    return rest.exchange(
-        baseUrl("/api/v1/prospeccoes"), HttpMethod.POST,
-        new HttpEntity<>(req, h()), ProspResp.class).getBody();
-  }
+    HttpHeaders h() {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(token);
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return h;
+    }
 
-  @Test
-  void crud_basico_funciona() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha A");
-    assertThat(p.id()).isNotNull();
-    assertThat(p.status()).isEqualTo("NOVA");
+    UUID criarMarca() {
+        var req = new MarcaReq("Marca " + UUID.randomUUID(), null, null, null, List.of());
+        return rest.exchange(
+                        baseUrl("/api/v1/marcas"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(req, h()),
+                        MarcaResp.class)
+                .getBody()
+                .id();
+    }
 
-    // list
-    PageResp page = rest.exchange(
-        baseUrl("/api/v1/prospeccoes"), HttpMethod.GET,
-        new HttpEntity<>(h()), PageResp.class).getBody();
-    assertThat(page.data()).hasSize(1);
+    ProspResp criarProsp(UUID marcaId, String titulo) {
+        var req =
+                new ProspReq(
+                        marcaId, null, null, titulo, 100_000L, null, null, null, new String[0]);
+        return rest.exchange(
+                        baseUrl("/api/v1/prospeccoes"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(req, h()),
+                        ProspResp.class)
+                .getBody();
+    }
 
-    // get
-    ProspResp got = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id()), HttpMethod.GET,
-        new HttpEntity<>(h()), ProspResp.class).getBody();
-    assertThat(got.titulo()).isEqualTo("Campanha A");
+    @Test
+    void crud_basico_funciona() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha A");
+        assertThat(p.id()).isNotNull();
+        assertThat(p.status()).isEqualTo("NOVA");
 
-    // delete (soft)
-    rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id()), HttpMethod.DELETE,
-        new HttpEntity<>(h()), Void.class);
+        // list
+        PageResp page =
+                rest.exchange(
+                                baseUrl("/api/v1/prospeccoes"),
+                                HttpMethod.GET,
+                                new HttpEntity<>(h()),
+                                PageResp.class)
+                        .getBody();
+        assertThat(page.data()).hasSize(1);
 
-    // listing não retorna mais
-    PageResp afterDelete = rest.exchange(
-        baseUrl("/api/v1/prospeccoes"), HttpMethod.GET,
-        new HttpEntity<>(h()), PageResp.class).getBody();
-    assertThat(afterDelete.data()).isEmpty();
-  }
+        // get
+        ProspResp got =
+                rest.exchange(
+                                baseUrl("/api/v1/prospeccoes/" + p.id()),
+                                HttpMethod.GET,
+                                new HttpEntity<>(h()),
+                                ProspResp.class)
+                        .getBody();
+        assertThat(got.titulo()).isEqualTo("Campanha A");
 
-  @Test
-  void mudanca_status_valida_segue_state_machine() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha SM");
+        // delete (soft)
+        rest.exchange(
+                baseUrl("/api/v1/prospeccoes/" + p.id()),
+                HttpMethod.DELETE,
+                new HttpEntity<>(h()),
+                Void.class);
 
-    // NOVA → CONTATADA
-    var resp1 = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("CONTATADA", null, null), h()), ProspResp.class);
-    assertThat(resp1.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(resp1.getBody().status()).isEqualTo("CONTATADA");
+        // listing não retorna mais
+        PageResp afterDelete =
+                rest.exchange(
+                                baseUrl("/api/v1/prospeccoes"),
+                                HttpMethod.GET,
+                                new HttpEntity<>(h()),
+                                PageResp.class)
+                        .getBody();
+        assertThat(afterDelete.data()).isEmpty();
+    }
 
-    // CONTATADA → NEGOCIANDO
-    rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("NEGOCIANDO", null, null), h()), ProspResp.class);
+    @Test
+    void mudanca_status_valida_segue_state_machine() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha SM");
 
-    // NEGOCIANDO → FECHADA_GANHA
-    var resp3 = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("FECHADA_GANHA", null, null), h()), ProspResp.class);
-    assertThat(resp3.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(resp3.getBody().status()).isEqualTo("FECHADA_GANHA");
-  }
+        // NOVA → CONTATADA
+        var resp1 =
+                rest.exchange(
+                        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(new StatusReq("CONTATADA", null, null), h()),
+                        ProspResp.class);
+        assertThat(resp1.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp1.getBody().status()).isEqualTo("CONTATADA");
 
-  @Test
-  void transicao_invalida_retorna_422() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha 422");
-    // NOVA → FECHADA_GANHA (inválida — pula CONTATADA + NEGOCIANDO)
-    ResponseEntity<Object> resp = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("FECHADA_GANHA", null, null), h()), Object.class);
-    assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-  }
+        // CONTATADA → NEGOCIANDO
+        rest.exchange(
+                baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                HttpMethod.PATCH,
+                new HttpEntity<>(new StatusReq("NEGOCIANDO", null, null), h()),
+                ProspResp.class);
 
-  @Test
-  void fechada_perdida_sem_motivo_retorna_422() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha SP");
-    rest.exchange(baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("CONTATADA", null, null), h()), ProspResp.class);
+        // NEGOCIANDO → FECHADA_GANHA
+        var resp3 =
+                rest.exchange(
+                        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(new StatusReq("FECHADA_GANHA", null, null), h()),
+                        ProspResp.class);
+        assertThat(resp3.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp3.getBody().status()).isEqualTo("FECHADA_GANHA");
+    }
 
-    ResponseEntity<Object> resp = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"), HttpMethod.PATCH,
-        new HttpEntity<>(new StatusReq("FECHADA_PERDIDA", null, null), h()), Object.class);
-    assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-  }
+    @Test
+    void transicao_invalida_retorna_422() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha 422");
+        // NOVA → FECHADA_GANHA (inválida — pula CONTATADA + NEGOCIANDO)
+        ResponseEntity<Object> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(new StatusReq("FECHADA_GANHA", null, null), h()),
+                        Object.class);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+    }
 
-  @Test
-  void comentario_imutavel_aparece_em_eventos() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha CMT");
+    @Test
+    void fechada_perdida_sem_motivo_retorna_422() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha SP");
+        rest.exchange(
+                baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                HttpMethod.PATCH,
+                new HttpEntity<>(new StatusReq("CONTATADA", null, null), h()),
+                ProspResp.class);
 
-    rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/comentarios"), HttpMethod.POST,
-        new HttpEntity<>(Map.of("texto", "primeiro comentário"), h()), Object.class);
+        ResponseEntity<Object> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/prospeccoes/" + p.id() + "/status"),
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(new StatusReq("FECHADA_PERDIDA", null, null), h()),
+                        Object.class);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+    }
 
-    Object[] eventos = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id() + "/eventos"), HttpMethod.GET,
-        new HttpEntity<>(h()), Object[].class).getBody();
+    @Test
+    void comentario_imutavel_aparece_em_eventos() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha CMT");
 
-    // pelo menos: STATUS_CHANGE inicial + COMMENT
-    assertThat(eventos.length).isGreaterThanOrEqualTo(2);
-  }
+        rest.exchange(
+                baseUrl("/api/v1/prospeccoes/" + p.id() + "/comentarios"),
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("texto", "primeiro comentário"), h()),
+                Object.class);
 
-  @Test
-  void cross_tenant_retorna_404() {
-    UUID marcaId = criarMarca();
-    ProspResp p = criarProsp(marcaId, "Campanha X");
+        Object[] eventos =
+                rest.exchange(
+                                baseUrl("/api/v1/prospeccoes/" + p.id() + "/eventos"),
+                                HttpMethod.GET,
+                                new HttpEntity<>(h()),
+                                Object[].class)
+                        .getBody();
 
-    // outro tenant
-    long ts = System.nanoTime();
-    String otherToken = rest.postForEntity(
-        baseUrl("/api/v1/auth/signup"),
-        new SignupReq("Other", "other-" + ts, "o" + ts + "@test.com", "senha123456"),
-        TokenResp.class).getBody().accessToken();
+        // pelo menos: STATUS_CHANGE inicial + COMMENT
+        assertThat(eventos.length).isGreaterThanOrEqualTo(2);
+    }
 
-    HttpHeaders otherH = new HttpHeaders();
-    otherH.setBearerAuth(otherToken);
+    @Test
+    void cross_tenant_retorna_404() {
+        UUID marcaId = criarMarca();
+        ProspResp p = criarProsp(marcaId, "Campanha X");
 
-    ResponseEntity<Object> resp = rest.exchange(
-        baseUrl("/api/v1/prospeccoes/" + p.id()), HttpMethod.GET,
-        new HttpEntity<>(otherH), Object.class);
-    assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-  }
+        // outro tenant
+        long ts = System.nanoTime();
+        String otherToken =
+                rest.postForEntity(
+                                baseUrl("/api/v1/auth/signup"),
+                                new SignupReq(
+                                        "Other",
+                                        "other-" + ts,
+                                        "o" + ts + "@test.com",
+                                        "senha123456"),
+                                TokenResp.class)
+                        .getBody()
+                        .accessToken();
+
+        HttpHeaders otherH = new HttpHeaders();
+        otherH.setBearerAuth(otherToken);
+
+        ResponseEntity<Object> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/prospeccoes/" + p.id()),
+                        HttpMethod.GET,
+                        new HttpEntity<>(otherH),
+                        Object.class);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
 }

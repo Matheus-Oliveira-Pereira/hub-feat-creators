@@ -16,34 +16,35 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 public class ConviteController {
 
-  private final ConviteService conviteService;
+    private final ConviteService conviteService;
 
-  public ConviteController(ConviteService conviteService) {
-    this.conviteService = conviteService;
-  }
+    public ConviteController(ConviteService conviteService) {
+        this.conviteService = conviteService;
+    }
 
-  record ConviteRequest(@NotBlank @Email String email, String role) {}
+    record ConviteRequest(@NotBlank @Email String email, String role) {}
 
-  record AceitarRequest(@NotBlank String token, @NotBlank @Size(min = 8) String senha) {}
+    record AceitarRequest(@NotBlank String token, @NotBlank @Size(min = 8) String senha) {}
 
-  record ConviteResponse(UUID id, String email, String role, Instant expiresAt) {}
+    record ConviteResponse(UUID id, String email, String role, Instant expiresAt) {}
 
-  record UsuarioResponse(UUID id, String email, String role) {}
+    record UsuarioResponse(UUID id, String email, String role) {}
 
-  @PostMapping("/convites")
-  @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasRole('OWNER')")
-  public ConviteResponse convidar(
-      @Valid @RequestBody ConviteRequest req, @AuthenticationPrincipal AuthPrincipal principal) {
-    Convite.Role role =
-        req.role() != null ? Convite.Role.valueOf(req.role()) : Convite.Role.ASSESSOR;
-    Convite c = conviteService.convidar(principal, req.email(), role);
-    return new ConviteResponse(c.getId(), c.getEmail(), c.getRole().name(), c.getExpiresAt());
-  }
+    @PostMapping("/convites")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('OWNER')")
+    public ConviteResponse convidar(
+            @Valid @RequestBody ConviteRequest req,
+            @AuthenticationPrincipal AuthPrincipal principal) {
+        Convite.Role role =
+                req.role() != null ? Convite.Role.valueOf(req.role()) : Convite.Role.ASSESSOR;
+        Convite c = conviteService.convidar(principal, req.email(), role);
+        return new ConviteResponse(c.getId(), c.getEmail(), c.getRole().name(), c.getExpiresAt());
+    }
 
-  @PostMapping("/auth/aceitar-convite")
-  public UsuarioResponse aceitar(@Valid @RequestBody AceitarRequest req) {
-    var u = conviteService.aceitarConvite(req.token(), req.senha());
-    return new UsuarioResponse(u.getId(), u.getEmail(), u.getRole().name());
-  }
+    @PostMapping("/auth/aceitar-convite")
+    public UsuarioResponse aceitar(@Valid @RequestBody AceitarRequest req) {
+        var u = conviteService.aceitarConvite(req.token(), req.senha());
+        return new UsuarioResponse(u.getId(), u.getEmail(), u.getRole().name());
+    }
 }

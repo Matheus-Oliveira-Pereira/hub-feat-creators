@@ -23,171 +23,178 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
-  private static final int REFRESH_TOKEN_DAYS = 30;
+    private static final int REFRESH_TOKEN_DAYS = 30;
 
-  private final AssessoriaRepository assessoriaRepo;
-  private final UsuarioRepository usuarioRepo;
-  private final RefreshTokenRepository refreshRepo;
-  private final JwtService jwtService;
-  private final PasswordEncoder passwordEncoder;
-  private final RbacBootstrap rbacBootstrap;
-  private final PerfilRepository perfilRepo;
+    private final AssessoriaRepository assessoriaRepo;
+    private final UsuarioRepository usuarioRepo;
+    private final RefreshTokenRepository refreshRepo;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final RbacBootstrap rbacBootstrap;
+    private final PerfilRepository perfilRepo;
 
-  public AuthService(
-      AssessoriaRepository assessoriaRepo,
-      UsuarioRepository usuarioRepo,
-      RefreshTokenRepository refreshRepo,
-      JwtService jwtService,
-      PasswordEncoder passwordEncoder,
-      RbacBootstrap rbacBootstrap,
-      PerfilRepository perfilRepo) {
-    this.assessoriaRepo = assessoriaRepo;
-    this.usuarioRepo = usuarioRepo;
-    this.refreshRepo = refreshRepo;
-    this.jwtService = jwtService;
-    this.passwordEncoder = passwordEncoder;
-    this.rbacBootstrap = rbacBootstrap;
-    this.perfilRepo = perfilRepo;
-  }
-
-  @Transactional
-  public TokenPair signup(
-      String assessoriaNome, String slug, String email, String senha, HttpServletRequest req) {
-    if (assessoriaRepo.existsBySlug(slug)) {
-      throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
-    }
-    if (usuarioRepo.findByEmail(email).isPresent()) {
-      throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já está cadastrado.");
+    public AuthService(
+            AssessoriaRepository assessoriaRepo,
+            UsuarioRepository usuarioRepo,
+            RefreshTokenRepository refreshRepo,
+            JwtService jwtService,
+            PasswordEncoder passwordEncoder,
+            RbacBootstrap rbacBootstrap,
+            PerfilRepository perfilRepo) {
+        this.assessoriaRepo = assessoriaRepo;
+        this.usuarioRepo = usuarioRepo;
+        this.refreshRepo = refreshRepo;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.rbacBootstrap = rbacBootstrap;
+        this.perfilRepo = perfilRepo;
     }
 
-    Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
+    @Transactional
+    public TokenPair signup(
+            String assessoriaNome,
+            String slug,
+            String email,
+            String senha,
+            HttpServletRequest req) {
+        if (assessoriaRepo.existsBySlug(slug)) {
+            throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
+        }
+        if (usuarioRepo.findByEmail(email).isPresent()) {
+            throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já está cadastrado.");
+        }
 
-    // Seed perfis (Owner, Assessor, Leitor) e atribui Owner ao usuário recém-criado.
-    Perfil ownerProfile = rbacBootstrap.seedAssessoria(assessoria.getId());
+        Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
 
-    Usuario owner = new Usuario(
-        assessoria.getId(),
-        email,
-        passwordEncoder.encode(senha),
-        Usuario.Role.OWNER);
-    owner.setProfileId(ownerProfile.getId());
-    owner = usuarioRepo.save(owner);
+        // Seed perfis (Owner, Assessor, Leitor) e atribui Owner ao usuário recém-criado.
+        Perfil ownerProfile = rbacBootstrap.seedAssessoria(assessoria.getId());
 
-    return issueTokenPair(owner, assessoria.getId(), req);
-  }
+        Usuario owner =
+                new Usuario(
+                        assessoria.getId(),
+                        email,
+                        passwordEncoder.encode(senha),
+                        Usuario.Role.OWNER);
+        owner.setProfileId(ownerProfile.getId());
+        owner = usuarioRepo.save(owner);
 
-  @Transactional
-  public TokenPair login(String email, String senha, HttpServletRequest req) {
-    Usuario usuario =
-        usuarioRepo
-            .findByEmail(email)
-            .filter(u -> u.getDeletedAt() == null)
-            .orElseThrow(() -> BusinessException.unauthorized("Credenciais inválidas."));
-
-    if (!passwordEncoder.matches(senha, usuario.getSenhaHash())) {
-      throw BusinessException.unauthorized("Credenciais inválidas.");
+        return issueTokenPair(owner, assessoria.getId(), req);
     }
 
-    usuario.setUltimoLoginEm(Instant.now());
-    usuarioRepo.save(usuario);
+    @Transactional
+    public TokenPair login(String email, String senha, HttpServletRequest req) {
+        Usuario usuario =
+                usuarioRepo
+                        .findByEmail(email)
+                        .filter(u -> u.getDeletedAt() == null)
+                        .orElseThrow(
+                                () -> BusinessException.unauthorized("Credenciais inválidas."));
 
-    return issueTokenPair(usuario, usuario.getAssessoriaId(), req);
-  }
+        if (!passwordEncoder.matches(senha, usuario.getSenhaHash())) {
+            throw BusinessException.unauthorized("Credenciais inválidas.");
+        }
 
-  @Transactional
-  public TokenPair refresh(String rawToken, HttpServletRequest req) {
-    String hash = sha256(rawToken);
-    RefreshToken stored =
+        usuario.setUltimoLoginEm(Instant.now());
+        usuarioRepo.save(usuario);
+
+        return issueTokenPair(usuario, usuario.getAssessoriaId(), req);
+    }
+
+    @Transactional
+    public TokenPair refresh(String rawToken, HttpServletRequest req) {
+        String hash = sha256(rawToken);
+        RefreshToken stored =
+                refreshRepo
+                        .findByTokenHash(hash)
+                        .orElseThrow(() -> BusinessException.unauthorized("Token inválido."));
+
+        if (!stored.isValid()) {
+            // Reuse detected — revoke entire family (token theft protection)
+            refreshRepo.revokeFamily(stored.getFamilyId());
+            throw BusinessException.unauthorized("Token revogado. Faça login novamente.");
+        }
+
+        stored.setRevokedAt(Instant.now());
+
+        Usuario usuario =
+                usuarioRepo
+                        .findById(stored.getUsuarioId())
+                        .orElseThrow(
+                                () -> BusinessException.unauthorized("Usuário não encontrado."));
+
+        String newRaw = UUID.randomUUID().toString();
+        RefreshToken newToken =
+                new RefreshToken(
+                        sha256(newRaw),
+                        stored.getUsuarioId(),
+                        stored.getAssessoriaId(),
+                        stored.getFamilyId(),
+                        Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
+                        req.getHeader("User-Agent"),
+                        req.getRemoteAddr());
+
+        stored.setReplacedBy(newToken.getId());
+        refreshRepo.save(stored);
+        refreshRepo.save(newToken);
+
+        String accessToken =
+                jwtService.generateAccessToken(
+                        usuario.getId(),
+                        stored.getAssessoriaId(),
+                        usuario.getRole().name(),
+                        permissionsOf(usuario));
+
+        return new TokenPair(accessToken, newRaw);
+    }
+
+    @Transactional
+    public void logout(String rawToken) {
         refreshRepo
-            .findByTokenHash(hash)
-            .orElseThrow(() -> BusinessException.unauthorized("Token inválido."));
-
-    if (!stored.isValid()) {
-      // Reuse detected — revoke entire family (token theft protection)
-      refreshRepo.revokeFamily(stored.getFamilyId());
-      throw BusinessException.unauthorized("Token revogado. Faça login novamente.");
+                .findByTokenHash(sha256(rawToken))
+                .ifPresent(rt -> refreshRepo.revokeFamily(rt.getFamilyId()));
     }
 
-    stored.setRevokedAt(Instant.now());
+    // ---- helpers ----
 
-    Usuario usuario =
-        usuarioRepo
-            .findById(stored.getUsuarioId())
-            .orElseThrow(() -> BusinessException.unauthorized("Usuário não encontrado."));
+    private TokenPair issueTokenPair(Usuario usuario, UUID assessoriaId, HttpServletRequest req) {
+        String rawRefresh = UUID.randomUUID().toString();
+        UUID familyId = UUID.randomUUID();
 
-    String newRaw = UUID.randomUUID().toString();
-    RefreshToken newToken =
-        new RefreshToken(
-            sha256(newRaw),
-            stored.getUsuarioId(),
-            stored.getAssessoriaId(),
-            stored.getFamilyId(),
-            Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
-            req.getHeader("User-Agent"),
-            req.getRemoteAddr());
+        RefreshToken refreshToken =
+                new RefreshToken(
+                        sha256(rawRefresh),
+                        usuario.getId(),
+                        assessoriaId,
+                        familyId,
+                        Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
+                        req.getHeader("User-Agent"),
+                        req.getRemoteAddr());
+        refreshRepo.save(refreshToken);
 
-    stored.setReplacedBy(newToken.getId());
-    refreshRepo.save(stored);
-    refreshRepo.save(newToken);
+        String accessToken =
+                jwtService.generateAccessToken(
+                        usuario.getId(),
+                        assessoriaId,
+                        usuario.getRole().name(),
+                        permissionsOf(usuario));
 
-    String accessToken =
-        jwtService.generateAccessToken(
-            usuario.getId(),
-            stored.getAssessoriaId(),
-            usuario.getRole().name(),
-            permissionsOf(usuario));
-
-    return new TokenPair(accessToken, newRaw);
-  }
-
-  @Transactional
-  public void logout(String rawToken) {
-    refreshRepo
-        .findByTokenHash(sha256(rawToken))
-        .ifPresent(rt -> refreshRepo.revokeFamily(rt.getFamilyId()));
-  }
-
-  // ---- helpers ----
-
-  private TokenPair issueTokenPair(Usuario usuario, UUID assessoriaId, HttpServletRequest req) {
-    String rawRefresh = UUID.randomUUID().toString();
-    UUID familyId = UUID.randomUUID();
-
-    RefreshToken refreshToken =
-        new RefreshToken(
-            sha256(rawRefresh),
-            usuario.getId(),
-            assessoriaId,
-            familyId,
-            Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
-            req.getHeader("User-Agent"),
-            req.getRemoteAddr());
-    refreshRepo.save(refreshToken);
-
-    String accessToken =
-        jwtService.generateAccessToken(
-            usuario.getId(), assessoriaId, usuario.getRole().name(), permissionsOf(usuario));
-
-    return new TokenPair(accessToken, rawRefresh);
-  }
-
-  private Set<String> permissionsOf(Usuario usuario) {
-    if (usuario.getProfileId() == null) return Set.of();
-    return perfilRepo
-        .findById(usuario.getProfileId())
-        .map(Perfil::rolesAsSet)
-        .orElse(Set.of());
-  }
-
-  static String sha256(String input) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-      return HexFormat.of().formatHex(hash);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+        return new TokenPair(accessToken, rawRefresh);
     }
-  }
 
-  public record TokenPair(String accessToken, String refreshToken) {}
+    private Set<String> permissionsOf(Usuario usuario) {
+        if (usuario.getProfileId() == null) return Set.of();
+        return perfilRepo.findById(usuario.getProfileId()).map(Perfil::rolesAsSet).orElse(Set.of());
+    }
+
+    static String sha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public record TokenPair(String accessToken, String refreshToken) {}
 }

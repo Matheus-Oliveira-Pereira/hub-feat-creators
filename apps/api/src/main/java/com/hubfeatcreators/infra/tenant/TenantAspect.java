@@ -11,37 +11,38 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Runs inside every @Transactional boundary (order=3, @Transactional is order=2).
- * Sets the Hibernate tenant_filter and Postgres SET LOCAL so RLS picks it up.
+ * Runs inside every @Transactional boundary (order=3, @Transactional is order=2). Sets the
+ * Hibernate tenant_filter and Postgres SET LOCAL so RLS picks it up.
  */
 @Aspect
 @Component
 @Order(3)
 public class TenantAspect {
 
-  @PersistenceContext private EntityManager em;
+    @PersistenceContext private EntityManager em;
 
-  @Before(
-      "@within(org.springframework.transaction.annotation.Transactional)"
-          + " || @annotation(org.springframework.transaction.annotation.Transactional)")
-  public void applyTenant() {
-    UUID assessoriaId = TenantContext.getAssessoriaId();
-    if (assessoriaId == null) return;
+    @Before(
+            "@within(org.springframework.transaction.annotation.Transactional)"
+                    + " || @annotation(org.springframework.transaction.annotation.Transactional)")
+    public void applyTenant() {
+        UUID assessoriaId = TenantContext.getAssessoriaId();
+        if (assessoriaId == null) return;
 
-    Session session = em.unwrap(Session.class);
+        Session session = em.unwrap(Session.class);
 
-    Filter filter = session.enableFilter("tenant_filter");
-    filter.setParameter("assessoriaId", assessoriaId);
+        Filter filter = session.enableFilter("tenant_filter");
+        filter.setParameter("assessoriaId", assessoriaId);
 
-    // SET LOCAL scopes to current transaction — safe with connection pooling
-    final String id = assessoriaId.toString();
-    session.doWork(
-        conn -> {
-          try (var stmt =
-              conn.prepareStatement("SELECT set_config('app.assessoria_id', ?, true)")) {
-            stmt.setString(1, id);
-            stmt.execute();
-          }
-        });
-  }
+        // SET LOCAL scopes to current transaction — safe with connection pooling
+        final String id = assessoriaId.toString();
+        session.doWork(
+                conn -> {
+                    try (var stmt =
+                            conn.prepareStatement(
+                                    "SELECT set_config('app.assessoria_id', ?, true)")) {
+                        stmt.setString(1, id);
+                        stmt.execute();
+                    }
+                });
+    }
 }

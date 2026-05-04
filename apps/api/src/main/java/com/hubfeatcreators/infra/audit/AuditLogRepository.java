@@ -5,7 +5,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
-  List<AuditLog> findByEntidadeIdOrderByCreatedAtDesc(UUID entidadeId);
-  List<AuditLog> findByAssessoriaIdAndEntidadeAndEntidadeIdOrderByCreatedAtDesc(
-      UUID assessoriaId, String entidade, UUID entidadeId);
+    List<AuditLog> findByEntidadeIdOrderByCreatedAtDesc(UUID entidadeId);
+
+    List<AuditLog> findByAssessoriaIdAndEntidadeAndEntidadeIdOrderByCreatedAtDesc(
+            UUID assessoriaId, String entidade, UUID entidadeId);
 }

@@ -9,10 +9,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface PerfilRepository extends JpaRepository<Perfil, UUID> {
 
-  List<Perfil> findAllByAssessoriaId(UUID assessoriaId);
+    List<Perfil> findAllByAssessoriaId(UUID assessoriaId);
 
-  Optional<Perfil> findByAssessoriaIdAndNome(UUID assessoriaId, String nome);
+    Optional<Perfil> findByAssessoriaIdAndNome(UUID assessoriaId, String nome);
 
-  @Query("SELECT COUNT(u) FROM Usuario u WHERE u.profileId = :perfilId AND u.deletedAt IS NULL")
-  long countUsuariosUsando(@Param("perfilId") UUID perfilId);
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.profileId = :perfilId AND u.deletedAt IS NULL")
+    long countUsuariosUsando(@Param("perfilId") UUID perfilId);
 }

@@ -20,47 +20,54 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-  @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService)
-      throws Exception {
-    http.csrf(csrf -> csrf.disable())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(new MdcFilter(), UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
-        .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(
-                        "/actuator/health/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/api/v1/auth/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated());
-    return http.build();
-  }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService)
+            throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new MdcFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/actuator/health/**",
+                                                "/v3/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/api/v1/auth/**",
+                                                "/api/v1/email/track/**",
+                                                "/api/v1/email/unsubscribe")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated());
+        return http.build();
+    }
 
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(java.util.List.of("http://localhost:3000"));
-    configuration.setAllowedMethods(
-        java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(java.util.List.of("*"));
-    configuration.setExposedHeaders(
-        java.util.List.of(
-            "Content-Length", "X-Request-Id", "X-Total-Count", "X-Has-More", "Location"));
-    configuration.setAllowCredentials(true);
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(java.util.List.of("http://localhost:3000"));
+        configuration.setAllowedMethods(
+                java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(java.util.List.of("*"));
+        configuration.setExposedHeaders(
+                java.util.List.of(
+                        "Content-Length",
+                        "X-Request-Id",
+                        "X-Total-Count",
+                        "X-Has-More",
+                        "Location"));
+        configuration.setAllowCredentials(true);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-  }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }

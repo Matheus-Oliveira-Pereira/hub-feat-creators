@@ -132,10 +132,12 @@ Detalhes em ADR-004 e `docs/specs/code-review-gates.md`.
 - `app/(app)/influenciadores`, `app/(app)/marcas` → listagens cards/tabela + drawer detalhe + modal create
 - `app/(app)/prospeccao` → kanban (`@dnd-kit`) + lista + drawer com tabs + modais
 - `app/(app)/tarefas` → lista + agenda semanal + drawer detalhe + modal criar (PRD-003)
+- `app/(app)/email` → tabs: Envios / Templates / Contas SMTP / Layout — compose modal (PRD-004)
 - `app/(app)/perfis` → CRUD de perfis RBAC com checkboxes agrupados por entidade
 - `components/ui/` → primitives shadcn (button, input, textarea, select, checkbox, dialog, sheet, dropdown-menu, command, tabs, popover, tags-input, etc.)
 - `components/app/` → shell e blocos compostos (sidebar, topbar, command-palette, page-header, filter-bar, entity-form-modal, stat-card, empty-state, prospeccao-kanban, prospeccao-detail-sheet, tarefa-detail-sheet, tarefa-agenda)
-- `components/forms/` → form modais por entidade (influenciador, marca, contato, perfil, prospeccao, fechar-perdida, tarefa)
+- `components/forms/` → form modais por entidade (influenciador, marca, contato, perfil, prospeccao, fechar-perdida, tarefa, email-account, email-template, email-compose)
+- `components/app/email-layout-editor.tsx` → editor HTML cabeçalho/rodapé por assessoria
 - `components/auth/can.tsx` → componente RBAC `<Can role="...">` para esconder UI sem permissão
 - `components/brand/` → logo
 - `lib/api.ts` → fetch client + tipos por entidade (influenciador, marca, contato, perfil, prospeccao)
@@ -165,7 +167,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `prospeccao/` → state machine + endpoints + métricas (PRD-002, ADR-015 visibility)
 - ✅ `rbac/` → roles 4-letter + perfis + aspect (PRD-005, ADR-015)
 - ✅ `tarefas/` → CRUD + scheduler digest + alertas in-app (PRD-003, ADR-010)
-- ⏳ `email/` → SMTP relay multi-conta (Jakarta Mail) — ADR-005
+- ✅ `email/` → SMTP relay multi-conta (Jakarta Mail, AES-GCM, Mustache templates, opt-out, tracking) — PRD-004, ADR-005
 - ⏳ `whatsapp/` → Cloud API oficial Meta — ADR-006
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
@@ -213,6 +215,9 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **Tarefa prazo default**: quando usuária escolhe só data (sem hora), default é `23:59` do dia — definido em `toFormDefaults()` no form modal
 - **DigestJobHandler sem destinatário**: handler loga o digest mas não envia e-mail real até integração com PRD-004 (e-mail outbound); `enviado_para` resolvido por `UserRepository` quando disponível
 - **State machine tarefas**: `FEITA → TODO` limpa `concluida_em`; editar tarefa com status terminal (`FEITA|CANCELADA`) retorna HTTP 422
+- **EmailSendJobHandler circuit breaker**: falhas auth SMTP incrementadas por `registrarFalhaAuthById()`; janela de 10min; 3 falhas → `FALHA_AUTH`. Resetado ao testar conexão com sucesso
+- **Email tracking pixel**: `EmailTrackingController` é público (sem JWT) — endpoints `/api/v1/email/track/*` e `/api/v1/email/unsubscribe` devem estar permitidos em `SecurityConfig.permitAll()`
+- **GreenMail em ITs**: `greenmail-junit5` v2.1.2 — `ServerSetupTest.SMTP` usa porta aleatória para evitar conflito; `IntegrationTestBase` configura `spring.mail.port` como `2525` (fixo) — no `EmailIT` a porta vem de `ServerSetupTest.SMTP.getPort()` diretamente
 - **`@RequirePermission` em controllers novos**: sempre anotar; aspect `RequirePermissionAspect @Order(1)` é separado do `TenantAspect @Order(3)` — não exige transação ativa, só `SecurityContext` populado pelo `JwtAuthFilter`. Falta da anotação = endpoint público (cuidado)
 - **Mudança de perfil só propaga no próximo refresh JWT** (até 60 min): documentado em ADR-015. Se UX virar dor, evento via websocket Fase 2
 - **State machine de prospecção**: matriz fixa em `ProspeccaoStateMachine.java` espelhada em `lib/prospeccao.ts` — quando alterar uma, alterar a outra. Transição inválida → HTTP 422

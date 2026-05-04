@@ -10,19 +10,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface InfluenciadorRepository extends JpaRepository<Influenciador, UUID> {
 
-  Optional<Influenciador> findByIdAndDeletedAtIsNull(UUID id);
+    Optional<Influenciador> findByIdAndDeletedAtIsNull(UUID id);
 
-  @Query(
-      """
+    @Query(
+            """
       SELECT i FROM Influenciador i
       WHERE i.deletedAt IS NULL
         AND (:nome IS NULL OR LOWER(i.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
         AND (:nicho IS NULL OR i.nicho = :nicho)
       ORDER BY i.createdAt DESC
       """)
-  Page<Influenciador> search(
-      @Param("nome") String nome, @Param("nicho") String nicho, Pageable pageable);
+    Page<Influenciador> search(
+            @Param("nome") String nome, @Param("nicho") String nicho, Pageable pageable);
 
-  @Query("SELECT i FROM Influenciador i WHERE i.deletedAt IS NULL ORDER BY i.createdAt DESC")
-  java.util.List<Influenciador> findAllActiveForExport();
+    @Query("SELECT i FROM Influenciador i WHERE i.deletedAt IS NULL ORDER BY i.createdAt DESC")
+    java.util.List<Influenciador> findAllActiveForExport();
 }

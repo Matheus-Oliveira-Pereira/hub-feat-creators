@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProspeccaoEventoRepository extends JpaRepository<ProspeccaoEvento, UUID> {
 
-  List<ProspeccaoEvento> findByProspeccaoIdOrderByCreatedAtDesc(UUID prospeccaoId);
+    List<ProspeccaoEvento> findByProspeccaoIdOrderByCreatedAtDesc(UUID prospeccaoId);
 }

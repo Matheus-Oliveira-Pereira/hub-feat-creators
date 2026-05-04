@@ -6,8 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record ContatoRequest(
-    @NotNull UUID marcaId,
-    @NotBlank String nome,
-    @Email String email,
-    String telefone,
-    String cargo) {}
+        @NotNull UUID marcaId,
+        @NotBlank String nome,
+        @Email String email,
+        String telefone,
+        String cargo) {}

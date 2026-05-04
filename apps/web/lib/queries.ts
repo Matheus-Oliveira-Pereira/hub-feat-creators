@@ -15,6 +15,7 @@ import {
   perfis,
   prospeccoes,
   tarefas,
+  email,
   Influenciador,
   Marca,
   Contato,
@@ -33,6 +34,15 @@ import {
   ProspeccaoStatus,
   MotivoPerda,
   PageResponse,
+  EmailAccount,
+  EmailAccountPayload,
+  EmailAccountUpdatePayload,
+  EmailTemplate,
+  EmailTemplatePayload,
+  EmailLayout,
+  EmailEnvio,
+  EmailEnvioPayload,
+  EmailEvento,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
@@ -81,6 +91,16 @@ export const qk = {
     comentarios: (id: string) => ['tarefas', 'comentarios', id] as const,
     alerta: ['tarefas', 'alerta'] as const,
     preferencias: ['tarefas', 'preferencias'] as const,
+  },
+  email: {
+    accounts: ['email', 'accounts'] as const,
+    account: (id: string) => ['email', 'accounts', id] as const,
+    templates: ['email', 'templates'] as const,
+    template: (id: string) => ['email', 'templates', id] as const,
+    layout: ['email', 'layout'] as const,
+    envios: (params?: object) => ['email', 'envios', params] as const,
+    envio: (id: string) => ['email', 'envios', id] as const,
+    eventos: (id: string) => ['email', 'envios', id, 'eventos'] as const,
   },
 };
 
@@ -579,5 +599,135 @@ export function useUpdatePreferencias() {
     mutationFn: (digestDiarioEnabled: boolean) =>
       tarefas.updatePreferencias(digestDiarioEnabled),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.tarefas.preferencias }),
+  });
+}
+
+// ─── Email ─────────────────────────────────────────────────────────────────
+
+export function useEmailAccounts() {
+  return useQuery({ queryKey: qk.email.accounts, queryFn: () => email.accounts.list() });
+}
+
+export function useEmailAccount(id: string) {
+  return useQuery({ queryKey: qk.email.account(id), queryFn: () => email.accounts.get(id) });
+}
+
+export function useCreateEmailAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: EmailAccountPayload) => email.accounts.create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.accounts }),
+  });
+}
+
+export function useUpdateEmailAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: EmailAccountUpdatePayload }) =>
+      email.accounts.update(id, data),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.email.accounts });
+      qc.invalidateQueries({ queryKey: qk.email.account(id) });
+    },
+  });
+}
+
+export function useDeleteEmailAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => email.accounts.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.accounts }),
+  });
+}
+
+export function useTestEmailAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => email.accounts.test(id),
+    onSuccess: (_data, id) => qc.invalidateQueries({ queryKey: qk.email.account(id) }),
+  });
+}
+
+export function useEmailTemplates() {
+  return useQuery({ queryKey: qk.email.templates, queryFn: () => email.templates.list() });
+}
+
+export function useEmailTemplate(id: string) {
+  return useQuery({ queryKey: qk.email.template(id), queryFn: () => email.templates.get(id), enabled: !!id });
+}
+
+export function useCreateEmailTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: EmailTemplatePayload) => email.templates.create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.templates }),
+  });
+}
+
+export function useUpdateEmailTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<EmailTemplatePayload> }) =>
+      email.templates.update(id, data),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.email.templates });
+      qc.invalidateQueries({ queryKey: qk.email.template(id) });
+    },
+  });
+}
+
+export function useDeleteEmailTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => email.templates.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.templates }),
+  });
+}
+
+export function usePreviewEmailTemplate() {
+  return useMutation({
+    mutationFn: ({ id, vars }: { id: string; vars: Record<string, unknown> }) =>
+      email.templates.preview(id, vars),
+  });
+}
+
+export function useEmailLayout() {
+  return useQuery({ queryKey: qk.email.layout, queryFn: () => email.layout.get() });
+}
+
+export function useSaveEmailLayout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Pick<EmailLayout, 'headerHtml' | 'footerHtml'>>) =>
+      email.layout.save(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.layout }),
+  });
+}
+
+export function useEmailEnvios(params?: { contexto?: string; page?: number; size?: number }) {
+  return useQuery({
+    queryKey: qk.email.envios(params),
+    queryFn: () => email.envios.list(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useEmailEnvio(id: string) {
+  return useQuery({ queryKey: qk.email.envio(id), queryFn: () => email.envios.get(id), enabled: !!id });
+}
+
+export function useSendEmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: EmailEnvioPayload) => email.envios.send(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.envios() }),
+  });
+}
+
+export function useEmailEventos(envioId: string) {
+  return useQuery({
+    queryKey: qk.email.eventos(envioId),
+    queryFn: () => email.envios.eventos(envioId),
+    enabled: !!envioId,
   });
 }

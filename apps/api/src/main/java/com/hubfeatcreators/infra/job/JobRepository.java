@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface JobRepository extends JpaRepository<Job, UUID> {
 
-  @Query(
-      value =
-          """
+    @Query(
+            value =
+                    """
           SELECT * FROM jobs
           WHERE status = 'PENDENTE'
             AND proxima_tentativa_em <= :now
@@ -18,6 +18,6 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
           LIMIT :limit
           FOR UPDATE SKIP LOCKED
           """,
-      nativeQuery = true)
-  List<Job> pickupPending(Instant now, int limit);
+            nativeQuery = true)
+    List<Job> pickupPending(Instant now, int limit);
 }

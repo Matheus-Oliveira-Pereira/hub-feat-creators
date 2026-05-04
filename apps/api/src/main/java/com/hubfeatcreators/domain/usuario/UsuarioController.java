@@ -15,27 +15,27 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController {
 
-  private final UsuarioRepository usuarioRepo;
+    private final UsuarioRepository usuarioRepo;
 
-  public UsuarioController(UsuarioRepository usuarioRepo) {
-    this.usuarioRepo = usuarioRepo;
-  }
-
-  public record AtribuirPerfilRequest(@NotNull UUID profileId) {}
-
-  @PatchMapping("/{id}/profile")
-  @RequirePermission(PermissionCodes.E_USU)
-  @Transactional
-  public void atribuirPerfil(
-      @AuthenticationPrincipal AuthPrincipal principal,
-      @PathVariable UUID id,
-      @Valid @RequestBody AtribuirPerfilRequest req) {
-    Usuario u =
-        usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
-    if (!u.getAssessoriaId().equals(principal.assessoriaId())) {
-      throw BusinessException.notFound("USUARIO");
+    public UsuarioController(UsuarioRepository usuarioRepo) {
+        this.usuarioRepo = usuarioRepo;
     }
-    u.setProfileId(req.profileId());
-    usuarioRepo.save(u);
-  }
+
+    public record AtribuirPerfilRequest(@NotNull UUID profileId) {}
+
+    @PatchMapping("/{id}/profile")
+    @RequirePermission(PermissionCodes.E_USU)
+    @Transactional
+    public void atribuirPerfil(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID id,
+            @Valid @RequestBody AtribuirPerfilRequest req) {
+        Usuario u =
+                usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        if (!u.getAssessoriaId().equals(principal.assessoriaId())) {
+            throw BusinessException.notFound("USUARIO");
+        }
+        u.setProfileId(req.profileId());
+        usuarioRepo.save(u);
+    }
 }
