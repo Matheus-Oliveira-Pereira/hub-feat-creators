@@ -175,3 +175,33 @@ prospeccao_eventos (
 - [ ] Comentários: editáveis ou imutáveis? — imutáveis (audit-friendly); permitir delete soft pelo autor
 - [ ] Reabrir `FECHADA_GANHA`? — não no MVP (terminal). Se cair, criar nova prospecção
 - [ ] Quem pode editar prospecção de outro assessor? — OWNER sim; ASSESSOR só as próprias? Definir antes de implementar
+
+---
+
+## Notas de implementação (post-mortem)
+
+> Adicionado em 2026-05-03, após implementação da Fase I (commits `b4b206d..c31f5f6`).
+
+### O que foi entregue
+- **Backend** (I1–I5): schema V4, entidades + state machine matrizada, `@RequirePermission` integrado, métricas Micrometer, export CSV streaming, IT smoke (CRUD + state machine + cross-tenant + comentários).
+- **Frontend** (I6–I9): api/schemas/queries com `inputToProspeccaoPayload` (BRL→centavos), kanban com `@dnd-kit/core` (drop válido ilumina coluna, inválido opacifica, FECHADA_PERDIDA dispara modal motivo), drawer detalhe com Tabs (Dados/Timeline/Comentários), dashboard com 4 KPIs reais + funil colorido.
+- **Docs** (I10): spec `docs/specs/prospeccao/`, CLAUDE.md atualizado, este apêndice.
+
+### Decisões implementadas
+- **Visibilidade**: ASSESSOR vê `created_by = me OR assessor_responsavel_id = me` (PRD-005 cenários 1+2). Resposta 404 fora do escopo.
+- **Audit log UPDATE**: registra `{titulo}` apenas (não diff completo). PRD-002 AC-9 pediu diff — adiável.
+- **Visualização padrão**: kanban em vez de lista. Toggle disponível.
+- **Card click**: abre drawer detalhe (não direto edit). Drawer tem botão Editar.
+- **Dashboard**: substituiu funil placeholder pelo real; bar fill colore FECHADA_GANHA com primary lime, FECHADA_PERDIDA com destructive.
+
+### Pendências (tech debt aceito)
+- Filtros de assessor/marca/data range na UI (backend aceita).
+- Drag-and-drop por teclado AC-NF-4 (sensors prontos, falta UX explícito + ARIA).
+- Virtualização kanban AC-NF-2 (adia até > 200 cards reais).
+- Diff completo no audit UPDATE.
+- Edição inline `assessor_responsavel_id` no detail drawer.
+
+### Métricas
+- 10 commits (I1–I10), ~3000 linhas backend + frontend.
+- Build limpo: `./mvnw compile` ✓ + `pnpm build` ✓ (rota `/prospeccao` 26.2 kB).
+- IT compila sem Docker; rodada exige Testcontainers.

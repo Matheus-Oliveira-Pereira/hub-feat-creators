@@ -151,3 +151,33 @@ Migration backfill: para cada assessoria existente cria os 3 perfis seed; OWNER 
 - ADR-008 (auth/JWT — claim `permissions` adicionado)
 - ADR-009 (multi-tenant — perfis são scoped por assessoria)
 - ADR-015 (RBAC technical) — a criar
+
+---
+
+## Notas de implementação (post-mortem)
+
+> Adicionado em 2026-05-03, após implementação da Fase R (commits `c5be1ab..744d41d`).
+
+### O que foi entregue
+- **Backend** (R1–R3): migration V3 com perfis + `usuarios.profile_id` + `influenciadores.assessor_responsavel_id` + backfill de seeds, entidade `Perfil` + `RbacBootstrap`, aspect `@RequirePermission` + `RequirePermissionAspect`, JWT claim `perms`, `AuthPrincipal.hasPermission`, `PerfilController` CRUD + `PATCH /usuarios/{id}/profile`, IT smoke.
+- **Frontend** (R4–R5): `lib/auth.ts` (decodeJwt + AuthProvider + usePermissions), `<Can>`, sidebar dinâmica, tela `/perfis` com checkboxes agrupados por entidade.
+
+### Decisões implementadas
+- 3 perfis seed (`Owner`, `Assessor`, `Leitor`) criados no signup + via backfill. Marcados `is_system=true` (não deletáveis, roles imutáveis).
+- `OWNER` coarse + role `OWNR` bypassam aspect — preserve compat PRD-001.
+- Token cresce ~200 bytes por causa do claim `perms`. Aceito.
+- `JwtService.generateAccessToken(...)` agora aceita `Collection<String> permissions` — compat com `AuthService` reescrito.
+- Mudança de perfil propaga só após próximo refresh do token (não imediato). Limitação MVP.
+
+### Códigos sincronizados manualmente
+`PermissionCodes.java` (backend) e `lib/rbac.ts` (frontend) listam roles. Adicionar role nova em ambos os lugares + spec `docs/specs/rbac/`. Sem code-gen.
+
+### Pendências
+- Override por usuário (negado por design).
+- Field-level (Fase 2).
+- Audit log de mudanças no perfil (plug fácil no `AuditLogService`).
+- Clonar perfil seed como ponto de partida (UI hoje força criar do zero).
+- Invalidação push do token via websocket.
+
+### Métricas
+- 6 commits R + 1 doc commit. Build limpo backend + frontend.

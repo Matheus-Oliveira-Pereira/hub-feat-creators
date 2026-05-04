@@ -128,13 +128,21 @@ Detalhes em ADR-004 e `docs/specs/code-review-gates.md`.
 ### Web architecture (`apps/web`)
 - `app/(auth)/` → login, signup (layout duo-painel hero+form)
 - `app/(app)/` → rotas autenticadas com AppShell (sidebar colapsável + topbar + Cmd+K)
-- `app/(app)/page.tsx` → dashboard home com KPIs + funil chart
-- `app/(app)/influenciadores`, `app/(app)/marcas` → listagens cards/tabela toggle + drawer detalhe + modal create
-- `components/ui/` → primitives shadcn (button, input, dialog, sheet, dropdown-menu, command, etc.)
-- `components/app/` → shell e blocos compostos (sidebar, topbar, command-palette, page-header, filter-bar, entity-form-modal, stat-card, empty-state)
+- `app/(app)/page.tsx` → dashboard home com KPIs reais + funil chart
+- `app/(app)/influenciadores`, `app/(app)/marcas` → listagens cards/tabela + drawer detalhe + modal create
+- `app/(app)/prospeccao` → kanban (`@dnd-kit`) + lista + drawer com tabs + modais
+- `app/(app)/perfis` → CRUD de perfis RBAC com checkboxes agrupados por entidade
+- `components/ui/` → primitives shadcn (button, input, dialog, sheet, dropdown-menu, command, tabs, popover, tags-input, etc.)
+- `components/app/` → shell e blocos compostos (sidebar, topbar, command-palette, page-header, filter-bar, entity-form-modal, stat-card, empty-state, prospeccao-kanban, prospeccao-detail-sheet)
+- `components/forms/` → form modais por entidade (influenciador, marca, contato, perfil, prospeccao, fechar-perdida)
+- `components/auth/can.tsx` → componente RBAC `<Can role="...">` para esconder UI sem permissão
 - `components/brand/` → logo
-- `components/theme-provider.tsx`, `theme-toggle.tsx` → next-themes
-- `lib/api.ts` → fetch client + tipos
+- `lib/api.ts` → fetch client + tipos por entidade (influenciador, marca, contato, perfil, prospeccao)
+- `lib/queries.ts` → hooks TanStack Query + `qk` query keys
+- `lib/schemas.ts` → schemas zod
+- `lib/auth.ts` → AuthProvider + decodeJwt + usePermissions/usePermission
+- `lib/rbac.ts` → catálogo de roles 4-letter (espelha `PermissionCodes.java`)
+- `lib/prospeccao.ts` → STATUS_LABEL/TONE/ORDER + isValidTransition (espelha state machine)
 - `lib/utils.ts` → `cn()` helper
 
 ## Modular Specifications
@@ -153,6 +161,8 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `api/` → REST conventions, paginação, erros, versionamento
 - ✅ `ai-ml/` → match marca↔influencer (futuro)
 - ✅ `long-term-memory/` → vector DB (L4)
+- ✅ `prospeccao/` → state machine + endpoints + métricas (PRD-002, ADR-015 visibility)
+- ✅ `rbac/` → roles 4-letter + perfis + aspect (PRD-005, ADR-015)
 - ⏳ `email/` → SMTP relay multi-conta (Jakarta Mail) — ADR-005
 - ⏳ `whatsapp/` → Cloud API oficial Meta — ADR-006
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
@@ -197,6 +207,11 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **typedRoutes**: `next.config.mjs` tem `experimental.typedRoutes: true` — `href` exige `Route` (`import { type Route } from 'next'` + cast `'/path' as Route`); rotas com querystring também
 - **Tailwind tokens via HSL**: cores em `globals.css` armazenam HSL components sem prefixo `hsl()` (ex: `--primary: 68 100% 44%`); `tailwind.config.ts` aplica `hsl(var(--primary))` — nunca hardcodear hex em componente
 - **Recharts SSR**: warning "width/height -1" no prerender é benigno (container tem 0px no momento da geração estática) — chart hidrata correto no cliente
+- **`@RequirePermission` em controllers novos**: sempre anotar; aspect `RequirePermissionAspect @Order(1)` é separado do `TenantAspect @Order(3)` — não exige transação ativa, só `SecurityContext` populado pelo `JwtAuthFilter`. Falta da anotação = endpoint público (cuidado)
+- **Mudança de perfil só propaga no próximo refresh JWT** (até 60 min): documentado em ADR-015. Se UX virar dor, evento via websocket Fase 2
+- **State machine de prospecção**: matriz fixa em `ProspeccaoStateMachine.java` espelhada em `lib/prospeccao.ts` — quando alterar uma, alterar a outra. Transição inválida → HTTP 422
+- **Visibilidade ASSESSOR vs OWNER**: row-level filter aplicado no service, não via Hibernate `@Filter` (dependeria do principal). `findAllAssessor` usa predicate `created_by OR assessor_responsavel_id = me`. Tentativa fora do escopo retorna `404` (não vaza existência)
+- **Códigos 4-letter**: lista canônica em `PermissionCodes.java` + `lib/rbac.ts`. Sincronizar manualmente — sem code-gen
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:
