@@ -79,13 +79,27 @@ public class AppProperties {
         this.secrets = secrets;
     }
 
+    private Web web = new Web();
     private Features features = new Features();
+
+    public static class Web {
+        private String baseUrl = "http://localhost:3000";
+
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+    }
+
+    public Web getWeb() { return web; }
+    public void setWeb(Web web) { this.web = web; }
 
     public static class Features {
         private boolean complianceStrict = true;
+        private boolean signupEnabled = true;
 
         public boolean isComplianceStrict() { return complianceStrict; }
         public void setComplianceStrict(boolean complianceStrict) { this.complianceStrict = complianceStrict; }
+        public boolean isSignupEnabled() { return signupEnabled; }
+        public void setSignupEnabled(boolean signupEnabled) { this.signupEnabled = signupEnabled; }
     }
 
     public Features getFeatures() { return features; }

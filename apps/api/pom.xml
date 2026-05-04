@@ -114,7 +114,19 @@
             <version>0.9.11</version>
         </dependency>
 
-        <!-- Password hashing: BCrypt (built into spring-security) -->
+        <!-- Password hashing: Argon2id via Bouncy Castle (Spring Security crypto) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+
+        <!-- MFA TOTP (RFC 6238) -->
+        <dependency>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp-spring-boot-starter</artifactId>
+            <version>1.7.1</version>
+        </dependency>
 
         <!-- Async jobs / ShedLock -->
         <dependency>

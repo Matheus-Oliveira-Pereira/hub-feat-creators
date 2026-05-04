@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ConviteRepository extends JpaRepository<Convite, UUID> {
     Optional<Convite> findByToken(String token);
 
-    List<Convite> findByAssessoriaIdAndUsedAtIsNullAndExpiresAtAfter(
-            UUID assessoriaId, Instant now);
+    List<Convite> findByAssessoriaIdAndUsedAtIsNullAndExpiresAtAfter(UUID assessoriaId, Instant now);
+
+    List<Convite> findByAssessoriaIdAndUsedAtIsNull(UUID assessoriaId);
 }

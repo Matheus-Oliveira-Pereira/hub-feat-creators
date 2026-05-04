@@ -33,14 +33,24 @@ public class AuditLog {
     @Column(nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> payload;
 
+    @Column(name = "ip")
+    private String ip;
+
+    @Column(name = "user_agent")
+    private String userAgent;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     public enum Acao {
-        CREATE,
-        UPDATE,
-        DELETE,
-        RESTORE
+        CREATE, UPDATE, DELETE, RESTORE,
+        LOGIN, LOGIN_FAILED, LOGOUT,
+        EMAIL_VERIFIED,
+        PASSWORD_RESET_REQUEST, PASSWORD_RESET,
+        MFA_ENABLED, MFA_DISABLED, MFA_RECOVERY_USED,
+        INVITE_SENT, INVITE_ACCEPTED,
+        MEMBER_DEACTIVATED, MEMBER_ACTIVATED, MEMBER_REMOVED,
+        SIGNUP, LOCKOUT
     }
 
     public AuditLog() {}
@@ -60,35 +70,28 @@ public class AuditLog {
         this.payload = payload;
     }
 
-    public UUID getId() {
-        return id;
+    public AuditLog(
+            UUID assessoriaId,
+            UUID usuarioId,
+            String entidade,
+            UUID entidadeId,
+            Acao acao,
+            Map<String, Object> payload,
+            String ip,
+            String userAgent) {
+        this(assessoriaId, usuarioId, entidade, entidadeId, acao, payload);
+        this.ip = ip;
+        this.userAgent = userAgent;
     }
 
-    public UUID getAssessoriaId() {
-        return assessoriaId;
-    }
-
-    public UUID getUsuarioId() {
-        return usuarioId;
-    }
-
-    public String getEntidade() {
-        return entidade;
-    }
-
-    public UUID getEntidadeId() {
-        return entidadeId;
-    }
-
-    public Acao getAcao() {
-        return acao;
-    }
-
-    public Map<String, Object> getPayload() {
-        return payload;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public UUID getId() { return id; }
+    public UUID getAssessoriaId() { return assessoriaId; }
+    public UUID getUsuarioId() { return usuarioId; }
+    public String getEntidade() { return entidade; }
+    public UUID getEntidadeId() { return entidadeId; }
+    public Acao getAcao() { return acao; }
+    public Map<String, Object> getPayload() { return payload; }
+    public String getIp() { return ip; }
+    public String getUserAgent() { return userAgent; }
+    public Instant getCreatedAt() { return createdAt; }
 }

@@ -33,6 +33,18 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(code, message, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    public static BusinessException tooManyRequests(String code, String message) {
+        return new BusinessException(code, message, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    public static BusinessException gone(String code, String message) {
+        return new BusinessException(code, message, HttpStatus.GONE);
+    }
+
+    public static BusinessException forbidden(String code, String message) {
+        return new BusinessException(code, message, HttpStatus.FORBIDDEN);
+    }
+
     public String getCode() {
         return code;
     }

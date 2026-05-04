@@ -57,10 +57,55 @@ export const api = {
 // Auth
 export const auth = {
   signup: (data: { assessoriaNome: string; slug: string; email: string; senha: string }) =>
-    api.post<{ accessToken: string; refreshToken: string }>('/api/v1/auth/signup', data),
-  login: (data: { email: string; senha: string }) =>
+    api.post<{ email: string; emailVerificado: boolean }>('/api/v1/auth/signup', data),
+  login: (data: { email: string; senha: string; mfaCode?: string }) =>
     api.post<{ accessToken: string; refreshToken: string }>('/api/v1/auth/login', data),
   logout: (refreshToken: string) => api.post('/api/v1/auth/logout', { refreshToken }),
+  verifyEmail: (token: string) => api.post('/api/v1/auth/verify-email', { token }),
+  forgotPassword: (email: string) => api.post('/api/v1/auth/forgot-password', { email }),
+  resetPassword: (token: string, novaSenha: string) =>
+    api.post('/api/v1/auth/reset-password', { token, novaSenha }),
+  aceitarConvite: (token: string, senha: string) =>
+    api.post<{ id: string; email: string; role: string }>('/api/v1/auth/aceitar-convite', { token, senha }),
+  mfaSetup: () =>
+    api.post<{ secret: string; qrCodeUri: string; recoveryCodes: string[] }>('/api/v1/auth/mfa/setup', {}),
+  mfaActivate: (code: string) => api.post('/api/v1/auth/mfa/activate', { code }),
+  mfaDisable: (code: string) => api.post('/api/v1/auth/mfa/disable', { code }),
+};
+
+// Membros
+export interface Membro {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  mfaAtivo: boolean;
+  emailVerificado: boolean;
+  profileId: string | null;
+  ultimoLoginEm: string | null;
+  createdAt: string;
+}
+
+export const membros = {
+  list: () => api.get<Membro[]>('/api/v1/membros'),
+  setStatus: (id: string, status: string) =>
+    api.patch<Membro>(`/api/v1/membros/${id}/status`, { status }),
+  remove: (id: string) => api.delete(`/api/v1/membros/${id}`),
+};
+
+// Convites
+export interface ConviteItem {
+  id: string;
+  email: string;
+  role: string;
+  perfilId: string | null;
+  expiresAt: string;
+}
+
+export const convites = {
+  list: () => api.get<ConviteItem[]>('/api/v1/convites'),
+  criar: (data: { email: string; role?: string; perfilId?: string }) =>
+    api.post<ConviteItem>('/api/v1/convites', data),
 };
 
 export type BaseLegal = 'CONSENTIMENTO' | 'EXECUCAO_CONTRATO' | 'LEGITIMO_INTERESSE' | 'OBRIGACAO_LEGAL';

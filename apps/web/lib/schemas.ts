@@ -7,6 +7,7 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   email: z.string().trim().email('E-mail inválido'),
   senha: z.string().min(1, 'Senha obrigatória'),
+  mfaCode: z.string().optional(),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
@@ -25,6 +26,23 @@ export const signupSchema = z.object({
   senha: z.string().min(8, 'Mínimo 8 caracteres'),
 });
 export type SignupInput = z.infer<typeof signupSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('E-mail inválido'),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  novaSenha: z.string().min(8, 'Mínimo 8 caracteres'),
+  confirmar: z.string(),
+}).refine(d => d.novaSenha === d.confirmar, { message: 'Senhas não coincidem', path: ['confirmar'] });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const aceitarConviteSchema = z.object({
+  senha: z.string().min(8, 'Mínimo 8 caracteres'),
+  confirmar: z.string(),
+}).refine(d => d.senha === d.confirmar, { message: 'Senhas não coincidem', path: ['confirmar'] });
+export type AceitarConviteInput = z.infer<typeof aceitarConviteSchema>;
 
 // ────────────────────────────────────────────────────────────────────────────
 // LGPD — Base legal enum

@@ -168,6 +168,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `rbac/` → roles 4-letter + perfis + aspect (PRD-005, ADR-015)
 - ✅ `tarefas/` → CRUD + scheduler digest + alertas in-app (PRD-003, ADR-010)
 - ✅ `email/` → SMTP relay multi-conta (Jakarta Mail, AES-GCM, Mustache templates, opt-out, tracking) — PRD-004, ADR-005
+- ✅ `onboarding/` → signup self-service, email verify, lockout, MFA TOTP, convites, membros, Argon2id (PRD-006)
 - ⏳ `whatsapp/` → Cloud API oficial Meta — ADR-006
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
@@ -229,6 +230,12 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **BaseLegal obrigatória**: todas entidades com PII (influenciador, marca, contato) requerem `baseLegal` no create/update. `FEATURE_COMPLIANCE_STRICT=true` (default) → 422 sem campo
 - **ROPA seed em V7**: 4 registros de tratamento semeados na migration. Editar em `data_processing_records` via admin ou SQL — não via código Java
 - **DSR endpoints públicos**: `/api/v1/dsr/**` em `permitAll()` (SecurityConfig) — titular acessa sem JWT. Admin endpoints em `/api/v1/admin/compliance/**` requerem `OWNR`
+- **Argon2id troca BCrypt (V8)**: senhas criadas antes de V8 (BCrypt sem prefixo) não autenticam após migração. Backfill: usuários legados devem redefinir senha via `/forgot-password`. Novos hashes: Argon2id t=3/m=64MB/p=4
+- **Email verify obrigatório pós-signup**: login bloqueado até `email_verificado_em != null`. Legados: V8 migration backfills `email_verificado_em = created_at` para usuários existentes
+- **LoginLockout via `login_attempts`**: chave = `email.toLowerCase()`. 5 falhas/15min → lock 30min. Janela reseta se última tentativa > 15min. Limpa em login bem-sucedido
+- **MFA TOTP secret em claro (MVP)**: `mfa_secret_enc` armazena o secret sem AES-GCM por ora. Criptografia real: fase 2 usando `EmailCipherService` padrão
+- **`/api/v1/auth/aceitar-convite` público**: convites marcam `email_verificado_em = now()` — e-mail considerado verificado por ter recebido o convite
+- **Convite 7 dias vs 72h anterior**: V8 altera validade de convites para 7d (era 72h no ConviteService pré-PRD-006)
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:

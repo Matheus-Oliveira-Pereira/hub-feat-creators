@@ -27,4 +27,18 @@ public class AuditLogService {
             Map<String, Object> payload) {
         repository.save(new AuditLog(assessoriaId, usuarioId, entidade, entidadeId, acao, payload));
     }
+
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAuth(
+            UUID assessoriaId,
+            UUID usuarioId,
+            AuditLog.Acao acao,
+            Map<String, Object> payload,
+            String ip,
+            String userAgent) {
+        UUID targetId = usuarioId != null ? usuarioId : UUID.randomUUID();
+        repository.save(
+                new AuditLog(assessoriaId, usuarioId, "auth", targetId, acao, payload, ip, userAgent));
+    }
 }

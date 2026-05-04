@@ -29,8 +29,18 @@ public class Usuario {
     @Column(name = "profile_id")
     private UUID profileId;
 
-    @Column(name = "mfa_secret")
-    private String mfaSecret;
+    @Column(name = "mfa_secret_enc")
+    private String mfaSecretEnc;
+
+    @Column(name = "mfa_ativo", nullable = false)
+    private boolean mfaAtivo = false;
+
+    @Column(name = "email_verificado_em")
+    private Instant emailVerificadoEm;
+
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.ATIVO;
 
     @Column(name = "ultimo_login_em")
     private Instant ultimoLoginEm;
@@ -49,6 +59,12 @@ public class Usuario {
         ASSESSOR
     }
 
+    public enum Status {
+        ATIVO,
+        INATIVO,
+        BLOQUEADO
+    }
+
     public Usuario() {}
 
     public Usuario(UUID assessoriaId, String email, String senhaHash, Role role) {
@@ -58,71 +74,49 @@ public class Usuario {
         this.role = role;
     }
 
-    public UUID getId() {
-        return id;
+    public boolean isEmailVerificado() {
+        return emailVerificadoEm != null;
     }
 
-    public UUID getAssessoriaId() {
-        return assessoriaId;
+    public boolean isAtivo() {
+        return status == Status.ATIVO && deletedAt == null;
     }
 
-    public String getEmail() {
-        return email;
-    }
+    public UUID getId() { return id; }
+    public UUID getAssessoriaId() { return assessoriaId; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getSenhaHash() {
-        return senhaHash;
-    }
+    public String getSenhaHash() { return senhaHash; }
+    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
 
-    public void setSenhaHash(String senhaHash) {
-        this.senhaHash = senhaHash;
-    }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
-    public Role getRole() {
-        return role;
-    }
+    public UUID getProfileId() { return profileId; }
+    public void setProfileId(UUID profileId) { this.profileId = profileId; }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+    public String getMfaSecretEnc() { return mfaSecretEnc; }
+    public void setMfaSecretEnc(String mfaSecretEnc) { this.mfaSecretEnc = mfaSecretEnc; }
 
-    public UUID getProfileId() {
-        return profileId;
-    }
+    public boolean isMfaAtivo() { return mfaAtivo; }
+    public void setMfaAtivo(boolean mfaAtivo) { this.mfaAtivo = mfaAtivo; }
 
-    public void setProfileId(UUID profileId) {
-        this.profileId = profileId;
-    }
+    public Instant getEmailVerificadoEm() { return emailVerificadoEm; }
+    public void setEmailVerificadoEm(Instant emailVerificadoEm) { this.emailVerificadoEm = emailVerificadoEm; }
 
-    public Instant getUltimoLoginEm() {
-        return ultimoLoginEm;
-    }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
 
-    public void setUltimoLoginEm(Instant ultimoLoginEm) {
-        this.ultimoLoginEm = ultimoLoginEm;
-    }
+    public Instant getUltimoLoginEm() { return ultimoLoginEm; }
+    public void setUltimoLoginEm(Instant ultimoLoginEm) { this.ultimoLoginEm = ultimoLoginEm; }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public Instant getCreatedAt() { return createdAt; }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(Instant deletedAt) {
-        this.deletedAt = deletedAt;
-    }
+    public Instant getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
 }

@@ -31,6 +31,9 @@ public class Convite {
     @Column(name = "used_at")
     private Instant usedAt;
 
+    @Column(name = "perfil_id")
+    private UUID perfilId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -96,6 +99,9 @@ public class Convite {
     public void setCreatedBy(Usuario createdBy) {
         this.createdBy = createdBy;
     }
+
+    public UUID getPerfilId() { return perfilId; }
+    public void setPerfilId(UUID perfilId) { this.perfilId = perfilId; }
 
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);

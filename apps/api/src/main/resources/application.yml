@@ -65,5 +65,8 @@ app:
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
   secrets:
     email-key: ${EMAIL_KEY:dev-only-not-for-prod-32-byte-aes-key}
+  web:
+    base-url: ${WEB_BASE_URL:http://localhost:3000}
   features:
     compliance-strict: ${FEATURE_COMPLIANCE_STRICT:true}
+    signup-enabled: ${FEATURE_SIGNUP_ENABLED:true}

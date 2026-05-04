@@ -1,19 +1,18 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { setTokens } from '@/lib/api';
 import { signupSchema, type SignupInput } from '@/lib/schemas';
 import { useSignupMutation } from '@/lib/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { Route } from 'next';
 
 function autoSlug(nome: string) {
   return nome
@@ -26,8 +25,8 @@ function autoSlug(nome: string) {
 }
 
 export default function SignupPage() {
-  const router = useRouter();
   const signup = useSignupMutation();
+  const [email, setEmail] = React.useState<string | null>(null);
 
   const {
     register,
@@ -52,13 +51,34 @@ export default function SignupPage() {
 
   async function onSubmit(values: SignupInput) {
     try {
-      const tokens = await signup.mutateAsync(values);
-      setTokens(tokens.accessToken, tokens.refreshToken);
-      toast.success('Workspace criado!');
-      router.push('/');
+      await signup.mutateAsync(values);
+      setEmail(values.email);
     } catch (err: any) {
       toast.error(err?.error?.message ?? 'Erro ao criar conta.');
     }
+  }
+
+  if (email) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex flex-col items-center gap-4 text-center"
+      >
+        <Mail className="h-12 w-12 text-primary" />
+        <h1 className="font-display text-2xl font-bold">Quase lá!</h1>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Enviamos um link de verificação para <strong>{email}</strong>. Abra o e-mail e clique no link para ativar sua conta.
+        </p>
+        <Link
+          href={'/login' as Route}
+          className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Já verifiquei, ir para o login
+        </Link>
+      </motion.div>
+    );
   }
 
   return (
@@ -161,7 +181,7 @@ export default function SignupPage() {
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Já tem uma conta?{' '}
         <Link
-          href="/login"
+          href={'/login' as Route}
           className="font-medium text-foreground underline-offset-4 hover:underline"
         >
           Entrar
