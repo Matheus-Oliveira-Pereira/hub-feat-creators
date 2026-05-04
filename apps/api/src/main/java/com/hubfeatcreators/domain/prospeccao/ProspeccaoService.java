@@ -277,6 +277,36 @@ public class ProspeccaoService {
     return eventoRepo.findByProspeccaoIdOrderByCreatedAtDesc(prospeccaoId);
   }
 
+  // ─── Dashboard ─────────────────────────────────────────────────────────
+  public record DashboardSummary(
+      java.util.Map<ProspeccaoStatus, Long> porStatus,
+      long fechadasMes,
+      double taxaConversao,
+      double timeToCloseDiasMedio) {}
+
+  @Transactional(readOnly = true)
+  public DashboardSummary dashboard(AuthPrincipal principal) {
+    var counts = repo.contarPorStatus(principal.assessoriaId());
+    java.util.EnumMap<ProspeccaoStatus, Long> porStatus =
+        new java.util.EnumMap<>(ProspeccaoStatus.class);
+    for (ProspeccaoStatus s : ProspeccaoStatus.values()) porStatus.put(s, 0L);
+    for (var c : counts) porStatus.put(c.getStatus(), c.getTotal());
+
+    java.time.Instant inicioMes =
+        java.time.LocalDate.now()
+            .withDayOfMonth(1)
+            .atStartOfDay(java.time.ZoneOffset.UTC)
+            .toInstant();
+    long fechadasMes = repo.countFechadasDesde(principal.assessoriaId(), inicioMes);
+
+    long ganhas = porStatus.get(ProspeccaoStatus.FECHADA_GANHA);
+    long perdidas = porStatus.get(ProspeccaoStatus.FECHADA_PERDIDA);
+    double taxa = (ganhas + perdidas) == 0 ? 0d : (double) ganhas / (ganhas + perdidas);
+
+    Double ttc = repo.timeToCloseDiasMedio(principal.assessoriaId());
+    return new DashboardSummary(porStatus, fechadasMes, taxa, ttc != null ? ttc : 0d);
+  }
+
   // ─── Helpers ───────────────────────────────────────────────────────────
   private boolean canSeeAll(AuthPrincipal principal) {
     return "OWNER".equals(principal.role()) || principal.permissions().contains("OWNR");

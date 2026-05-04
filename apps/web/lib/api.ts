@@ -190,7 +190,15 @@ export interface ProspeccaoFiltros {
   nome?: string;
 }
 
+export interface ProspeccaoDashboard {
+  porStatus: Partial<Record<ProspeccaoStatus, number>>;
+  fechadasMes: number;
+  taxaConversao: number;
+  timeToCloseDiasMedio: number;
+}
+
 export const prospeccoes = {
+  dashboard: () => api.get<ProspeccaoDashboard>('/api/v1/prospeccoes/dashboard'),
   list: (params: ProspeccaoFiltros & { cursor?: string; size?: number } = {}) => {
     const q = new URLSearchParams();
     if (params.status) q.set('status', params.status);

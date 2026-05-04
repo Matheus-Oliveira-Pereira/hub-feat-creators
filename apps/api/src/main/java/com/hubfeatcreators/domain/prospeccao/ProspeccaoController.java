@@ -90,6 +90,13 @@ public class ProspeccaoController {
     return PageResponse.of(data, cursor, size);
   }
 
+  @GetMapping("/dashboard")
+  @RequirePermission(PermissionCodes.B_REL)
+  public ProspeccaoService.DashboardSummary dashboard(
+      @AuthenticationPrincipal AuthPrincipal principal) {
+    return service.dashboard(principal);
+  }
+
   @GetMapping("/{id}")
   @RequirePermission(PermissionCodes.B_PRO)
   public ProspeccaoResponse buscar(

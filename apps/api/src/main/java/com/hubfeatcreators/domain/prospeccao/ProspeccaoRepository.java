@@ -47,6 +47,21 @@ public interface ProspeccaoRepository extends JpaRepository<Prospeccao, UUID> {
       + "WHERE p.assessoriaId = :assessoriaId GROUP BY p.status")
   List<StatusCount> contarPorStatus(@Param("assessoriaId") UUID assessoriaId);
 
+  @Query("SELECT COUNT(p) FROM Prospeccao p WHERE p.assessoriaId = :assessoriaId "
+      + "AND p.fechadaEm >= :desde")
+  long countFechadasDesde(
+      @Param("assessoriaId") UUID assessoriaId, @Param("desde") java.time.Instant desde);
+
+  /** Média em dias entre createdAt e fechadaEm para FECHADA_GANHA. Postgres-specific. */
+  @Query(
+      value =
+          "SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (fechada_em - created_at))/86400.0), 0)"
+              + " FROM prospeccoes WHERE assessoria_id = :assessoriaId"
+              + " AND status = 'FECHADA_GANHA' AND fechada_em IS NOT NULL"
+              + " AND deleted_at IS NULL",
+      nativeQuery = true)
+  Double timeToCloseDiasMedio(@Param("assessoriaId") UUID assessoriaId);
+
   interface StatusCount {
     ProspeccaoStatus getStatus();
     long getTotal();

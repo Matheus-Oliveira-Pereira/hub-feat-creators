@@ -61,6 +61,7 @@ export const qk = {
     list: (filtros: ProspeccaoFiltros) => ['prospeccoes', 'list', filtros] as const,
     detail: (id: string) => ['prospeccoes', 'detail', id] as const,
     eventos: (id: string) => ['prospeccoes', 'eventos', id] as const,
+    dashboard: ['prospeccoes', 'dashboard'] as const,
   },
 };
 
@@ -419,5 +420,13 @@ export function useDeleteProspeccao() {
   return useMutation({
     mutationFn: (id: string) => prospeccoes.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.prospeccoes.all }),
+  });
+}
+
+export function useProspeccaoDashboard() {
+  return useQuery({
+    queryKey: qk.prospeccoes.dashboard,
+    queryFn: () => prospeccoes.dashboard(),
+    staleTime: 60_000,
   });
 }
