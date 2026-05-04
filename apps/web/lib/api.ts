@@ -63,6 +63,8 @@ export const auth = {
   logout: (refreshToken: string) => api.post('/api/v1/auth/logout', { refreshToken }),
 };
 
+export type BaseLegal = 'CONSENTIMENTO' | 'EXECUCAO_CONTRATO' | 'LEGITIMO_INTERESSE' | 'OBRIGACAO_LEGAL';
+
 // Influenciadores
 export interface Influenciador {
   id: string;
@@ -72,6 +74,7 @@ export interface Influenciador {
   audienciaTotal: number | null;
   observacoes: string | null;
   tags: string[];
+  baseLegal: BaseLegal;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +109,7 @@ export interface Marca {
   site: string | null;
   observacoes: string | null;
   tags: string[];
+  baseLegal: BaseLegal;
   createdAt: string;
   updatedAt: string;
 }
@@ -261,6 +265,7 @@ export interface Contato {
   telefone: string | null;
   cargo: string | null;
   emailInvalido: boolean;
+  baseLegal: BaseLegal;
   createdAt: string;
   updatedAt: string;
 }

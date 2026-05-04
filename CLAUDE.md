@@ -172,7 +172,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
-- ⏳ `compliance/` → LGPD — ativar antes de produção
+- ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
 - ❌ `i18n/` → MVP só pt-BR
 
 ## Model Presets (L4)
@@ -223,6 +223,12 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **State machine de prospecção**: matriz fixa em `ProspeccaoStateMachine.java` espelhada em `lib/prospeccao.ts` — quando alterar uma, alterar a outra. Transição inválida → HTTP 422
 - **Visibilidade ASSESSOR vs OWNER**: row-level filter aplicado no service, não via Hibernate `@Filter` (dependeria do principal). `findAllAssessor` usa predicate `created_by OR assessor_responsavel_id = me`. Tentativa fora do escopo retorna `404` (não vaza existência)
 - **Códigos 4-letter**: lista canônica em `PermissionCodes.java` + `lib/rbac.ts`. Sincronizar manualmente — sem code-gen
+- **DSR token single-use**: `DsrToken.usedAt` setado atomicamente; reuso retorna 404 (não vaza motivo). Token expira em 48h. Hash SHA-256 armazenado, nunca o token raw
+- **RetentionJob anonymize vs delete**: influenciadores/marcas/contatos NUNCA deletados fisicamente — apenas anonimizados após janela de retenção (180d). Soft-delete via `deleted_at` + job
+- **PiiMaskingFilter**: `mask(String)` é utilitário estático — integrar em interceptors de log manual ou usar diretamente antes de logar dados de titular. Não há logback.xml no projeto
+- **BaseLegal obrigatória**: todas entidades com PII (influenciador, marca, contato) requerem `baseLegal` no create/update. `FEATURE_COMPLIANCE_STRICT=true` (default) → 422 sem campo
+- **ROPA seed em V7**: 4 registros de tratamento semeados na migration. Editar em `data_processing_records` via admin ou SQL — não via código Java
+- **DSR endpoints públicos**: `/api/v1/dsr/**` em `permitAll()` (SecurityConfig) — titular acessa sem JWT. Admin endpoints em `/api/v1/admin/compliance/**` requerem `OWNR`
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:

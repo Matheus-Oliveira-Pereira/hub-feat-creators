@@ -96,6 +96,7 @@ public class MarcaService {
         marca.setSite(req.site());
         marca.setObservacoes(req.observacoes());
         marca.setTags(req.tags() != null ? req.tags().toArray(new String[0]) : new String[0]);
+        marca.setBaseLegal(req.baseLegal());
     }
 
     private Map<String, Object> toMap(Marca m) {

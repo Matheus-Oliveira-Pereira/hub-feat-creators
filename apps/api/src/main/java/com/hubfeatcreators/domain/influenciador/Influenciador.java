@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.influenciador;
 
+import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.HashMap;
@@ -52,6 +53,10 @@ public class Influenciador {
 
     @Column(name = "assessor_responsavel_id")
     private UUID assessorResponsavelId;
+
+    @Column(name = "base_legal", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BaseLegal baseLegal = BaseLegal.LEGITIMO_INTERESSE;
 
     public Influenciador() {}
 
@@ -148,4 +153,7 @@ public class Influenciador {
     public void setAssessorResponsavelId(UUID assessorResponsavelId) {
         this.assessorResponsavelId = assessorResponsavelId;
     }
+
+    public BaseLegal getBaseLegal() { return baseLegal; }
+    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
 }

@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '@/components/ui/tags-input';
 import { EntityFormModal } from '@/components/app/entity-form-modal';
+import { BaseLegalSelect } from '@/components/forms/base-legal-select';
+import type { BaseLegal } from '@/lib/schemas';
 
 interface Props {
   open: boolean;
@@ -26,6 +28,7 @@ function toFormDefaults(m?: Marca | null): MarcaInput {
     site: m?.site ?? '',
     observacoes: m?.observacoes ?? '',
     tags: m?.tags ?? [],
+    baseLegal: (m?.baseLegal as BaseLegal) ?? 'LEGITIMO_INTERESSE',
   };
 }
 
@@ -158,6 +161,18 @@ export function MarcaFormModal({ open, onOpenChange, marca }: Props) {
           </p>
         )}
       </div>
+      <Controller
+        control={control}
+        name="baseLegal"
+        render={({ field }) => (
+          <BaseLegalSelect
+            value={field.value}
+            onChange={field.onChange}
+            error={errors.baseLegal?.message}
+            required
+          />
+        )}
+      />
     </EntityFormModal>
   );
 }

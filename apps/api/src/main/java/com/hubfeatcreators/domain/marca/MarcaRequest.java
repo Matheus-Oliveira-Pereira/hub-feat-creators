@@ -1,6 +1,8 @@
 package com.hubfeatcreators.domain.marca;
 
+import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record MarcaRequest(
@@ -8,4 +10,5 @@ public record MarcaRequest(
         String segmento,
         String site,
         String observacoes,
-        List<String> tags) {}
+        List<String> tags,
+        @NotNull BaseLegal baseLegal) {}

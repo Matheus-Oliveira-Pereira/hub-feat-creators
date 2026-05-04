@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.marca;
 
+import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -42,6 +43,10 @@ public class Marca {
 
     @Column(name = "created_by")
     private UUID createdBy;
+
+    @Column(name = "base_legal", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BaseLegal baseLegal = BaseLegal.LEGITIMO_INTERESSE;
 
     public Marca() {}
 
@@ -122,4 +127,7 @@ public class Marca {
     public UUID getCreatedBy() {
         return createdBy;
     }
+
+    public BaseLegal getBaseLegal() { return baseLegal; }
+    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
 }

@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.contato;
 
+import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -30,6 +31,10 @@ public class Contato {
 
     @Column(name = "email_invalido", nullable = false)
     private boolean emailInvalido = false;
+
+    @Column(name = "base_legal", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BaseLegal baseLegal = BaseLegal.LEGITIMO_INTERESSE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -119,4 +124,7 @@ public class Contato {
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
     }
+
+    public BaseLegal getBaseLegal() { return baseLegal; }
+    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
 }

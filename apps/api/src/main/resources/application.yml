@@ -65,3 +65,5 @@ app:
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
   secrets:
     email-key: ${EMAIL_KEY:dev-only-not-for-prod-32-byte-aes-key}
+  features:
+    compliance-strict: ${FEATURE_COMPLIANCE_STRICT:true}

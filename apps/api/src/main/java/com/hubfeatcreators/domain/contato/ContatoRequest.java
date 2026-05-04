@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.contato;
 
+import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,4 +11,5 @@ public record ContatoRequest(
         @NotBlank String nome,
         @Email String email,
         String telefone,
-        String cargo) {}
+        String cargo,
+        @NotNull BaseLegal baseLegal) {}

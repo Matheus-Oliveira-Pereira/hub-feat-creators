@@ -28,7 +28,8 @@ class InfluenciadorIT extends IntegrationTestBase {
             String nicho,
             Long audienciaTotal,
             String observacoes,
-            List<String> tags) {}
+            List<String> tags,
+            String baseLegal) {}
 
     record InfResp(UUID id, String nome, String nicho, List<String> tags) {}
 
@@ -60,7 +61,8 @@ class InfluenciadorIT extends IntegrationTestBase {
                         "fitness",
                         50000L,
                         "obs",
-                        List.of("top", "fitness"));
+                        List.of("top", "fitness"),
+                        "LEGITIMO_INTERESSE");
         HttpHeaders h = headers();
         InfResp created =
                 rest.exchange(
@@ -92,7 +94,8 @@ class InfluenciadorIT extends IntegrationTestBase {
                         "moda",
                         60000L,
                         "obs2",
-                        List.of("moda"));
+                        List.of("moda"),
+                        "LEGITIMO_INTERESSE");
         InfResp updated =
                 rest.exchange(
                                 baseUrl("/api/v1/influenciadores/" + created.id()),
@@ -129,13 +132,13 @@ class InfluenciadorIT extends IntegrationTestBase {
                 baseUrl("/api/v1/influenciadores"),
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new InfReq("Maria Fitness", Map.of(), "fitness", null, null, List.of()), h),
+                        new InfReq("Maria Fitness", Map.of(), "fitness", null, null, List.of(), "LEGITIMO_INTERESSE"), h),
                 InfResp.class);
         rest.exchange(
                 baseUrl("/api/v1/influenciadores"),
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new InfReq("Pedro Gamer", Map.of(), "games", null, null, List.of()), h),
+                        new InfReq("Pedro Gamer", Map.of(), "games", null, null, List.of(), "LEGITIMO_INTERESSE"), h),
                 InfResp.class);
 
         PageResp page =

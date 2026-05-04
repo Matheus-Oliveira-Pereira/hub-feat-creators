@@ -119,6 +119,7 @@ public class InfluenciadorService {
         inf.setAudienciaTotal(req.audienciaTotal());
         inf.setObservacoes(req.observacoes());
         inf.setTags(req.tags() != null ? req.tags().toArray(new String[0]) : new String[0]);
+        inf.setBaseLegal(req.baseLegal());
     }
 
     @SuppressWarnings("unchecked")

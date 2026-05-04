@@ -78,4 +78,16 @@ public class AppProperties {
     public void setSecrets(Secrets secrets) {
         this.secrets = secrets;
     }
+
+    private Features features = new Features();
+
+    public static class Features {
+        private boolean complianceStrict = true;
+
+        public boolean isComplianceStrict() { return complianceStrict; }
+        public void setComplianceStrict(boolean complianceStrict) { this.complianceStrict = complianceStrict; }
+    }
+
+    public Features getFeatures() { return features; }
+    public void setFeatures(Features features) { this.features = features; }
 }

@@ -23,7 +23,8 @@ class MultiTenantIsolationIT extends IntegrationTestBase {
             String nicho,
             Long audienciaTotal,
             String observacoes,
-            java.util.List<String> tags) {}
+            java.util.List<String> tags,
+            String baseLegal) {}
 
     record InfluenciadorResponse(java.util.UUID id, String nome) {}
 
@@ -91,7 +92,7 @@ class MultiTenantIsolationIT extends IntegrationTestBase {
     private InfluenciadorResponse criarInfluenciador(String token, String nome) {
         var req =
                 new InfluenciadorRequest(
-                        nome, java.util.Map.of(), null, null, null, java.util.List.of());
+                        nome, java.util.Map.of(), null, null, null, java.util.List.of(), "LEGITIMO_INTERESSE");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);

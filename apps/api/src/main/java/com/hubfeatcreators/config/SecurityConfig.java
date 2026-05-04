@@ -43,7 +43,8 @@ public class SecurityConfig {
                                                 "/swagger-ui.html",
                                                 "/api/v1/auth/**",
                                                 "/api/v1/email/track/**",
-                                                "/api/v1/email/unsubscribe")
+                                                "/api/v1/email/unsubscribe",
+                                                "/api/v1/dsr/**")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated());

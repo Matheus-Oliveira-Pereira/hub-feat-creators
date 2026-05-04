@@ -27,6 +27,25 @@ export const signupSchema = z.object({
 export type SignupInput = z.infer<typeof signupSchema>;
 
 // ────────────────────────────────────────────────────────────────────────────
+// LGPD — Base legal enum
+// ────────────────────────────────────────────────────────────────────────────
+
+export const baseLegalEnum = z.enum([
+  'CONSENTIMENTO',
+  'EXECUCAO_CONTRATO',
+  'LEGITIMO_INTERESSE',
+  'OBRIGACAO_LEGAL',
+]);
+export type BaseLegal = z.infer<typeof baseLegalEnum>;
+
+export const baseLegalLabels: Record<BaseLegal, string> = {
+  CONSENTIMENTO: 'Consentimento',
+  EXECUCAO_CONTRATO: 'Execução de contrato',
+  LEGITIMO_INTERESSE: 'Legítimo interesse',
+  OBRIGACAO_LEGAL: 'Obrigação legal',
+};
+
+// ────────────────────────────────────────────────────────────────────────────
 // Influenciador
 // (form fields são todos string; transformação para payload em queries.ts)
 // ────────────────────────────────────────────────────────────────────────────
@@ -41,6 +60,7 @@ export const influenciadorSchema = z.object({
   audienciaTotal: z.string().regex(/^\d*$/, 'Apenas números').max(15),
   observacoes: z.string().max(2000, 'Máx 2000 caracteres'),
   tags: z.array(z.string().min(1).max(40)).max(20),
+  baseLegal: baseLegalEnum,
 });
 export type InfluenciadorInput = z.infer<typeof influenciadorSchema>;
 
@@ -69,6 +89,7 @@ export const marcaSchema = z.object({
     ),
   observacoes: z.string().max(2000),
   tags: z.array(z.string().min(1).max(40)).max(20),
+  baseLegal: baseLegalEnum,
 });
 export type MarcaInput = z.infer<typeof marcaSchema>;
 
@@ -86,6 +107,7 @@ export const contatoSchema = z.object({
     }),
   telefone: z.string().max(40),
   cargo: z.string().max(80),
+  baseLegal: baseLegalEnum,
 });
 export type ContatoInput = z.infer<typeof contatoSchema>;
 

@@ -7,9 +7,12 @@ import { toast } from 'sonner';
 import { Contato } from '@/lib/api';
 import { contatoSchema, type ContatoInput } from '@/lib/schemas';
 import { useCreateContato, useUpdateContato } from '@/lib/queries';
+import { Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EntityFormModal } from '@/components/app/entity-form-modal';
+import { BaseLegalSelect } from '@/components/forms/base-legal-select';
+import type { BaseLegal } from '@/lib/schemas';
 
 interface Props {
   open: boolean;
@@ -24,6 +27,7 @@ function toFormDefaults(c?: Contato | null): ContatoInput {
     email: c?.email ?? '',
     telefone: c?.telefone ?? '',
     cargo: c?.cargo ?? '',
+    baseLegal: (c?.baseLegal as BaseLegal) ?? 'LEGITIMO_INTERESSE',
   };
 }
 
@@ -59,7 +63,7 @@ export function ContatoFormModal({ open, onOpenChange, marcaId, contato }: Props
     }
   }
 
-  const { register, handleSubmit, formState } = form;
+  const { register, handleSubmit, control, formState } = form;
   const { errors } = formState;
 
   return (
@@ -121,6 +125,18 @@ export function ContatoFormModal({ open, onOpenChange, marcaId, contato }: Props
           />
         </div>
       </div>
+      <Controller
+        control={control}
+        name="baseLegal"
+        render={({ field }) => (
+          <BaseLegalSelect
+            value={field.value}
+            onChange={field.onChange}
+            error={errors.baseLegal?.message}
+            required
+          />
+        )}
+      />
     </EntityFormModal>
   );
 }

@@ -1,6 +1,7 @@
 package com.hubfeatcreators.infra.log;
 
 public class PiiMasker {
+
     public static String maskEmail(String email) {
         if (email == null || !email.contains("@")) {
             return email;
@@ -9,8 +10,7 @@ public class PiiMasker {
         if (atIndex <= 1) {
             return "***@" + email.substring(atIndex + 1);
         }
-        String localPart = email.substring(0, atIndex);
-        String first = localPart.substring(0, 1);
+        String first = String.valueOf(email.charAt(0));
         String domain = email.substring(atIndex + 1);
         return first + "***@" + domain;
     }
@@ -19,7 +19,14 @@ public class PiiMasker {
         if (phone == null || phone.length() < 4) {
             return phone;
         }
-        return phone.substring(0, 2) + "*****" + phone.substring(phone.length() - 4);
+        String digits = phone.replaceAll("[^\\d]", "");
+        if (digits.length() < 4) return "***";
+        return digits.substring(0, 2) + "*****" + digits.substring(digits.length() - 4);
+    }
+
+    /** Masks CPF (11 digits) — with or without formatting. */
+    public static String maskCpf(String cpf) {
+        return "***.***.***-**";
     }
 
     public static String maskPassword(String password) {

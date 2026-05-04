@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '@/components/ui/tags-input';
 import { EntityFormModal } from '@/components/app/entity-form-modal';
+import { BaseLegalSelect } from '@/components/forms/base-legal-select';
+import type { BaseLegal } from '@/lib/schemas';
 
 interface Props {
   open: boolean;
@@ -27,6 +29,7 @@ function toFormDefaults(inf?: Influenciador | null): InfluenciadorInput {
     audienciaTotal: inf?.audienciaTotal != null ? String(inf.audienciaTotal) : '',
     observacoes: inf?.observacoes ?? '',
     tags: inf?.tags ?? [],
+    baseLegal: (inf?.baseLegal as BaseLegal) ?? 'LEGITIMO_INTERESSE',
   };
 }
 
@@ -188,6 +191,18 @@ export function InfluenciadorFormModal({ open, onOpenChange, influenciador }: Pr
           </p>
         )}
       </div>
+      <Controller
+        control={control}
+        name="baseLegal"
+        render={({ field }) => (
+          <BaseLegalSelect
+            value={field.value}
+            onChange={field.onChange}
+            error={errors.baseLegal?.message}
+            required
+          />
+        )}
+      />
     </EntityFormModal>
   );
 }

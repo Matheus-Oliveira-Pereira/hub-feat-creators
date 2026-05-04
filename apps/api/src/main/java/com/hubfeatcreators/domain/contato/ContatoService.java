@@ -84,6 +84,7 @@ public class ContatoService {
         c.setEmail(req.email());
         c.setTelefone(req.telefone());
         c.setCargo(req.cargo());
+        c.setBaseLegal(req.baseLegal());
     }
 
     private Map<String, Object> toMap(Contato c) {

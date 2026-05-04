@@ -24,7 +24,7 @@ class ProspeccaoIT extends IntegrationTestBase {
     record TokenResp(String accessToken, String refreshToken) {}
 
     record MarcaReq(
-            String nome, String segmento, String site, String observacoes, List<String> tags) {}
+            String nome, String segmento, String site, String observacoes, List<String> tags, String baseLegal) {}
 
     record MarcaResp(UUID id, String nome) {}
 
@@ -69,7 +69,7 @@ class ProspeccaoIT extends IntegrationTestBase {
     }
 
     UUID criarMarca() {
-        var req = new MarcaReq("Marca " + UUID.randomUUID(), null, null, null, List.of());
+        var req = new MarcaReq("Marca " + UUID.randomUUID(), null, null, null, List.of(), "LEGITIMO_INTERESSE");
         return rest.exchange(
                         baseUrl("/api/v1/marcas"),
                         HttpMethod.POST,
