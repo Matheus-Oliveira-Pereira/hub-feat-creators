@@ -14,11 +14,20 @@ import {
   contatos,
   perfis,
   prospeccoes,
+  tarefas,
   Influenciador,
   Marca,
   Contato,
   Perfil,
   Prospeccao,
+  Tarefa,
+  TarefaComentario,
+  TarefaFiltros,
+  TarefaStatus,
+  TarefaPrioridade,
+  EntidadeTipo,
+  AlertaResponse,
+  UsuarioPreferencia,
   ProspeccaoEventoResponse,
   ProspeccaoFiltros,
   ProspeccaoStatus,
@@ -31,6 +40,7 @@ import type {
   ContatoInput,
   PerfilInput,
   ProspeccaoInput,
+  TarefaInput,
   LoginInput,
   SignupInput,
 } from '@/lib/schemas';
@@ -62,6 +72,15 @@ export const qk = {
     detail: (id: string) => ['prospeccoes', 'detail', id] as const,
     eventos: (id: string) => ['prospeccoes', 'eventos', id] as const,
     dashboard: ['prospeccoes', 'dashboard'] as const,
+  },
+  tarefas: {
+    all: ['tarefas'] as const,
+    list: (filtros: TarefaFiltros) => ['tarefas', 'list', filtros] as const,
+    me: (filtros?: object) => ['tarefas', 'me', filtros] as const,
+    detail: (id: string) => ['tarefas', 'detail', id] as const,
+    comentarios: (id: string) => ['tarefas', 'comentarios', id] as const,
+    alerta: ['tarefas', 'alerta'] as const,
+    preferencias: ['tarefas', 'preferencias'] as const,
   },
 };
 
@@ -428,5 +447,137 @@ export function useProspeccaoDashboard() {
     queryKey: qk.prospeccoes.dashboard,
     queryFn: () => prospeccoes.dashboard(),
     staleTime: 60_000,
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tarefas (PRD-003)
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useTarefas(filtros: TarefaFiltros = {}) {
+  return useQuery<PageResponse<Tarefa>>({
+    queryKey: qk.tarefas.list(filtros),
+    queryFn: () => tarefas.list(filtros),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useMinhasTarefas(filtros?: Pick<TarefaFiltros, 'status' | 'prazoFiltro'>) {
+  return useQuery<PageResponse<Tarefa>>({
+    queryKey: qk.tarefas.me(filtros),
+    queryFn: () => tarefas.me(filtros),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useTarefa(id: string | null | undefined) {
+  return useQuery<Tarefa>({
+    queryKey: id ? qk.tarefas.detail(id) : ['tarefas', 'detail', 'none'],
+    queryFn: () => tarefas.get(id!),
+    enabled: !!id,
+  });
+}
+
+export function useTarefaComentarios(id: string | null | undefined) {
+  return useQuery<TarefaComentario[]>({
+    queryKey: id ? qk.tarefas.comentarios(id) : ['tarefas', 'comentarios', 'none'],
+    queryFn: () => tarefas.comentarios(id!),
+    enabled: !!id,
+  });
+}
+
+export function useTarefaAlerta() {
+  return useQuery<AlertaResponse>({
+    queryKey: qk.tarefas.alerta,
+    queryFn: () => tarefas.alerta(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
+export function useUsuarioPreferencias() {
+  return useQuery<UsuarioPreferencia>({
+    queryKey: qk.tarefas.preferencias,
+    queryFn: () => tarefas.preferencias(),
+  });
+}
+
+function inputToTarefaPayload(input: TarefaInput) {
+  return {
+    titulo: input.titulo.trim(),
+    descricao: input.descricao?.trim() || null,
+    prazo: input.prazo,
+    prioridade: input.prioridade as TarefaPrioridade,
+    responsavelId: input.responsavelId || null,
+    entidadeTipo: (input.entidadeTipo as EntidadeTipo) || null,
+    entidadeId: input.entidadeId || null,
+  };
+}
+
+export function useCreateTarefa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TarefaInput) => tarefas.create(inputToTarefaPayload(input) as Parameters<typeof tarefas.create>[0]),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.tarefas.all });
+      qc.invalidateQueries({ queryKey: qk.tarefas.alerta });
+    },
+  });
+}
+
+export function useUpdateTarefa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<TarefaInput> }) =>
+      tarefas.update(id, inputToTarefaPayload(input as TarefaInput)),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.tarefas.all });
+      qc.invalidateQueries({ queryKey: qk.tarefas.detail(id) });
+      qc.invalidateQueries({ queryKey: qk.tarefas.alerta });
+    },
+  });
+}
+
+export function useMudarStatusTarefa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: TarefaStatus }) =>
+      tarefas.status(id, status),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.tarefas.all });
+      qc.invalidateQueries({ queryKey: qk.tarefas.detail(id) });
+      qc.invalidateQueries({ queryKey: qk.tarefas.alerta });
+    },
+  });
+}
+
+export function useDeleteTarefa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => tarefas.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.tarefas.all });
+      qc.invalidateQueries({ queryKey: qk.tarefas.alerta });
+    },
+  });
+}
+
+export function useAddComentarioTarefa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, texto }: { id: string; texto: string }) =>
+      tarefas.addComentario(id, texto),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: qk.tarefas.comentarios(id) });
+    },
+  });
+}
+
+export function useUpdatePreferencias() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (digestDiarioEnabled: boolean) =>
+      tarefas.updatePreferencias(digestDiarioEnabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.tarefas.preferencias }),
   });
 }

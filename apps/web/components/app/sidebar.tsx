@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/logo';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/lib/auth';
+import { useTarefaAlerta } from '@/lib/queries';
 
 interface NavItem {
   href: Route;
@@ -36,7 +37,7 @@ const NAV: NavItem[] = [
   { href: '/influenciadores' as Route, label: 'Influenciadores', icon: Users, requires: ['BINF'] },
   { href: '/marcas' as Route, label: 'Marcas', icon: Building2, requires: ['BMAR'] },
   { href: '/prospeccao' as Route, label: 'Prospecção', icon: Search, requires: ['BPRO'] },
-  { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, badge: 'em breve', disabled: true, requires: ['BTAR'] },
+  { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, requires: ['BTAR'] },
   { href: '/email' as Route, label: 'E-mail', icon: Mail, badge: 'em breve', disabled: true, requires: ['BEML'] },
   { href: '/perfis' as Route, label: 'Perfis', icon: ShieldCheck, requires: ['BPRF'] },
 ];
@@ -51,6 +52,8 @@ export function Sidebar({ collapsed, onToggle, onCommandOpen }: SidebarProps) {
   const pathname = usePathname();
   const { hasPermission } = useAuth();
   const visibleNav = NAV.filter(item => !item.requires || hasPermission(item.requires));
+  const { data: alerta } = useTarefaAlerta();
+  const alertaCount = alerta?.count ?? 0;
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -131,6 +134,11 @@ export function Sidebar({ collapsed, onToggle, onCommandOpen }: SidebarProps) {
                 {!collapsed && item.badge && (
                   <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                     {item.badge}
+                  </span>
+                )}
+                {!collapsed && !item.badge && item.href === '/tarefas' && alertaCount > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {alertaCount > 99 ? '99+' : alertaCount}
                   </span>
                 )}
               </Link>

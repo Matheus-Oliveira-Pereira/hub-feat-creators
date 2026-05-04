@@ -154,3 +154,22 @@ export const perfilSchema = z.object({
   roles: z.array(z.string()).min(1, 'Selecione ao menos uma permissão'),
 });
 export type PerfilInput = z.infer<typeof perfilSchema>;
+
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tarefa (PRD-003)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const tarefaSchema = z.object({
+  titulo: z.string().trim().min(1, 'Título obrigatório').max(200, 'Máx 200 caracteres'),
+  descricao: z.string().max(5000, 'Máx 5000 caracteres').optional(),
+  prazo: z.string().min(1, 'Prazo obrigatório'),
+  prioridade: z.enum(['BAIXA', 'MEDIA', 'ALTA', 'URGENTE']),
+  responsavelId: z.string().uuid('ID inválido').optional().or(z.literal('')),
+  entidadeTipo: z
+    .enum(['PROSPECCAO', 'INFLUENCIADOR', 'MARCA', 'CONTATO'])
+    .optional()
+    .or(z.literal('')),
+  entidadeId: z.string().uuid('ID inválido').optional().or(z.literal('')),
+});
+export type TarefaInput = z.infer<typeof tarefaSchema>;

@@ -281,3 +281,107 @@ export const contatos = {
     api.put<Contato>(`/api/v1/contatos/${id}`, data),
   delete: (id: string) => api.delete(`/api/v1/contatos/${id}`),
 };
+
+// Tarefas (PRD-003)
+export type TarefaStatus = 'TODO' | 'EM_ANDAMENTO' | 'FEITA' | 'CANCELADA';
+export type TarefaPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
+export type EntidadeTipo = 'PROSPECCAO' | 'INFLUENCIADOR' | 'MARCA' | 'CONTATO';
+
+export interface Tarefa {
+  id: string;
+  assessoriaId: string;
+  titulo: string;
+  descricao: string | null;
+  prazo: string;
+  prioridade: TarefaPrioridade;
+  status: TarefaStatus;
+  responsavelId: string;
+  criadorId: string;
+  entidadeTipo: EntidadeTipo | null;
+  entidadeId: string | null;
+  concluidaEm: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TarefaPayload {
+  titulo: string;
+  descricao?: string | null;
+  prazo: string;
+  prioridade?: TarefaPrioridade;
+  responsavelId?: string | null;
+  entidadeTipo?: EntidadeTipo | null;
+  entidadeId?: string | null;
+}
+
+export interface TarefaUpdatePayload {
+  titulo?: string;
+  descricao?: string | null;
+  prazo?: string;
+  prioridade?: TarefaPrioridade;
+  responsavelId?: string | null;
+  entidadeTipo?: EntidadeTipo | null;
+  entidadeId?: string | null;
+}
+
+export interface TarefaFiltros {
+  status?: TarefaStatus;
+  prioridade?: TarefaPrioridade;
+  responsavelId?: string;
+  prazoFiltro?: 'VENCIDAS' | 'HOJE' | 'SEMANA' | 'FUTURAS';
+  minhas?: boolean;
+  page?: number;
+  size?: number;
+}
+
+export interface TarefaComentario {
+  id: string;
+  tarefaId: string;
+  autorId: string;
+  texto: string;
+  createdAt: string;
+}
+
+export interface AlertaResponse {
+  count: number;
+}
+
+export interface UsuarioPreferencia {
+  usuarioId: string;
+  digestDiarioEnabled: boolean;
+}
+
+function buildTarefaQuery(filtros: TarefaFiltros = {}): string {
+  const params = new URLSearchParams();
+  if (filtros.status) params.set('status', filtros.status);
+  if (filtros.prioridade) params.set('prioridade', filtros.prioridade);
+  if (filtros.responsavelId) params.set('responsavelId', filtros.responsavelId);
+  if (filtros.prazoFiltro) params.set('prazoFiltro', filtros.prazoFiltro);
+  if (filtros.minhas) params.set('minhas', 'true');
+  if (filtros.page !== undefined) params.set('page', String(filtros.page));
+  if (filtros.size !== undefined) params.set('size', String(filtros.size));
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
+export const tarefas = {
+  list: (filtros?: TarefaFiltros) =>
+    api.get<PageResponse<Tarefa>>(`/api/v1/tarefas${buildTarefaQuery(filtros)}`),
+  me: (filtros?: Pick<TarefaFiltros, 'status' | 'prazoFiltro' | 'page' | 'size'>) =>
+    api.get<PageResponse<Tarefa>>(`/api/v1/tarefas/me${buildTarefaQuery(filtros)}`),
+  get: (id: string) => api.get<Tarefa>(`/api/v1/tarefas/${id}`),
+  create: (data: TarefaPayload) => api.post<Tarefa>('/api/v1/tarefas', data),
+  update: (id: string, data: TarefaUpdatePayload) =>
+    api.patch<Tarefa>(`/api/v1/tarefas/${id}`, data),
+  status: (id: string, status: TarefaStatus) =>
+    api.patch<Tarefa>(`/api/v1/tarefas/${id}/status`, { status }),
+  delete: (id: string) => api.delete(`/api/v1/tarefas/${id}`),
+  alerta: () => api.get<AlertaResponse>('/api/v1/tarefas/alerta'),
+  comentarios: (id: string) =>
+    api.get<TarefaComentario[]>(`/api/v1/tarefas/${id}/comentarios`),
+  addComentario: (id: string, texto: string) =>
+    api.post<TarefaComentario>(`/api/v1/tarefas/${id}/comentarios`, { texto }),
+  preferencias: () => api.get<UsuarioPreferencia>('/api/v1/tarefas/preferencias'),
+  updatePreferencias: (digestDiarioEnabled: boolean) =>
+    api.patch<UsuarioPreferencia>('/api/v1/tarefas/preferencias', { digestDiarioEnabled }),
+};
