@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.prospeccao;
 
+import com.hubfeatcreators.domain.notificacao.events.ProspeccaoMudouStatusEvent;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
@@ -14,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -28,16 +30,19 @@ public class ProspeccaoService {
     private final ProspeccaoEventoRepository eventoRepo;
     private final MeterRegistry meterRegistry;
     private final AuditLogService auditLog;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProspeccaoService(
             ProspeccaoRepository repo,
             ProspeccaoEventoRepository eventoRepo,
             MeterRegistry meterRegistry,
-            AuditLogService auditLog) {
+            AuditLogService auditLog,
+            ApplicationEventPublisher eventPublisher) {
         this.repo = repo;
         this.eventoRepo = eventoRepo;
         this.meterRegistry = meterRegistry;
         this.auditLog = auditLog;
+        this.eventPublisher = eventPublisher;
     }
 
     // ─── Read ───────────────────────────────────────────────────────────────
@@ -238,6 +243,14 @@ public class ProspeccaoService {
                         EventoTipo.STATUS_CHANGE,
                         payload,
                         principal.usuarioId()));
+
+        eventPublisher.publishEvent(new ProspeccaoMudouStatusEvent(
+                principal.assessoriaId(),
+                saved.getAssessorResponsavelId(),
+                saved.getId(),
+                saved.getTitulo(),
+                antes.name(),
+                novo.name()));
 
         return saved;
     }

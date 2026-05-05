@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.email;
 
+import com.hubfeatcreators.domain.notificacao.events.EmailAuthFalhouEvent;
 import com.hubfeatcreators.infra.job.Job;
 import com.hubfeatcreators.infra.job.JobHandler;
 import io.micrometer.core.instrument.Counter;
@@ -19,6 +20,7 @@ import java.util.Properties;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,18 +35,21 @@ public class EmailSendJobHandler implements JobHandler {
     private final EmailAccountService accountService;
     private final EmailCipherService cipher;
     private final MeterRegistry meterRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     public EmailSendJobHandler(
             EmailEnvioRepository envioRepo,
             EmailAccountRepository accountRepo,
             EmailAccountService accountService,
             EmailCipherService cipher,
-            MeterRegistry meterRegistry) {
+            MeterRegistry meterRegistry,
+            ApplicationEventPublisher eventPublisher) {
         this.envioRepo = envioRepo;
         this.accountRepo = accountRepo;
         this.accountService = accountService;
         this.cipher = cipher;
         this.meterRegistry = meterRegistry;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -99,6 +104,8 @@ public class EmailSendJobHandler implements JobHandler {
                     .register(meterRegistry)
                     .increment();
             log.error("email.send.auth_fail envioId={} accountId={}", envioId, account.getId());
+            eventPublisher.publishEvent(new EmailAuthFalhouEvent(
+                    account.getAssessoriaId(), account.getId(), account.getFromAddress()));
             throw e;
 
         } catch (Exception e) {

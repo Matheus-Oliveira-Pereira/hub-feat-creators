@@ -88,6 +88,7 @@ public class AppProperties {
         this.secrets = secrets;
     }
 
+    private Webpush webpush = new Webpush();
     private Web web = new Web();
     private Features features = new Features();
 
@@ -97,6 +98,22 @@ public class AppProperties {
         public String getBaseUrl() { return baseUrl; }
         public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
     }
+
+    public static class Webpush {
+        private String publicKey = "";
+        private String privateKey = "";
+        private String subject = "mailto:admin@example.com";
+
+        public String getPublicKey() { return publicKey; }
+        public void setPublicKey(String publicKey) { this.publicKey = publicKey; }
+        public String getPrivateKey() { return privateKey; }
+        public void setPrivateKey(String privateKey) { this.privateKey = privateKey; }
+        public String getSubject() { return subject; }
+        public void setSubject(String subject) { this.subject = subject; }
+    }
+
+    public Webpush getWebpush() { return webpush; }
+    public void setWebpush(Webpush webpush) { this.webpush = webpush; }
 
     public Web getWeb() { return web; }
     public void setWeb(Web web) { this.web = web; }
