@@ -170,6 +170,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `email/` → SMTP relay multi-conta (Jakarta Mail, AES-GCM, Mustache templates, opt-out, tracking) — PRD-004, ADR-005
 - ✅ `onboarding/` → signup self-service, email verify, lockout, MFA TOTP, convites, membros, Argon2id (PRD-006)
 - ✅ `whatsapp/` → Cloud API oficial Meta, HMAC webhook, AES-GCM tokens, janela 24h, opt-out — PRD-008, ADR-006
+- ✅ `notificacoes/` → in-app (SSE badge + drawer), Web Push VAPID, throttle/dedupe 5min, prefs por tipo×canal, digest 07:00 BRT — PRD-009
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
@@ -244,6 +245,10 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **Template polling automático**: `WhatsappTemplateService.pollPendingTemplates()` roda a cada 15min. Templates sem `meta_template_id` (não submetidos) são ignorados no poll
 - **`/api/v1/whatsapp/webhook` scan por phoneNumberId**: busca todas contas para encontrar a certa pelo `phone_number_id` do evento — pode ser otimizado com índice em tabela quando escalar
 - **FEATURE_WHATSAPP_ENABLED**: flag em `AppProperties.Features.whatsappEnabled`. Checar no controller antes de cadastrar conta se quiser hard-block. Atualmente usada apenas como feature flag documental
+- **SSE auth em `/notificacoes/stream`**: `EventSource` do browser não suporta headers customizados — JWT via `withCredentials: true` (envia cookie session se existir) ou query param `?token=`. Implementação atual usa `withCredentials: true`; `JwtAuthFilter` já lê header `Authorization`. Se o JWT estiver só em localStorage (não cookie), SSE falhará 401 silenciosamente — solução Phase 2: query param token na URL do stream
+- **WebPush VAPID keys**: gere com `npx web-push generate-vapid-keys` (formato Base64 URL-encoded sem padding). `PushService` inicializado em `ApplicationReadyEvent`; se keys em branco, sender desligado silenciosamente (log WARN). Subscription 410/404 → marcar inativa automaticamente (AC-5)
+- **Notificação com `userId=null`**: `EmailAuthFalhouEvent` não carrega `userId` (falha de conta SMTP, não de usuário específico). `NotificacaoService.criar()` faz early-return quando `userId == null` — lookup de owner para notificar: Phase 2
+- **Dedupe de notificações**: chave `{tipo}:{alvoId}` em `notificacao_dedupe`. Dentro de 5min → incrementa `agrupadas`. `NotificacaoDedupe` usa `@Id String key` (TEXT PK) — Hibernate não gera `@GeneratedValue` para String; chave calculada no service antes do save
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:
