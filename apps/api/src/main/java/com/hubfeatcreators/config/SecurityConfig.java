@@ -48,6 +48,8 @@ public class SecurityConfig {
                                                 "/api/v1/dsr/**",
                                                 "/api/v1/whatsapp/webhook")
                                         .permitAll()
+                                        .requestMatchers("/api/v1/webpush/public-key")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated());
         return http.build();
@@ -66,7 +68,8 @@ public class SecurityConfig {
                         "X-Request-Id",
                         "X-Total-Count",
                         "X-Has-More",
-                        "Location"));
+                        "Location",
+                        "Last-Event-ID"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
