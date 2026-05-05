@@ -14,7 +14,7 @@ import { EntityFormModal } from '@/components/app/entity-form-modal';
 const schema = z.object({
   accountId: z.string().uuid('Selecione uma conta'),
   nome: z.string().min(1, 'Obrigatório').regex(/^[a-z0-9_]+$/, 'Apenas letras minúsculas, números e _'),
-  idioma: z.string().default('pt_BR'),
+  idioma: z.string().min(1),
   categoria: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
   corpo: z.string().min(1, 'Obrigatório').max(1024, 'Máx 1024 caracteres'),
 });

@@ -9,6 +9,7 @@ import { auth, clearTokens } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationBell } from '@/components/app/notification-bell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,7 @@ export function Topbar({ onMobileMenuOpen }: TopbarProps) {
       </nav>
 
       <div className="ml-auto flex items-center gap-1">
+        <NotificationBell />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

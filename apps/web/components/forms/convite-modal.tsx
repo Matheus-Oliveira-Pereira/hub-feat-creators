@@ -13,7 +13,7 @@ import { EntityFormModal } from '@/components/app/entity-form-modal';
 
 const schema = z.object({
   email: z.string().trim().email('E-mail inválido'),
-  role: z.enum(['OWNER', 'ASSESSOR']).default('ASSESSOR'),
+  role: z.enum(['OWNER', 'ASSESSOR']),
 });
 type Input = z.infer<typeof schema>;
 

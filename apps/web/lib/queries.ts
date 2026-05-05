@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import {
   useQuery,
   useMutation,
@@ -16,6 +17,8 @@ import {
   prospeccoes,
   tarefas,
   email,
+  notificacoes,
+  webpush,
   Influenciador,
   Marca,
   Contato,
@@ -43,6 +46,8 @@ import {
   EmailEnvio,
   EmailEnvioPayload,
   EmailEvento,
+  Notificacao,
+  NotificacaoPreferencia,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
@@ -101,6 +106,12 @@ export const qk = {
     envios: (params?: object) => ['email', 'envios', params] as const,
     envio: (id: string) => ['email', 'envios', id] as const,
     eventos: (id: string) => ['email', 'envios', id, 'eventos'] as const,
+  },
+  notificacoes: {
+    all: ['notificacoes'] as const,
+    list: (params?: object) => ['notificacoes', 'list', params] as const,
+    contagem: ['notificacoes', 'contagem'] as const,
+    prefs: ['notificacoes', 'prefs'] as const,
   },
 };
 
@@ -730,4 +741,132 @@ export function useEmailEventos(envioId: string) {
     queryFn: () => email.envios.eventos(envioId),
     enabled: !!envioId,
   });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Notificações
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useNotificacoes(params?: { apenasNaoLidas?: boolean; tipo?: string; page?: number; size?: number }) {
+  return useQuery<PageResponse<Notificacao>>({
+    queryKey: qk.notificacoes.list(params),
+    queryFn: () => notificacoes.list(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useNotificacaoContagem() {
+  return useQuery<{ naoLidas: number }>({
+    queryKey: qk.notificacoes.contagem,
+    queryFn: () => notificacoes.contagem(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarcarLida() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => notificacoes.marcarLida(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.notificacoes.contagem });
+      qc.invalidateQueries({ queryKey: qk.notificacoes.all });
+    },
+  });
+}
+
+export function useMarcarTodasLidas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => notificacoes.marcarTodasLidas(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.notificacoes.contagem });
+      qc.invalidateQueries({ queryKey: qk.notificacoes.all });
+    },
+  });
+}
+
+export function useNotificacaoPrefs() {
+  return useQuery<NotificacaoPreferencia[]>({
+    queryKey: qk.notificacoes.prefs,
+    queryFn: () => notificacoes.prefs(),
+  });
+}
+
+export function useUpdateNotificacaoPref() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tipo, canal, habilitado }: { tipo: string; canal: string; habilitado: boolean }) =>
+      notificacoes.updatePref(tipo, canal, habilitado),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.notificacoes.prefs }),
+  });
+}
+
+export function useWebPushSubscribe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { publicKey } = await webpush.publicKey();
+      if (!publicKey) throw new Error('VAPID public key not configured');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await webpush.subscribe(sub.toJSON() as PushSubscriptionJSON);
+      return sub;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.notificacoes.prefs }),
+  });
+}
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+export function useNotificacaoSSE(enabled = true) {
+  const qc = useQueryClient();
+  const reconnectTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let es: EventSource | null = null;
+    let closed = false;
+
+    const connect = () => {
+      if (closed) return;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) return;
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/v1/notificacoes/stream`;
+      es = new EventSource(url, { withCredentials: true });
+
+      es.onmessage = () => {
+        qc.invalidateQueries({ queryKey: qk.notificacoes.contagem });
+      };
+
+      es.addEventListener('notificacao', () => {
+        qc.invalidateQueries({ queryKey: qk.notificacoes.contagem });
+      });
+
+      es.onerror = () => {
+        es?.close();
+        if (!closed) {
+          reconnectTimeout.current = setTimeout(connect, 3000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      closed = true;
+      clearTimeout(reconnectTimeout.current);
+      es?.close();
+    };
+  }, [enabled, qc]);
 }

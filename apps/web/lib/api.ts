@@ -667,3 +667,51 @@ export const email = {
     eventos: (id: string) => api.get<EmailEvento[]>(`/api/v1/email/envios/${id}/eventos`),
   },
 };
+
+// ─── Notificações ────────────────────────────────────────────────────────────
+
+export interface Notificacao {
+  id: string;
+  tipo: string;
+  prioridade: 'LOW' | 'NORMAL' | 'HIGH';
+  titulo: string;
+  mensagem: string;
+  payload: Record<string, unknown>;
+  alvoTipo?: string;
+  alvoId?: string;
+  agrupadas: number;
+  lidaEm?: string;
+  createdAt: string;
+}
+
+export interface NotificacaoPreferencia {
+  tipo: string;
+  canal: 'INAPP' | 'PUSH' | 'EMAIL';
+  habilitado: boolean;
+}
+
+export const notificacoes = {
+  list: (params?: { apenasNaoLidas?: boolean; tipo?: string; page?: number; size?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.apenasNaoLidas) qs.set('apenasNaoLidas', 'true');
+    if (params?.tipo) qs.set('tipo', params.tipo);
+    if (params?.page !== undefined) qs.set('page', String(params.page));
+    if (params?.size !== undefined) qs.set('size', String(params.size));
+    const q = qs.toString();
+    return api.get<PageResponse<Notificacao>>(`/api/v1/notificacoes${q ? `?${q}` : ''}`);
+  },
+  contagem: () => api.get<{ naoLidas: number }>('/api/v1/notificacoes/contagem'),
+  marcarLida: (id: string) => api.post<void>(`/api/v1/notificacoes/${id}/lida`, {}),
+  marcarTodasLidas: () => api.post<void>('/api/v1/notificacoes/lidas', {}),
+  prefs: () => api.get<NotificacaoPreferencia[]>('/api/v1/notificacoes/prefs'),
+  updatePref: (tipo: string, canal: string, habilitado: boolean) =>
+    api.put<NotificacaoPreferencia>(`/api/v1/notificacoes/prefs/${tipo}/${canal}`, { habilitado }),
+};
+
+export const webpush = {
+  publicKey: () => api.get<{ publicKey: string }>('/api/v1/webpush/public-key'),
+  subscribe: (subscription: PushSubscriptionJSON) =>
+    api.post<void>('/api/v1/webpush/subscribe', subscription),
+  unsubscribe: (endpoint: string) =>
+    api.post<void>('/api/v1/webpush/unsubscribe', { endpoint }),
+};

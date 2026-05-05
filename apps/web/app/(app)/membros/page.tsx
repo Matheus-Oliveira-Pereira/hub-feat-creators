@@ -62,7 +62,7 @@ function MembrosPage() {
       <PageHeader
         title="Equipe"
         description="Membros e convites do workspace."
-        action={
+        actions={
           <Button onClick={() => setConviteOpen(true)} size="sm">
             <UserPlus className="h-4 w-4 mr-2" />
             Convidar

@@ -19,6 +19,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (stored === '1') setCollapsed(true);
   }, []);
 
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
+
   function toggleCollapsed() {
     setCollapsed(prev => {
       const next = !prev;
