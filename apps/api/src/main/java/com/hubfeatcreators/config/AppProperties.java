@@ -95,8 +95,13 @@ public class AppProperties {
     public static class Web {
         private String baseUrl = "http://localhost:3000";
 
-        public String getBaseUrl() { return baseUrl; }
-        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
     }
 
     public static class Webpush {
@@ -104,33 +109,91 @@ public class AppProperties {
         private String privateKey = "";
         private String subject = "mailto:admin@example.com";
 
-        public String getPublicKey() { return publicKey; }
-        public void setPublicKey(String publicKey) { this.publicKey = publicKey; }
-        public String getPrivateKey() { return privateKey; }
-        public void setPrivateKey(String privateKey) { this.privateKey = privateKey; }
-        public String getSubject() { return subject; }
-        public void setSubject(String subject) { this.subject = subject; }
+        public String getPublicKey() {
+            return publicKey;
+        }
+
+        public void setPublicKey(String publicKey) {
+            this.publicKey = publicKey;
+        }
+
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
+        public String getSubject() {
+            return subject;
+        }
+
+        public void setSubject(String subject) {
+            this.subject = subject;
+        }
     }
 
-    public Webpush getWebpush() { return webpush; }
-    public void setWebpush(Webpush webpush) { this.webpush = webpush; }
+    public Webpush getWebpush() {
+        return webpush;
+    }
 
-    public Web getWeb() { return web; }
-    public void setWeb(Web web) { this.web = web; }
+    public void setWebpush(Webpush webpush) {
+        this.webpush = webpush;
+    }
+
+    public Web getWeb() {
+        return web;
+    }
+
+    public void setWeb(Web web) {
+        this.web = web;
+    }
 
     public static class Features {
         private boolean complianceStrict = true;
         private boolean signupEnabled = true;
         private boolean whatsappEnabled = false;
+        private boolean historicoUnified = true;
 
-        public boolean isComplianceStrict() { return complianceStrict; }
-        public void setComplianceStrict(boolean complianceStrict) { this.complianceStrict = complianceStrict; }
-        public boolean isSignupEnabled() { return signupEnabled; }
-        public void setSignupEnabled(boolean signupEnabled) { this.signupEnabled = signupEnabled; }
-        public boolean isWhatsappEnabled() { return whatsappEnabled; }
-        public void setWhatsappEnabled(boolean whatsappEnabled) { this.whatsappEnabled = whatsappEnabled; }
+        public boolean isComplianceStrict() {
+            return complianceStrict;
+        }
+
+        public void setComplianceStrict(boolean complianceStrict) {
+            this.complianceStrict = complianceStrict;
+        }
+
+        public boolean isSignupEnabled() {
+            return signupEnabled;
+        }
+
+        public void setSignupEnabled(boolean signupEnabled) {
+            this.signupEnabled = signupEnabled;
+        }
+
+        public boolean isWhatsappEnabled() {
+            return whatsappEnabled;
+        }
+
+        public void setWhatsappEnabled(boolean whatsappEnabled) {
+            this.whatsappEnabled = whatsappEnabled;
+        }
+
+        public boolean isHistoricoUnified() {
+            return historicoUnified;
+        }
+
+        public void setHistoricoUnified(boolean historicoUnified) {
+            this.historicoUnified = historicoUnified;
+        }
     }
 
-    public Features getFeatures() { return features; }
-    public void setFeatures(Features features) { this.features = features; }
+    public Features getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(Features features) {
+        this.features = features;
+    }
 }

@@ -1,5 +1,8 @@
 package com.hubfeatcreators.domain.email;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
+import com.hubfeatcreators.domain.historico.EventoTipo;
 import com.hubfeatcreators.domain.notificacao.events.EmailAuthFalhouEvent;
 import com.hubfeatcreators.infra.job.Job;
 import com.hubfeatcreators.infra.job.JobHandler;
@@ -36,6 +39,7 @@ public class EmailSendJobHandler implements JobHandler {
     private final EmailCipherService cipher;
     private final MeterRegistry meterRegistry;
     private final ApplicationEventPublisher eventPublisher;
+    private final EventoService eventoService;
 
     public EmailSendJobHandler(
             EmailEnvioRepository envioRepo,
@@ -43,13 +47,15 @@ public class EmailSendJobHandler implements JobHandler {
             EmailAccountService accountService,
             EmailCipherService cipher,
             MeterRegistry meterRegistry,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            EventoService eventoService) {
         this.envioRepo = envioRepo;
         this.accountRepo = accountRepo;
         this.accountService = accountService;
         this.cipher = cipher;
         this.meterRegistry = meterRegistry;
         this.eventPublisher = eventPublisher;
+        this.eventoService = eventoService;
     }
 
     @Override
@@ -94,6 +100,16 @@ public class EmailSendJobHandler implements JobHandler {
             Counter.builder("email_enviado_total").register(meterRegistry).increment();
             log.info("email.send.ok envioId={} smtpMessageId={}", envioId, smtpMessageId);
 
+            eventoService.registrar(
+                    envio.getAssessoriaId(),
+                    null,
+                    EventoTipo.EMAIL_ENVIADO,
+                    Map.of(
+                            "envioId", envioId.toString(),
+                            "destinatario", envio.getDestinatarioEmail(),
+                            "assunto", envio.getAssunto()),
+                    new EntidadeRef("EMAIL_ENVIO", envioId));
+
         } catch (AuthenticationFailedException e) {
             accountService.registrarFalhaAuthById(account.getId());
             envio.setStatus(EmailEnvioStatus.FALHOU);
@@ -104,8 +120,9 @@ public class EmailSendJobHandler implements JobHandler {
                     .register(meterRegistry)
                     .increment();
             log.error("email.send.auth_fail envioId={} accountId={}", envioId, account.getId());
-            eventPublisher.publishEvent(new EmailAuthFalhouEvent(
-                    account.getAssessoriaId(), account.getId(), account.getFromAddress()));
+            eventPublisher.publishEvent(
+                    new EmailAuthFalhouEvent(
+                            account.getAssessoriaId(), account.getId(), account.getFromAddress()));
             throw e;
 
         } catch (Exception e) {

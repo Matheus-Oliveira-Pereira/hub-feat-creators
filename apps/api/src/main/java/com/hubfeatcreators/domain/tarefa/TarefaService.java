@@ -1,5 +1,8 @@
 package com.hubfeatcreators.domain.tarefa;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
+import com.hubfeatcreators.domain.historico.EventoTipo;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
@@ -30,18 +33,21 @@ public class TarefaService {
     private final UsuarioPreferenciaRepository prefRepo;
     private final MeterRegistry meterRegistry;
     private final AuditLogService auditLog;
+    private final EventoService eventoService;
 
     public TarefaService(
             TarefaRepository repo,
             TarefaComentarioRepository comentarioRepo,
             UsuarioPreferenciaRepository prefRepo,
             MeterRegistry meterRegistry,
-            AuditLogService auditLog) {
+            AuditLogService auditLog,
+            EventoService eventoService) {
         this.repo = repo;
         this.comentarioRepo = comentarioRepo;
         this.prefRepo = prefRepo;
         this.meterRegistry = meterRegistry;
         this.auditLog = auditLog;
+        this.eventoService = eventoService;
     }
 
     // ─── Read ───────────────────────────────────────────────────────────────
@@ -139,6 +145,24 @@ public class TarefaService {
                         "responsavelId",
                         saved.getResponsavelId().toString()));
 
+        EntidadeRef tarefaRef = new EntidadeRef("TAREFA", saved.getId());
+        if (saved.getEntidadeId() != null && saved.getEntidadeTipo() != null) {
+            eventoService.registrar(
+                    principal.assessoriaId(),
+                    principal.usuarioId(),
+                    EventoTipo.TAREFA_CRIADA,
+                    Map.of("titulo", saved.getTitulo()),
+                    tarefaRef,
+                    new EntidadeRef(saved.getEntidadeTipo().name(), saved.getEntidadeId()));
+        } else {
+            eventoService.registrar(
+                    principal.assessoriaId(),
+                    principal.usuarioId(),
+                    EventoTipo.TAREFA_CRIADA,
+                    Map.of("titulo", saved.getTitulo()),
+                    tarefaRef);
+        }
+
         return saved;
     }
 
@@ -206,6 +230,15 @@ public class TarefaService {
                 saved.getId(),
                 AuditLog.Acao.UPDATE,
                 Map.of("de", antes.name(), "para", novoStatus.name()));
+
+        if (novoStatus == TarefaStatus.FEITA) {
+            eventoService.registrar(
+                    principal.assessoriaId(),
+                    principal.usuarioId(),
+                    EventoTipo.TAREFA_CONCLUIDA,
+                    Map.of("titulo", saved.getTitulo()),
+                    new EntidadeRef("TAREFA", saved.getId()));
+        }
 
         return saved;
     }

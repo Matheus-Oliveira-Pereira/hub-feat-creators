@@ -1,5 +1,8 @@
 package com.hubfeatcreators.domain.contato;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
+import com.hubfeatcreators.domain.historico.EventoTipo;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
@@ -16,10 +19,13 @@ public class ContatoService {
 
     private final ContatoRepository repo;
     private final AuditLogService auditLogService;
+    private final EventoService eventoService;
 
-    public ContatoService(ContatoRepository repo, AuditLogService auditLogService) {
+    public ContatoService(
+            ContatoRepository repo, AuditLogService auditLogService, EventoService eventoService) {
         this.repo = repo;
         this.auditLogService = auditLogService;
+        this.eventoService = eventoService;
     }
 
     @Transactional
@@ -34,6 +40,13 @@ public class ContatoService {
                 contato.getId(),
                 AuditLog.Acao.CREATE,
                 toMap(contato));
+        eventoService.registrar(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                EventoTipo.CONTATO_CRIADO,
+                Map.of("nome", contato.getNome()),
+                new EntidadeRef("CONTATO", contato.getId()),
+                new EntidadeRef("MARCA", contato.getMarcaId()));
         return contato;
     }
 

@@ -1,5 +1,8 @@
 package com.hubfeatcreators.domain.marca;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
+import com.hubfeatcreators.domain.historico.EventoTipo;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
@@ -19,10 +22,13 @@ public class MarcaService {
 
     private final MarcaRepository repo;
     private final AuditLogService auditLogService;
+    private final EventoService eventoService;
 
-    public MarcaService(MarcaRepository repo, AuditLogService auditLogService) {
+    public MarcaService(
+            MarcaRepository repo, AuditLogService auditLogService, EventoService eventoService) {
         this.repo = repo;
         this.auditLogService = auditLogService;
+        this.eventoService = eventoService;
     }
 
     @Transactional
@@ -37,6 +43,12 @@ public class MarcaService {
                 marca.getId(),
                 AuditLog.Acao.CREATE,
                 toMap(marca));
+        eventoService.registrar(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                EventoTipo.MARCA_CRIADA,
+                Map.of("nome", marca.getNome()),
+                new EntidadeRef("MARCA", marca.getId()));
         return marca;
     }
 

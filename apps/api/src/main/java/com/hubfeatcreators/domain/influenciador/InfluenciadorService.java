@@ -1,5 +1,8 @@
 package com.hubfeatcreators.domain.influenciador;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
+import com.hubfeatcreators.domain.historico.EventoTipo;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
 import com.hubfeatcreators.infra.job.JobService;
@@ -23,12 +26,17 @@ public class InfluenciadorService {
     private final InfluenciadorRepository repo;
     private final AuditLogService auditLogService;
     private final JobService jobService;
+    private final EventoService eventoService;
 
     public InfluenciadorService(
-            InfluenciadorRepository repo, AuditLogService auditLogService, JobService jobService) {
+            InfluenciadorRepository repo,
+            AuditLogService auditLogService,
+            JobService jobService,
+            EventoService eventoService) {
         this.repo = repo;
         this.auditLogService = auditLogService;
         this.jobService = jobService;
+        this.eventoService = eventoService;
     }
 
     @Transactional
@@ -55,6 +63,13 @@ public class InfluenciadorService {
                         "email",
                         req.handles().getOrDefault("email", "")),
                 inf.getId());
+
+        eventoService.registrar(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                EventoTipo.INFLUENCIADOR_CRIADO,
+                Map.of("nome", inf.getNome()),
+                new EntidadeRef("INFLUENCIADOR", inf.getId()));
 
         return inf;
     }

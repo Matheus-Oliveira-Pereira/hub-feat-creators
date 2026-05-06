@@ -1,5 +1,7 @@
 package com.hubfeatcreators.domain.prospeccao;
 
+import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
+import com.hubfeatcreators.domain.historico.EventoService;
 import com.hubfeatcreators.domain.notificacao.events.ProspeccaoMudouStatusEvent;
 import com.hubfeatcreators.infra.audit.AuditLog;
 import com.hubfeatcreators.infra.audit.AuditLogService;
@@ -31,18 +33,21 @@ public class ProspeccaoService {
     private final MeterRegistry meterRegistry;
     private final AuditLogService auditLog;
     private final ApplicationEventPublisher eventPublisher;
+    private final EventoService eventoService;
 
     public ProspeccaoService(
             ProspeccaoRepository repo,
             ProspeccaoEventoRepository eventoRepo,
             MeterRegistry meterRegistry,
             AuditLogService auditLog,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            EventoService eventoService) {
         this.repo = repo;
         this.eventoRepo = eventoRepo;
         this.meterRegistry = meterRegistry;
         this.auditLog = auditLog;
         this.eventPublisher = eventPublisher;
+        this.eventoService = eventoService;
     }
 
     // ─── Read ───────────────────────────────────────────────────────────────
@@ -126,6 +131,14 @@ public class ProspeccaoService {
                 salvo.getId(),
                 AuditLog.Acao.CREATE,
                 Map.of("titulo", salvo.getTitulo(), "marcaId", salvo.getMarcaId().toString()));
+
+        eventoService.registrar(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                com.hubfeatcreators.domain.historico.EventoTipo.PROSPECCAO_CRIADA,
+                Map.of("titulo", salvo.getTitulo()),
+                new EntidadeRef("PROSPECCAO", salvo.getId()),
+                new EntidadeRef("MARCA", salvo.getMarcaId()));
 
         return salvo;
     }
@@ -244,13 +257,35 @@ public class ProspeccaoService {
                         payload,
                         principal.usuarioId()));
 
-        eventPublisher.publishEvent(new ProspeccaoMudouStatusEvent(
+        eventPublisher.publishEvent(
+                new ProspeccaoMudouStatusEvent(
+                        principal.assessoriaId(),
+                        saved.getAssessorResponsavelId(),
+                        saved.getId(),
+                        saved.getTitulo(),
+                        antes.name(),
+                        novo.name()));
+
+        com.hubfeatcreators.domain.historico.EventoTipo evTipo =
+                novo == ProspeccaoStatus.FECHADA_GANHA
+                        ? com.hubfeatcreators.domain.historico.EventoTipo.PROSPECCAO_FECHADA_GANHA
+                        : novo == ProspeccaoStatus.FECHADA_PERDIDA
+                                ? com.hubfeatcreators.domain.historico.EventoTipo
+                                        .PROSPECCAO_FECHADA_PERDIDA
+                                : com.hubfeatcreators.domain.historico.EventoTipo
+                                        .PROSPECCAO_STATUS_MUDOU;
+        Map<String, Object> evPayload = new HashMap<>();
+        evPayload.put("de", antes.name());
+        evPayload.put("para", novo.name());
+        if (motivoPerda != null) evPayload.put("motivo_perda", motivoPerda.name());
+        eventoService.registrar(
                 principal.assessoriaId(),
-                saved.getAssessorResponsavelId(),
-                saved.getId(),
-                saved.getTitulo(),
-                antes.name(),
-                novo.name()));
+                principal.usuarioId(),
+                evTipo,
+                evPayload,
+                new EntidadeRef("PROSPECCAO", saved.getId()),
+                new EntidadeRef(
+                        "MARCA", saved.getMarcaId() != null ? saved.getMarcaId() : saved.getId()));
 
         return saved;
     }
@@ -279,13 +314,23 @@ public class ProspeccaoService {
         if (texto == null || texto.isBlank()) {
             throw BusinessException.badRequest("COMENTARIO_VAZIO", "Texto obrigatório.");
         }
-        return eventoRepo.save(
-                new ProspeccaoEvento(
-                        p.getId(),
-                        principal.assessoriaId(),
-                        EventoTipo.COMMENT,
-                        Map.of("texto", texto),
-                        principal.usuarioId()));
+        ProspeccaoEvento saved =
+                eventoRepo.save(
+                        new ProspeccaoEvento(
+                                p.getId(),
+                                principal.assessoriaId(),
+                                EventoTipo.COMMENT,
+                                Map.of("texto", texto),
+                                principal.usuarioId()));
+
+        eventoService.registrar(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                com.hubfeatcreators.domain.historico.EventoTipo.PROSPECCAO_COMENTARIO,
+                Map.of("texto", texto),
+                new EntidadeRef("PROSPECCAO", p.getId()));
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
