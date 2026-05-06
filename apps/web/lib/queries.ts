@@ -48,6 +48,8 @@ import {
   EmailEvento,
   Notificacao,
   NotificacaoPreferencia,
+  historico,
+  Evento,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
@@ -112,6 +114,10 @@ export const qk = {
     list: (params?: object) => ['notificacoes', 'list', params] as const,
     contagem: ['notificacoes', 'contagem'] as const,
     prefs: ['notificacoes', 'prefs'] as const,
+  },
+  historico: {
+    list: (entidadeTipo: string, entidadeId: string, tipos?: string) =>
+      ['historico', entidadeTipo, entidadeId, tipos] as const,
   },
 };
 
@@ -869,4 +875,30 @@ export function useNotificacaoSSE(enabled = true) {
       es?.close();
     };
   }, [enabled, qc]);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Histórico Unificado
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useHistorico(
+  entidadeTipo: string,
+  entidadeId: string,
+  tipos?: string
+) {
+  return useInfiniteQuery<ReturnType<typeof historico.list> extends Promise<infer R> ? R : never>({
+    queryKey: qk.historico.list(entidadeTipo, entidadeId, tipos),
+    queryFn: ({ pageParam }) =>
+      historico.list({
+        entidade_tipo: entidadeTipo,
+        entidade_id: entidadeId,
+        tipos,
+        cursor: pageParam as string | undefined,
+        size: 50,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) =>
+      last.pagination.hasMore ? last.pagination.cursor ?? undefined : undefined,
+    enabled: !!entidadeId,
+  });
 }

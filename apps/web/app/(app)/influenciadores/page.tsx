@@ -38,6 +38,8 @@ import { FilterBar } from '@/components/app/filter-bar';
 import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { InfluenciadorFormModal } from '@/components/forms/influenciador-form-modal';
 import { Can } from '@/components/auth/can';
+import { Timeline } from '@/components/app/timeline';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -370,82 +372,95 @@ function InfluenciadoresInner() {
                 </div>
               </SheetHeader>
 
-              <div className="mt-6 space-y-5">
-                <section>
-                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                    Handles
-                  </h4>
-                  {Object.keys(detail.handles ?? {}).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nenhum handle cadastrado.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {Object.entries(detail.handles).map(([k, v]) => (
-                        <div
-                          key={k}
-                          className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm"
-                        >
-                          <span className="capitalize text-muted-foreground">{k}</span>
-                          <span className="font-mono">{v}</span>
+              <Tabs defaultValue="dados" className="mt-4">
+                <TabsList className="self-start">
+                  <TabsTrigger value="dados">Dados</TabsTrigger>
+                  <TabsTrigger value="historico">Histórico</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="dados">
+                  <div className="mt-2 space-y-5">
+                    <section>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                        Handles
+                      </h4>
+                      {Object.keys(detail.handles ?? {}).length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Nenhum handle cadastrado.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {Object.entries(detail.handles).map(([k, v]) => (
+                            <div
+                              key={k}
+                              className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm"
+                            >
+                              <span className="capitalize text-muted-foreground">{k}</span>
+                              <span className="font-mono">{v}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                    </section>
+
+                    <section>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                        Tags
+                      </h4>
+                      {detail.tags.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sem tags.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {detail.tags.map(t => (
+                            <Badge key={t} variant="secondary">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+
+                    <section>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                        Audiência
+                      </h4>
+                      <p className="font-display text-2xl font-semibold tabular-nums">
+                        {detail.audienciaTotal?.toLocaleString('pt-BR') ?? '—'}
+                      </p>
+                    </section>
+
+                    {detail.observacoes && (
+                      <section>
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                          Observações
+                        </h4>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {detail.observacoes}
+                        </p>
+                      </section>
+                    )}
+
+                    <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                      <span>Criado em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(detail)}>
+                          <Pencil className="h-4 w-4" /> Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(detail.id, detail.nome)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" /> Remover
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </section>
-
-                <section>
-                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                    Tags
-                  </h4>
-                  {detail.tags.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Sem tags.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {detail.tags.map(t => (
-                        <Badge key={t} variant="secondary">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section>
-                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                    Audiência
-                  </h4>
-                  <p className="font-display text-2xl font-semibold tabular-nums">
-                    {detail.audienciaTotal?.toLocaleString('pt-BR') ?? '—'}
-                  </p>
-                </section>
-
-                {detail.observacoes && (
-                  <section>
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                      Observações
-                    </h4>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {detail.observacoes}
-                    </p>
-                  </section>
-                )}
-
-                <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-                  <span>Criado em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(detail)}>
-                      <Pencil className="h-4 w-4" /> Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(detail.id, detail.nome)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" /> Remover
-                    </Button>
                   </div>
-                </div>
-              </div>
+                </TabsContent>
+
+                <TabsContent value="historico" className="overflow-y-auto max-h-[70vh]">
+                  <Timeline entidadeTipo="INFLUENCIADOR" entidadeId={detail.id} />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </SheetContent>

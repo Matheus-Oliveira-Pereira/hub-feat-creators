@@ -715,3 +715,32 @@ export const webpush = {
   unsubscribe: (endpoint: string) =>
     api.post<void>('/api/v1/webpush/unsubscribe', { endpoint }),
 };
+
+// ─── Histórico Unificado ─────────────────────────────────────────────────────
+
+export interface Evento {
+  id: string;
+  tipo: string;
+  entidadesRelacionadas: Array<{ tipo: string; id: string }>;
+  payload: Record<string, unknown>;
+  autorId?: string;
+  ts: string;
+}
+
+export const historico = {
+  list: (params: {
+    entidade_tipo: string;
+    entidade_id: string;
+    tipos?: string;
+    cursor?: string;
+    size?: number;
+  }) => {
+    const q = new URLSearchParams();
+    q.set('entidade_tipo', params.entidade_tipo);
+    q.set('entidade_id', params.entidade_id);
+    if (params.tipos) q.set('tipos', params.tipos);
+    if (params.cursor) q.set('cursor', params.cursor);
+    if (params.size !== undefined) q.set('size', String(params.size));
+    return api.get<PageResponse<Evento>>(`/api/v1/historico?${q}`);
+  },
+};

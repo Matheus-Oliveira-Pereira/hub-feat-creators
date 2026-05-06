@@ -49,6 +49,8 @@ import { EmptyIllustration, EmptyState } from '@/components/app/empty-state';
 import { MarcaFormModal } from '@/components/forms/marca-form-modal';
 import { ContatoFormModal } from '@/components/forms/contato-form-modal';
 import { Can } from '@/components/auth/can';
+import { Timeline } from '@/components/app/timeline';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -404,75 +406,88 @@ function MarcasInner() {
                 </div>
               </SheetHeader>
 
-              <div className="mt-6 space-y-5">
-                {detail.site && (
-                  <section>
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                      Site
-                    </h4>
-                    <a
-                      href={detail.site.startsWith('http') ? detail.site : `https://${detail.site}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm font-mono hover:bg-muted hover:text-primary transition-colors"
-                    >
-                      {hostname(detail.site)}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </section>
-                )}
+              <Tabs defaultValue="dados" className="mt-4">
+                <TabsList className="self-start">
+                  <TabsTrigger value="dados">Dados</TabsTrigger>
+                  <TabsTrigger value="historico">Histórico</TabsTrigger>
+                </TabsList>
 
-                <ContatosSection
-                  marcaId={detail.id}
-                  onAdd={() => setContatoForm({ open: true, contato: null })}
-                  onEdit={c => setContatoForm({ open: true, contato: c })}
-                />
+                <TabsContent value="dados">
+                  <div className="mt-2 space-y-5">
+                    {detail.site && (
+                      <section>
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                          Site
+                        </h4>
+                        <a
+                          href={detail.site.startsWith('http') ? detail.site : `https://${detail.site}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm font-mono hover:bg-muted hover:text-primary transition-colors"
+                        >
+                          {hostname(detail.site)}
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </section>
+                    )}
 
-                <section>
-                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                    Tags
-                  </h4>
-                  {detail.tags.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Sem tags.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {detail.tags.map(t => (
-                        <Badge key={t} variant="secondary">
-                          {t}
-                        </Badge>
-                      ))}
+                    <ContatosSection
+                      marcaId={detail.id}
+                      onAdd={() => setContatoForm({ open: true, contato: null })}
+                      onEdit={c => setContatoForm({ open: true, contato: c })}
+                    />
+
+                    <section>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                        Tags
+                      </h4>
+                      {detail.tags.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sem tags.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {detail.tags.map(t => (
+                            <Badge key={t} variant="secondary">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+
+                    {detail.observacoes && (
+                      <section>
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                          Observações
+                        </h4>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {detail.observacoes}
+                        </p>
+                      </section>
+                    )}
+
+                    <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                      <span>Criada em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(detail)}>
+                          <Pencil className="h-4 w-4" /> Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(detail.id, detail.nome)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" /> Remover
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </section>
-
-                {detail.observacoes && (
-                  <section>
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                      Observações
-                    </h4>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {detail.observacoes}
-                    </p>
-                  </section>
-                )}
-
-                <div className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-                  <span>Criada em {new Date(detail.createdAt).toLocaleDateString('pt-BR')}</span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(detail)}>
-                      <Pencil className="h-4 w-4" /> Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(detail.id, detail.nome)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" /> Remover
-                    </Button>
                   </div>
-                </div>
-              </div>
+                </TabsContent>
+
+                <TabsContent value="historico" className="overflow-y-auto max-h-[70vh]">
+                  <Timeline entidadeTipo="MARCA" entidadeId={detail.id} />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </SheetContent>

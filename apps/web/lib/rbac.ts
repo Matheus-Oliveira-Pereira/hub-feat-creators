@@ -43,6 +43,11 @@ export const ROLE_GROUPS: RoleGroup[] = [
     roles: [{ code: 'BNOT', label: 'Browse', description: 'Ver notificações in-app' }],
   },
   {
+    key: 'HIS',
+    label: 'Histórico',
+    roles: [{ code: 'BHIS', label: 'Browse', description: 'Ver histórico unificado por entidade' }],
+  },
+  {
     key: 'SPECIAL',
     label: 'Especiais',
     roles: [

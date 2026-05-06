@@ -43,6 +43,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Can } from '@/components/auth/can';
+import { Timeline } from '@/components/app/timeline';
 import {
   STATUS_LABEL,
   STATUS_TONE,
@@ -153,7 +154,7 @@ function Inner({
           <DadosTab p={p} />
         </TabsContent>
         <TabsContent value="timeline" className="flex-1 overflow-y-auto scrollbar-thin pr-1">
-          <TimelineTab prospeccaoId={p.id} />
+          <Timeline entidadeTipo="PROSPECCAO" entidadeId={p.id} />
         </TabsContent>
         <TabsContent value="comentarios" className="flex-1 overflow-y-auto scrollbar-thin pr-1">
           <ComentariosTab prospeccaoId={p.id} />
