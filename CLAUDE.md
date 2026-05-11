@@ -172,6 +172,8 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `whatsapp/` → Cloud API oficial Meta, HMAC webhook, AES-GCM tokens, janela 24h, opt-out — PRD-008, ADR-006
 - ✅ `notificacoes/` → in-app (SSE badge + drawer), Web Push VAPID, throttle/dedupe 5min, prefs por tipo×canal, digest 07:00 BRT — PRD-009
 - ✅ `historico/` → tabela `eventos` append-only, EventoService + cursor `(ts,id)` base64, BHIS permission, Timeline component em drawers — PRD-010
+- ✅ `importacao/` → CSV/XLSX bulk import (univocity + POI), dry-run, SSE progress, CPF/CNPJ/phone validation, templates — PRD-011
+- ✅ `relatorios/` → funil prospecção, performance assessor, SLA tarefas + comparativo anterior, CSV export (EXPT), save relatórios, MVs refresh diário — PRD-012
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
@@ -198,6 +200,7 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **E-mail deliverability**: SPF/DKIM/DMARC alinhados antes de enviar em massa; warmup de IP/domínio; honrar `List-Unsubscribe`
 - **LGPD desde dia 1**: pseudonimizar logs, soft-delete com retenção definida, base legal documentada por finalidade
 - **Timezone**: DB em UTC; converter para `America/Sao_Paulo` no front; cuidado com agendamento de tarefas e DST (BR não usa mais, mas libs antigas erram)
+- **RelatorioService BRT labels**: `fmtPeriod()` converte Instant para `America/Sao_Paulo` — midnight UTC (00:00Z) vira 21:00 do dia anterior em BRT. Em testes usar instantes ao meio-dia UTC ou ajustar expectativas para a data BRT resultante
 - **Postgres locale**: collation `pt_BR.UTF-8` para ordenar nomes com acento ("Álvaro" < "Bruno")
 - **Spring Boot 3 + Java 21**: travar `<java.version>21</java.version>` no `pom.xml` e na CI; Java 22+ não LTS
 - **Next App Router**: server components default — `'use client'` quando precisar hooks; hidratação de datas requer ISO no servidor
