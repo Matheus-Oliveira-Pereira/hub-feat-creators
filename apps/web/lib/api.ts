@@ -744,3 +744,103 @@ export const historico = {
     return api.get<PageResponse<Evento>>(`/api/v1/historico?${q}`);
   },
 };
+
+// ─── Importação CSV (PRD-011) ─────────────────────────────────────────────────
+
+export type ImportEntidade = 'INFLUENCIADOR' | 'MARCA' | 'CONTATO';
+export type ImportStatus =
+  | 'UPLOADADO'
+  | 'VALIDANDO'
+  | 'PRONTO_DRY_RUN'
+  | 'EXECUTANDO'
+  | 'CONCLUIDO'
+  | 'CANCELADO'
+  | 'FALHOU';
+export type DedupStrategy = 'SKIP' | 'UPDATE' | 'DUPLICATE';
+
+export interface ImportJob {
+  id: string;
+  entidade: ImportEntidade;
+  arquivoNome: string;
+  status: ImportStatus;
+  totalLinhas: number | null;
+  processadas: number;
+  sucesso: number;
+  falha: number;
+  iniciadoEm: string | null;
+  concluidoEm: string | null;
+  createdAt: string;
+}
+
+export interface ImportLinha {
+  linha: number;
+  status: 'OK' | 'ERRO' | 'SKIP' | 'UPDATE';
+  entidadeId: string | null;
+  erros: string[];
+}
+
+export interface ColumnSuggestion {
+  csvHeader: string;
+  suggestedField: string | null;
+  distance: number;
+}
+
+export interface ProbeResponse {
+  headers: string[];
+  encoding: string;
+  separator: string;
+  suggestions: ColumnSuggestion[];
+}
+
+export interface ImportTemplate {
+  id: string;
+  nome: string;
+  entidade: ImportEntidade;
+  mapeamento: Record<string, string>;
+  createdAt: string;
+}
+
+async function uploadFile(file: File, entidade: ImportEntidade): Promise<ImportJob> {
+  const token = getToken();
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('entidade', entidade);
+  const res = await fetch(`${API_URL}/api/v1/imports/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw { status: res.status, ...body };
+  }
+  return res.json();
+}
+
+export const importacoes = {
+  upload: uploadFile,
+  probe: (id: string) => api.get<ProbeResponse>(`/api/v1/imports/${id}/probe`),
+  setMapeamento: (id: string, mapeamento: Record<string, string>, baseLegal: string, dedupStrategy: DedupStrategy) =>
+    api.put<ImportJob>(`/api/v1/imports/${id}/mapeamento`, { mapeamento, baseLegal, dedupStrategy }),
+  dryRun: (id: string) => api.post<ImportJob>(`/api/v1/imports/${id}/dry-run`, {}),
+  listDryRun: (id: string, page = 0, size = 200) =>
+    api.get<{ linhas: ImportLinha[]; total: number; hasMore: boolean }>(
+      `/api/v1/imports/${id}/dry-run?page=${page}&size=${size}`
+    ),
+  execute: (id: string) => api.post<ImportJob>(`/api/v1/imports/${id}/execute`, {}),
+  cancel: (id: string) => api.delete(`/api/v1/imports/${id}`),
+  get: (id: string) => api.get<ImportJob>(`/api/v1/imports/${id}`),
+  list: (page = 0, size = 20) =>
+    api.get<{ jobs: ImportJob[]; total: number; hasMore: boolean }>(
+      `/api/v1/imports?page=${page}&size=${size}`
+    ),
+  relatorioUrl: (id: string) => {
+    const token = getToken();
+    return `${API_URL}/api/v1/imports/${id}/relatorio${token ? `?token=${token}` : ''}`;
+  },
+  listTemplates: (entidade?: ImportEntidade) =>
+    api.get<ImportTemplate[]>(`/api/v1/imports/templates${entidade ? `?entidade=${entidade}` : ''}`),
+  createTemplate: (nome: string, entidade: ImportEntidade, mapeamento: Record<string, string>) =>
+    api.post<ImportTemplate>('/api/v1/imports/templates', { nome, entidade, mapeamento }),
+  deleteTemplate: (id: string) => api.delete(`/api/v1/imports/templates/${id}`),
+};

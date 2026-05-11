@@ -14,6 +14,7 @@ import {
   Mail,
   CheckSquare,
   MessageCircle,
+  Upload,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
@@ -41,6 +42,7 @@ const NAV: NavItem[] = [
   { href: '/tarefas' as Route, label: 'Tarefas', icon: CheckSquare, requires: ['BTAR'] },
   { href: '/email' as Route, label: 'E-mail', icon: Mail, requires: ['BEML'] },
   { href: '/whatsapp' as Route, label: 'WhatsApp', icon: MessageCircle, requires: ['BWAP'] },
+  { href: '/importacao' as Route, label: 'Importação', icon: Upload, requires: ['BIMP'] },
   { href: '/perfis' as Route, label: 'Perfis', icon: ShieldCheck, requires: ['BPRF'] },
 ];
 

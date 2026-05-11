@@ -48,6 +48,14 @@ export const ROLE_GROUPS: RoleGroup[] = [
     roles: [{ code: 'BHIS', label: 'Browse', description: 'Ver histórico unificado por entidade' }],
   },
   {
+    key: 'IMP',
+    label: 'Importação',
+    roles: [
+      { code: 'BIMP', label: 'Browse', description: 'Ver jobs de importação e relatórios' },
+      { code: 'CIMP', label: 'Change', description: 'Criar e executar imports CSV/XLSX' },
+    ],
+  },
+  {
     key: 'SPECIAL',
     label: 'Especiais',
     roles: [
