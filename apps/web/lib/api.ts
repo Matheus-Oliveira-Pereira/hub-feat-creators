@@ -844,3 +844,93 @@ export const importacoes = {
     api.post<ImportTemplate>('/api/v1/imports/templates', { nome, entidade, mapeamento }),
   deleteTemplate: (id: string) => api.delete(`/api/v1/imports/templates/${id}`),
 };
+
+// ─── Relatórios (PRD-012) ─────────────────────────────────────────────────────
+
+export type RelatorioTipo = 'FUNIL' | 'PERFORMANCE_ASSESSOR' | 'TAREFAS_SLA';
+
+export interface FunilItem {
+  status: string;
+  qtd: number;
+  qtdAnterior: number;
+  deltaPercent: number;
+  valorTotalCentavos: number;
+  tempoMedioDias: number;
+}
+
+export interface FunilResult {
+  itens: FunilItem[];
+  periodoAtual: string;
+  periodoAnterior: string;
+}
+
+export interface AssessorItem {
+  assessorId: string;
+  assessorEmail: string;
+  abertas: number;
+  ganhas: number;
+  perdidas: number;
+  ticketMedioCentavos: number;
+  tempoMedioFechamentoDias: number;
+  abertasAnterior: number;
+  ganhasAnterior: number;
+  perdidasAnterior: number;
+}
+
+export interface PerformanceResult {
+  assessores: AssessorItem[];
+  periodoAtual: string;
+  periodoAnterior: string;
+}
+
+export interface TarefaSlaItem {
+  responsavelId: string;
+  responsavelEmail: string;
+  total: number;
+  noPrazo: number;
+  atrasadas: number;
+  atrasoMedioHoras: number;
+  totalAnterior: number;
+}
+
+export interface TarefaSlaResult {
+  assessores: TarefaSlaItem[];
+  periodoAtual: string;
+  periodoAnterior: string;
+}
+
+export interface RelatorioSalvo {
+  id: string;
+  nome: string;
+  relatorioTipo: RelatorioTipo;
+  filtros: Record<string, unknown>;
+  createdAt: string;
+}
+
+function buildPeriodParams(from: string, to: string, extra?: Record<string, string>) {
+  const p = new URLSearchParams({ from, to });
+  if (extra) Object.entries(extra).forEach(([k, v]) => p.set(k, v));
+  return p.toString();
+}
+
+export const relatorios = {
+  funil: (from: string, to: string, assessorId?: string) =>
+    api.get<FunilResult>(`/api/v1/relatorios/funil?${buildPeriodParams(from, to, assessorId ? { assessorId } : undefined)}`),
+
+  performanceAssessor: (from: string, to: string) =>
+    api.get<PerformanceResult>(`/api/v1/relatorios/performance-assessor?${buildPeriodParams(from, to)}`),
+
+  tarefasSla: (from: string, to: string, responsavelId?: string) =>
+    api.get<TarefaSlaResult>(`/api/v1/relatorios/tarefas-sla?${buildPeriodParams(from, to, responsavelId ? { responsavelId } : undefined)}`),
+
+  exportUrl: (tipo: 'funil' | 'performance-assessor' | 'tarefas-sla', from: string, to: string, extra?: Record<string, string>) => {
+    const token = getToken();
+    const params = buildPeriodParams(from, to, { ...(extra ?? {}), ...(token ? { token } : {}) });
+    return `${API_URL}/api/v1/relatorios/${tipo}/export.csv?${params}`;
+  },
+
+  listarSalvos: () => api.get<RelatorioSalvo[]>('/api/v1/relatorios-salvos'),
+  salvar: (nome: string, tipo: RelatorioTipo, filtros: Record<string, unknown>) =>
+    api.post<RelatorioSalvo>('/api/v1/relatorios-salvos', { nome, tipo, filtros }),
+  deletarSalvo: (id: string) => api.delete(`/api/v1/relatorios-salvos/${id}`),
+};
