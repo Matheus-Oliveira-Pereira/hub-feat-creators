@@ -25,4 +25,19 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
 
     @Query("SELECT i FROM Influenciador i WHERE i.deletedAt IS NULL ORDER BY i.createdAt DESC")
     java.util.List<Influenciador> findAllActiveForExport();
+
+    @Query(
+            value = """
+      SELECT * FROM influenciadores
+      WHERE assessoria_id = :assessoriaId
+        AND deleted_at IS NULL
+        AND handles->>:handleKey = :handleValue
+      LIMIT 1
+      """,
+            nativeQuery = true)
+    Optional<Influenciador> findByHandleAndAssessoria(
+            @Param("assessoriaId") UUID assessoriaId,
+            @Param("handleKey") String handleKey,
+            @Param("handleValue") String handleValue);
+
 }

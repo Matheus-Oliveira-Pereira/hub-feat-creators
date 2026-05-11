@@ -9,4 +9,6 @@ public interface ContatoRepository extends JpaRepository<Contato, UUID> {
     Optional<Contato> findByIdAndDeletedAtIsNull(UUID id);
 
     List<Contato> findByMarcaIdAndDeletedAtIsNull(UUID marcaId);
+
+    Optional<Contato> findByEmailAndMarcaIdAndDeletedAtIsNull(String email, UUID marcaId);
 }

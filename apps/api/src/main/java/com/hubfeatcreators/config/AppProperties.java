@@ -91,6 +91,17 @@ public class AppProperties {
     private Webpush webpush = new Webpush();
     private Web web = new Web();
     private Features features = new Features();
+    private Import importConfig = new Import();
+
+    public static class Import {
+        private String uploadDir = System.getProperty("java.io.tmpdir") + "/hub-imports";
+
+        public String getUploadDir() { return uploadDir; }
+        public void setUploadDir(String uploadDir) { this.uploadDir = uploadDir; }
+    }
+
+    public Import getImport() { return importConfig; }
+    public void setImport(Import importConfig) { this.importConfig = importConfig; }
 
     public static class Web {
         private String baseUrl = "http://localhost:3000";
@@ -155,6 +166,7 @@ public class AppProperties {
         private boolean signupEnabled = true;
         private boolean whatsappEnabled = false;
         private boolean historicoUnified = true;
+        private boolean importEnabled = true;
 
         public boolean isComplianceStrict() {
             return complianceStrict;
@@ -186,6 +198,14 @@ public class AppProperties {
 
         public void setHistoricoUnified(boolean historicoUnified) {
             this.historicoUnified = historicoUnified;
+        }
+
+        public boolean isImportEnabled() {
+            return importEnabled;
+        }
+
+        public void setImportEnabled(boolean importEnabled) {
+            this.importEnabled = importEnabled;
         }
     }
 

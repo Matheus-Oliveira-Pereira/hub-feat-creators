@@ -25,4 +25,14 @@ public interface MarcaRepository extends JpaRepository<Marca, UUID> {
 
     @Query("SELECT m FROM Marca m WHERE m.deletedAt IS NULL ORDER BY m.createdAt DESC")
     java.util.List<Marca> findAllActiveForExport();
+
+    @Query(
+            """
+      SELECT m FROM Marca m
+      WHERE m.assessoriaId = :assessoriaId
+        AND m.deletedAt IS NULL
+        AND LOWER(m.nome) = LOWER(:nome)
+      """)
+    java.util.Optional<Marca> findByNomeIgnoreCaseAndAssessoriaId(
+            @Param("nome") String nome, @Param("assessoriaId") UUID assessoriaId);
 }
