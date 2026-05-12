@@ -40,11 +40,18 @@ public class DsrSolicitacao {
     private Instant atendidoEm;
 
     public enum TipoDsr {
-        ACESSO, CORRECAO, EXCLUSAO, PORTABILIDADE, OPOSICAO
+        ACESSO,
+        CORRECAO,
+        EXCLUSAO,
+        PORTABILIDADE,
+        OPOSICAO
     }
 
     public enum StatusDsr {
-        PENDENTE, EM_ANDAMENTO, CONCLUIDA, REJEITADA
+        PENDENTE,
+        EM_ANDAMENTO,
+        CONCLUIDA,
+        REJEITADA
     }
 
     public DsrSolicitacao() {}
@@ -58,17 +65,55 @@ public class DsrSolicitacao {
         this.prazoLegalEm = Instant.now().plus(java.time.Duration.ofDays(15));
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getTitularTipo() { return titularTipo; }
-    public UUID getTitularId() { return titularId; }
-    public TipoDsr getTipo() { return tipo; }
-    public StatusDsr getStatus() { return status; }
-    public void setStatus(StatusDsr status) { this.status = status; }
-    public String getResultadoPath() { return resultadoPath; }
-    public void setResultadoPath(String resultadoPath) { this.resultadoPath = resultadoPath; }
-    public Instant getPrazoLegalEm() { return prazoLegalEm; }
-    public Instant getCriadoEm() { return criadoEm; }
-    public Instant getAtendidoEm() { return atendidoEm; }
-    public void setAtendidoEm(Instant atendidoEm) { this.atendidoEm = atendidoEm; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getTitularTipo() {
+        return titularTipo;
+    }
+
+    public UUID getTitularId() {
+        return titularId;
+    }
+
+    public TipoDsr getTipo() {
+        return tipo;
+    }
+
+    public StatusDsr getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusDsr status) {
+        this.status = status;
+    }
+
+    public String getResultadoPath() {
+        return resultadoPath;
+    }
+
+    public void setResultadoPath(String resultadoPath) {
+        this.resultadoPath = resultadoPath;
+    }
+
+    public Instant getPrazoLegalEm() {
+        return prazoLegalEm;
+    }
+
+    public Instant getCriadoEm() {
+        return criadoEm;
+    }
+
+    public Instant getAtendidoEm() {
+        return atendidoEm;
+    }
+
+    public void setAtendidoEm(Instant atendidoEm) {
+        this.atendidoEm = atendidoEm;
+    }
 }

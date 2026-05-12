@@ -36,7 +36,10 @@ class WebPushSenderTest {
     void setUp() {
         sender =
                 new WebPushSender(
-                        new AppProperties(), subRepo, new SimpleMeterRegistry(), new ObjectMapper());
+                        new AppProperties(),
+                        subRepo,
+                        new SimpleMeterRegistry(),
+                        new ObjectMapper());
         try {
             var field = WebPushSender.class.getDeclaredField("pushService");
             field.setAccessible(true);

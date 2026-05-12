@@ -11,7 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> {
 
-    @Query("""
+    @Query(
+            """
         SELECT n FROM Notificacao n
         WHERE n.assessoriaId = :assessoriaId
           AND n.usuarioId = :usuarioId
@@ -28,13 +29,16 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
 
     long countByAssessoriaIdAndUsuarioIdAndLidaEmIsNull(UUID assessoriaId, UUID usuarioId);
 
-    @Query("SELECT COUNT(n) FROM Notificacao n WHERE n.assessoriaId = :assessoriaId AND n.lidaEm IS NULL")
+    @Query(
+            "SELECT COUNT(n) FROM Notificacao n WHERE n.assessoriaId = :assessoriaId AND n.lidaEm IS NULL")
     long countNaoLidasByAssessoriaId(UUID assessoriaId);
 
-    Optional<Notificacao> findByIdAndAssessoriaIdAndUsuarioId(UUID id, UUID assessoriaId, UUID usuarioId);
+    Optional<Notificacao> findByIdAndAssessoriaIdAndUsuarioId(
+            UUID id, UUID assessoriaId, UUID usuarioId);
 
     @Modifying
-    @Query("""
+    @Query(
+            """
         UPDATE Notificacao n SET n.lidaEm = :agora
         WHERE n.assessoriaId = :assessoriaId
           AND n.usuarioId = :usuarioId
@@ -42,7 +46,8 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
         """)
     int marcarTodasLidas(UUID assessoriaId, UUID usuarioId, Instant agora);
 
-    @Query("""
+    @Query(
+            """
         SELECT n FROM Notificacao n
         WHERE n.assessoriaId = :assessoriaId
           AND n.usuarioId = :usuarioId
@@ -51,5 +56,10 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
           AND n.lidaEm IS NULL
         ORDER BY n.createdAt DESC
         """)
-    Page<Notificacao> findPendingForDedupe(UUID assessoriaId, UUID usuarioId, NotificacaoTipo tipo, UUID alvoId, Pageable pageable);
+    Page<Notificacao> findPendingForDedupe(
+            UUID assessoriaId,
+            UUID usuarioId,
+            NotificacaoTipo tipo,
+            UUID alvoId,
+            Pageable pageable);
 }

@@ -1,11 +1,20 @@
 package com.hubfeatcreators.onboarding;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
 import com.hubfeatcreators.config.AppProperties;
 import com.hubfeatcreators.domain.onboarding.*;
 import com.hubfeatcreators.domain.usuario.Usuario;
 import com.hubfeatcreators.domain.usuario.UsuarioRepository;
 import com.hubfeatcreators.infra.mail.SystemMailService;
 import com.hubfeatcreators.infra.web.BusinessException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,16 +25,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -61,7 +60,9 @@ class OnboardingServiceTest {
     void verifyEmail_validToken_setsVerifiedAt() {
         String raw = "token-raw";
         String hash = OnboardingService.sha256(raw);
-        EmailVerifyToken token = new EmailVerifyToken(UUID.randomUUID(), hash, Instant.now().plus(1, ChronoUnit.HOURS));
+        EmailVerifyToken token =
+                new EmailVerifyToken(
+                        UUID.randomUUID(), hash, Instant.now().plus(1, ChronoUnit.HOURS));
 
         Usuario usuario = new Usuario(UUID.randomUUID(), "a@b.com", "hash", Usuario.Role.ASSESSOR);
 
@@ -79,7 +80,9 @@ class OnboardingServiceTest {
     void verifyEmail_expiredToken_throws410() {
         String raw = "expired-token";
         String hash = OnboardingService.sha256(raw);
-        EmailVerifyToken token = new EmailVerifyToken(UUID.randomUUID(), hash, Instant.now().minus(1, ChronoUnit.HOURS));
+        EmailVerifyToken token =
+                new EmailVerifyToken(
+                        UUID.randomUUID(), hash, Instant.now().minus(1, ChronoUnit.HOURS));
 
         when(verifyRepo.findByTokenHash(hash)).thenReturn(Optional.of(token));
 
@@ -101,7 +104,8 @@ class OnboardingServiceTest {
         String raw = "reset-raw";
         String hash = OnboardingService.sha256(raw);
         UUID uid = UUID.randomUUID();
-        PasswordResetToken token = new PasswordResetToken(uid, hash, Instant.now().plus(1, ChronoUnit.HOURS));
+        PasswordResetToken token =
+                new PasswordResetToken(uid, hash, Instant.now().plus(1, ChronoUnit.HOURS));
 
         Usuario usuario = new Usuario(uid, "a@b.com", "old", Usuario.Role.ASSESSOR);
         when(resetRepo.findByTokenHash(hash)).thenReturn(Optional.of(token));

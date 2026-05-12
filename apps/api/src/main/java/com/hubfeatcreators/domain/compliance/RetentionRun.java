@@ -31,7 +31,8 @@ public class RetentionRun {
 
     public RetentionRun() {}
 
-    public RetentionRun(LocalDate data, String tabela, int anonimizados, int purgados, long duracaoMs) {
+    public RetentionRun(
+            LocalDate data, String tabela, int anonimizados, int purgados, long duracaoMs) {
         this.data = data;
         this.tabela = tabela;
         this.anonimizados = anonimizados;
@@ -39,11 +40,31 @@ public class RetentionRun {
         this.duracaoMs = duracaoMs;
     }
 
-    public UUID getId() { return id; }
-    public LocalDate getData() { return data; }
-    public String getTabela() { return tabela; }
-    public int getAnonimizados() { return anonimizados; }
-    public int getPurgados() { return purgados; }
-    public long getDuracaoMs() { return duracaoMs; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public LocalDate getData() {
+        return data;
+    }
+
+    public String getTabela() {
+        return tabela;
+    }
+
+    public int getAnonimizados() {
+        return anonimizados;
+    }
+
+    public int getPurgados() {
+        return purgados;
+    }
+
+    public long getDuracaoMs() {
+        return duracaoMs;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

@@ -30,12 +30,35 @@ public class DsrToken {
         this.expiresAt = expiresAt;
     }
 
-    public UUID getId() { return id; }
-    public UUID getSolicitacaoId() { return solicitacaoId; }
-    public String getTokenHash() { return tokenHash; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getUsedAt() { return usedAt; }
-    public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
-    public boolean isExpired() { return Instant.now().isAfter(expiresAt); }
-    public boolean isUsed() { return usedAt != null; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getSolicitacaoId() {
+        return solicitacaoId;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Instant getUsedAt() {
+        return usedAt;
+    }
+
+    public void setUsedAt(Instant usedAt) {
+        this.usedAt = usedAt;
+    }
+
+    public boolean isExpired() {
+        return Instant.now().isAfter(expiresAt);
+    }
+
+    public boolean isUsed() {
+        return usedAt != null;
+    }
 }

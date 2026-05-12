@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ConsentimentoRepository extends JpaRepository<Consentimento, UUID> {
     List<Consentimento> findByTitularTipoAndTitularId(String titularTipo, UUID titularId);
-    Optional<Consentimento> findByTitularTipoAndTitularIdAndFinalidade(String titularTipo, UUID titularId, String finalidade);
+
+    Optional<Consentimento> findByTitularTipoAndTitularIdAndFinalidade(
+            String titularTipo, UUID titularId, String finalidade);
 }

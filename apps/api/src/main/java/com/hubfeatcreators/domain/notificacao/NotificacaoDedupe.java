@@ -22,7 +22,15 @@ public class NotificacaoDedupe {
         this.lastEmitted = lastEmitted;
     }
 
-    public String getKey() { return key; }
-    public Instant getLastEmitted() { return lastEmitted; }
-    public void setLastEmitted(Instant lastEmitted) { this.lastEmitted = lastEmitted; }
+    public String getKey() {
+        return key;
+    }
+
+    public Instant getLastEmitted() {
+        return lastEmitted;
+    }
+
+    public void setLastEmitted(Instant lastEmitted) {
+        this.lastEmitted = lastEmitted;
+    }
 }

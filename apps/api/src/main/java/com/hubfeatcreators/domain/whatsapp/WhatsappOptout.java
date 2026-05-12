@@ -31,9 +31,23 @@ public class WhatsappOptout {
         this.motivo = motivo;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getE164() { return e164; }
-    public String getMotivo() { return motivo; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getE164() {
+        return e164;
+    }
+
+    public String getMotivo() {
+        return motivo;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

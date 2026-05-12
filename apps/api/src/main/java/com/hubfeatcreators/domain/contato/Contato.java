@@ -125,6 +125,11 @@ public class Contato {
         this.deletedAt = deletedAt;
     }
 
-    public BaseLegal getBaseLegal() { return baseLegal; }
-    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
+    public BaseLegal getBaseLegal() {
+        return baseLegal;
+    }
+
+    public void setBaseLegal(BaseLegal baseLegal) {
+        this.baseLegal = baseLegal;
+    }
 }

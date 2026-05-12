@@ -38,27 +38,44 @@ public class NotificacaoDigestScheduler {
         String dataHoje = LocalDate.now(TZ_BR).toString();
         log.info("notificacao.digest.scheduler.start data={}", dataHoje);
 
-        assessoriaRepo.findAll().forEach(assessoria -> {
-            try {
-                // Idempotência: mesmo key por assessoria+data → job ignora se já executado (AC-8)
-                var idempotencyKey = java.util.UUID.nameUUIDFromBytes(
-                        (assessoria.getId().toString() + ":NOTIFICACAO_DIGEST:" + dataHoje).getBytes());
+        assessoriaRepo
+                .findAll()
+                .forEach(
+                        assessoria -> {
+                            try {
+                                // Idempotência: mesmo key por assessoria+data → job ignora se já
+                                // executado (AC-8)
+                                var idempotencyKey =
+                                        java.util.UUID.nameUUIDFromBytes(
+                                                (assessoria.getId().toString()
+                                                                + ":NOTIFICACAO_DIGEST:"
+                                                                + dataHoje)
+                                                        .getBytes());
 
-                jobService.enqueue(
-                        assessoria.getId(),
-                        "NOTIFICACAO_DIGEST",
-                        Map.of("assessoriaId", assessoria.getId().toString(), "data", dataHoje),
-                        idempotencyKey);
+                                jobService.enqueue(
+                                        assessoria.getId(),
+                                        "NOTIFICACAO_DIGEST",
+                                        Map.of(
+                                                "assessoriaId",
+                                                assessoria.getId().toString(),
+                                                "data",
+                                                dataHoje),
+                                        idempotencyKey);
 
-                Counter.builder("notificacao_digest_enfileirado_total")
-                        .register(meterRegistry).increment();
-            } catch (Exception e) {
-                log.error("notificacao.digest.scheduler.error assessoriaId={} msg={}",
-                        assessoria.getId(), e.getMessage(), e);
-                Counter.builder("notificacao_digest_falha_total")
-                        .register(meterRegistry).increment();
-            }
-        });
+                                Counter.builder("notificacao_digest_enfileirado_total")
+                                        .register(meterRegistry)
+                                        .increment();
+                            } catch (Exception e) {
+                                log.error(
+                                        "notificacao.digest.scheduler.error assessoriaId={} msg={}",
+                                        assessoria.getId(),
+                                        e.getMessage(),
+                                        e);
+                                Counter.builder("notificacao_digest_falha_total")
+                                        .register(meterRegistry)
+                                        .increment();
+                            }
+                        });
 
         log.info("notificacao.digest.scheduler.done data={}", dataHoje);
     }

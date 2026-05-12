@@ -39,7 +39,8 @@ public class WebpushSubscription {
 
     protected WebpushSubscription() {}
 
-    public WebpushSubscription(UUID usuarioId, String endpoint, String p256dh, String authSecret, String userAgent) {
+    public WebpushSubscription(
+            UUID usuarioId, String endpoint, String p256dh, String authSecret, String userAgent) {
         this.usuarioId = usuarioId;
         this.endpoint = endpoint;
         this.p256dh = p256dh;
@@ -47,16 +48,47 @@ public class WebpushSubscription {
         this.userAgent = userAgent;
     }
 
-    public UUID getId() { return id; }
-    public UUID getUsuarioId() { return usuarioId; }
-    public String getEndpoint() { return endpoint; }
-    public String getP256dh() { return p256dh; }
-    public String getAuthSecret() { return authSecret; }
-    public String getUserAgent() { return userAgent; }
-    public boolean isAtiva() { return ativa; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getLastUsedAt() { return lastUsedAt; }
+    public UUID getId() {
+        return id;
+    }
 
-    public void setAtiva(boolean ativa) { this.ativa = ativa; }
-    public void setLastUsedAt(Instant lastUsedAt) { this.lastUsedAt = lastUsedAt; }
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public String getP256dh() {
+        return p256dh;
+    }
+
+    public String getAuthSecret() {
+        return authSecret;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public boolean isAtiva() {
+        return ativa;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getLastUsedAt() {
+        return lastUsedAt;
+    }
+
+    public void setAtiva(boolean ativa) {
+        this.ativa = ativa;
+    }
+
+    public void setLastUsedAt(Instant lastUsedAt) {
+        this.lastUsedAt = lastUsedAt;
+    }
 }

@@ -154,6 +154,11 @@ public class Influenciador {
         this.assessorResponsavelId = assessorResponsavelId;
     }
 
-    public BaseLegal getBaseLegal() { return baseLegal; }
-    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
+    public BaseLegal getBaseLegal() {
+        return baseLegal;
+    }
+
+    public void setBaseLegal(BaseLegal baseLegal) {
+        this.baseLegal = baseLegal;
+    }
 }

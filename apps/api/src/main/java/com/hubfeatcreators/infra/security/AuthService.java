@@ -80,7 +80,8 @@ public class AuthService {
             String senha,
             HttpServletRequest req) {
         if (!props.getFeatures().isSignupEnabled()) {
-            throw BusinessException.forbidden("SIGNUP_DISABLED", "Novos cadastros estão temporariamente desativados.");
+            throw BusinessException.forbidden(
+                    "SIGNUP_DISABLED", "Novos cadastros estão temporariamente desativados.");
         }
         if (assessoriaRepo.existsBySlug(slug)) {
             throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
@@ -92,14 +93,24 @@ public class AuthService {
         Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
         Perfil ownerProfile = rbacBootstrap.seedAssessoria(assessoria.getId());
 
-        Usuario owner = new Usuario(assessoria.getId(), email, passwordEncoder.encode(senha), Usuario.Role.OWNER);
+        Usuario owner =
+                new Usuario(
+                        assessoria.getId(),
+                        email,
+                        passwordEncoder.encode(senha),
+                        Usuario.Role.OWNER);
         owner.setProfileId(ownerProfile.getId());
         owner = usuarioRepo.save(owner);
 
         onboardingService.sendVerification(owner);
 
-        auditLogService.logAuth(assessoria.getId(), owner.getId(), AuditLog.Acao.SIGNUP,
-                Map.of("email", email, "slug", slug), ip(req), ua(req));
+        auditLogService.logAuth(
+                assessoria.getId(),
+                owner.getId(),
+                AuditLog.Acao.SIGNUP,
+                Map.of("email", email, "slug", slug),
+                ip(req),
+                ua(req));
 
         return new SignupResult(owner.getId(), email, false);
     }
@@ -109,25 +120,31 @@ public class AuthService {
         String lockKey = email.toLowerCase();
         lockoutService.checkLockout(lockKey);
 
-        Usuario usuario = usuarioRepo.findByEmail(email)
-                .filter(u -> u.getDeletedAt() == null)
-                .orElse(null);
+        Usuario usuario =
+                usuarioRepo.findByEmail(email).filter(u -> u.getDeletedAt() == null).orElse(null);
 
         if (usuario == null || !passwordEncoder.matches(senha, usuario.getSenhaHash())) {
             if (usuario != null) {
                 lockoutService.recordFailure(lockKey);
-                auditLogService.logAuth(usuario.getAssessoriaId(), usuario.getId(),
-                        AuditLog.Acao.LOGIN_FAILED, Map.of("reason", "BAD_CREDENTIALS"), ip(req), ua(req));
+                auditLogService.logAuth(
+                        usuario.getAssessoriaId(),
+                        usuario.getId(),
+                        AuditLog.Acao.LOGIN_FAILED,
+                        Map.of("reason", "BAD_CREDENTIALS"),
+                        ip(req),
+                        ua(req));
             }
             throw BusinessException.unauthorized("Credenciais inválidas.");
         }
 
         if (!usuario.isAtivo()) {
-            throw BusinessException.unauthorized("Conta inativa. Entre em contato com o administrador.");
+            throw BusinessException.unauthorized(
+                    "Conta inativa. Entre em contato com o administrador.");
         }
 
         if (!usuario.isEmailVerificado()) {
-            throw BusinessException.forbidden("EMAIL_NOT_VERIFIED", "Verifique seu e-mail antes de fazer login.");
+            throw BusinessException.forbidden(
+                    "EMAIL_NOT_VERIFIED", "Verifique seu e-mail antes de fazer login.");
         }
 
         // MFA check
@@ -139,8 +156,13 @@ public class AuthService {
             if (!valid) {
                 valid = mfaService.useRecoveryCode(usuario.getId(), totpCode);
                 if (valid) {
-                    auditLogService.logAuth(usuario.getAssessoriaId(), usuario.getId(),
-                            AuditLog.Acao.MFA_RECOVERY_USED, Map.of(), ip(req), ua(req));
+                    auditLogService.logAuth(
+                            usuario.getAssessoriaId(),
+                            usuario.getId(),
+                            AuditLog.Acao.MFA_RECOVERY_USED,
+                            Map.of(),
+                            ip(req),
+                            ua(req));
                 }
             }
             if (!valid) {
@@ -153,8 +175,13 @@ public class AuthService {
         usuario.setUltimoLoginEm(Instant.now());
         usuarioRepo.save(usuario);
 
-        auditLogService.logAuth(usuario.getAssessoriaId(), usuario.getId(),
-                AuditLog.Acao.LOGIN, Map.of(), ip(req), ua(req));
+        auditLogService.logAuth(
+                usuario.getAssessoriaId(),
+                usuario.getId(),
+                AuditLog.Acao.LOGIN,
+                Map.of(),
+                ip(req),
+                ua(req));
 
         return issueTokenPair(usuario, usuario.getAssessoriaId(), req);
     }
@@ -162,8 +189,10 @@ public class AuthService {
     @Transactional
     public TokenPair refresh(String rawToken, HttpServletRequest req) {
         String hash = sha256(rawToken);
-        RefreshToken stored = refreshRepo.findByTokenHash(hash)
-                .orElseThrow(() -> BusinessException.unauthorized("Token inválido."));
+        RefreshToken stored =
+                refreshRepo
+                        .findByTokenHash(hash)
+                        .orElseThrow(() -> BusinessException.unauthorized("Token inválido."));
 
         if (!stored.isValid()) {
             refreshRepo.revokeFamily(stored.getFamilyId());
@@ -172,36 +201,52 @@ public class AuthService {
 
         stored.setRevokedAt(Instant.now());
 
-        Usuario usuario = usuarioRepo.findById(stored.getUsuarioId())
-                .orElseThrow(() -> BusinessException.unauthorized("Usuário não encontrado."));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(stored.getUsuarioId())
+                        .orElseThrow(
+                                () -> BusinessException.unauthorized("Usuário não encontrado."));
 
         String newRaw = UUID.randomUUID().toString();
-        RefreshToken newToken = new RefreshToken(
-                sha256(newRaw),
-                stored.getUsuarioId(),
-                stored.getAssessoriaId(),
-                stored.getFamilyId(),
-                Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
-                req.getHeader("User-Agent"),
-                req.getRemoteAddr());
+        RefreshToken newToken =
+                new RefreshToken(
+                        sha256(newRaw),
+                        stored.getUsuarioId(),
+                        stored.getAssessoriaId(),
+                        stored.getFamilyId(),
+                        Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
+                        req.getHeader("User-Agent"),
+                        req.getRemoteAddr());
 
         stored.setReplacedBy(newToken.getId());
         refreshRepo.save(stored);
         refreshRepo.save(newToken);
 
-        String accessToken = jwtService.generateAccessToken(
-                usuario.getId(), stored.getAssessoriaId(), usuario.getRole().name(), permissionsOf(usuario));
+        String accessToken =
+                jwtService.generateAccessToken(
+                        usuario.getId(),
+                        stored.getAssessoriaId(),
+                        usuario.getRole().name(),
+                        permissionsOf(usuario));
 
         return new TokenPair(accessToken, newRaw);
     }
 
     @Transactional
     public void logout(String rawToken, HttpServletRequest req) {
-        refreshRepo.findByTokenHash(sha256(rawToken)).ifPresent(rt -> {
-            refreshRepo.revokeFamily(rt.getFamilyId());
-            auditLogService.logAuth(rt.getAssessoriaId(), rt.getUsuarioId(),
-                    AuditLog.Acao.LOGOUT, Map.of(), ip(req), ua(req));
-        });
+        refreshRepo
+                .findByTokenHash(sha256(rawToken))
+                .ifPresent(
+                        rt -> {
+                            refreshRepo.revokeFamily(rt.getFamilyId());
+                            auditLogService.logAuth(
+                                    rt.getAssessoriaId(),
+                                    rt.getUsuarioId(),
+                                    AuditLog.Acao.LOGOUT,
+                                    Map.of(),
+                                    ip(req),
+                                    ua(req));
+                        });
     }
 
     // ── helpers ──────────────────────────────────────────────────────────
@@ -210,18 +255,23 @@ public class AuthService {
         String rawRefresh = UUID.randomUUID().toString();
         UUID familyId = UUID.randomUUID();
 
-        RefreshToken refreshToken = new RefreshToken(
-                sha256(rawRefresh),
-                usuario.getId(),
-                assessoriaId,
-                familyId,
-                Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
-                req.getHeader("User-Agent"),
-                req.getRemoteAddr());
+        RefreshToken refreshToken =
+                new RefreshToken(
+                        sha256(rawRefresh),
+                        usuario.getId(),
+                        assessoriaId,
+                        familyId,
+                        Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
+                        req.getHeader("User-Agent"),
+                        req.getRemoteAddr());
         refreshRepo.save(refreshToken);
 
-        String accessToken = jwtService.generateAccessToken(
-                usuario.getId(), assessoriaId, usuario.getRole().name(), permissionsOf(usuario));
+        String accessToken =
+                jwtService.generateAccessToken(
+                        usuario.getId(),
+                        assessoriaId,
+                        usuario.getRole().name(),
+                        permissionsOf(usuario));
 
         return new TokenPair(accessToken, rawRefresh);
     }
@@ -251,8 +301,7 @@ public class AuthService {
     }
 
     public Usuario getUsuario(UUID id) {
-        return usuarioRepo.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        return usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
     }
 
     public record TokenPair(String accessToken, String refreshToken) {}

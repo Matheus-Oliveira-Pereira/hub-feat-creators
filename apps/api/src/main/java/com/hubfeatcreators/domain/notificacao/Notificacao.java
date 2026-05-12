@@ -80,20 +80,63 @@ public class Notificacao {
         this.alvoId = alvoId;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getUsuarioId() { return usuarioId; }
-    public NotificacaoTipo getTipo() { return tipo; }
-    public NotificacaoPrioridade getPrioridade() { return prioridade; }
-    public String getTitulo() { return titulo; }
-    public String getMensagem() { return mensagem; }
-    public Map<String, Object> getPayload() { return payload; }
-    public String getAlvoTipo() { return alvoTipo; }
-    public UUID getAlvoId() { return alvoId; }
-    public int getAgrupadas() { return agrupadas; }
-    public Instant getLidaEm() { return lidaEm; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
 
-    public void setAgrupadas(int agrupadas) { this.agrupadas = agrupadas; }
-    public void setLidaEm(Instant lidaEm) { this.lidaEm = lidaEm; }
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public NotificacaoTipo getTipo() {
+        return tipo;
+    }
+
+    public NotificacaoPrioridade getPrioridade() {
+        return prioridade;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public String getMensagem() {
+        return mensagem;
+    }
+
+    public Map<String, Object> getPayload() {
+        return payload;
+    }
+
+    public String getAlvoTipo() {
+        return alvoTipo;
+    }
+
+    public UUID getAlvoId() {
+        return alvoId;
+    }
+
+    public int getAgrupadas() {
+        return agrupadas;
+    }
+
+    public Instant getLidaEm() {
+        return lidaEm;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setAgrupadas(int agrupadas) {
+        this.agrupadas = agrupadas;
+    }
+
+    public void setLidaEm(Instant lidaEm) {
+        this.lidaEm = lidaEm;
+    }
 }

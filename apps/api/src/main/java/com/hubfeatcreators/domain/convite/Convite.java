@@ -100,8 +100,13 @@ public class Convite {
         this.createdBy = createdBy;
     }
 
-    public UUID getPerfilId() { return perfilId; }
-    public void setPerfilId(UUID perfilId) { this.perfilId = perfilId; }
+    public UUID getPerfilId() {
+        return perfilId;
+    }
+
+    public void setPerfilId(UUID perfilId) {
+        this.perfilId = perfilId;
+    }
 
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);

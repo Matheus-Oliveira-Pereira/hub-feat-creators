@@ -29,11 +29,31 @@ public class LoginAttempt {
         return lockedUntil != null && Instant.now().isBefore(lockedUntil);
     }
 
-    public String getKey() { return key; }
-    public int getCount() { return count; }
-    public void setCount(int count) { this.count = count; }
-    public Instant getLockedUntil() { return lockedUntil; }
-    public void setLockedUntil(Instant lockedUntil) { this.lockedUntil = lockedUntil; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public String getKey() {
+        return key;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Instant lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

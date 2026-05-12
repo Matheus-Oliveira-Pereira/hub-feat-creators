@@ -20,7 +20,8 @@ public class WhatsappTemplateService {
     private final WhatsappAccountService accountService;
     private final MetaApiClient meta;
 
-    public WhatsappTemplateService(WhatsappTemplateRepository templateRepo,
+    public WhatsappTemplateService(
+            WhatsappTemplateRepository templateRepo,
             WhatsappAccountRepository accountRepo,
             WhatsappAccountService accountService,
             MetaApiClient meta) {
@@ -36,22 +37,36 @@ public class WhatsappTemplateService {
     }
 
     @Transactional
-    public WhatsappTemplate create(UUID assessoriaId, UUID accountId, String nome,
-            String idioma, String categoria, String corpo, String[] variaveis) {
+    public WhatsappTemplate create(
+            UUID assessoriaId,
+            UUID accountId,
+            String nome,
+            String idioma,
+            String categoria,
+            String corpo,
+            String[] variaveis) {
         accountService.requireAccount(assessoriaId, accountId);
-        var template = new WhatsappTemplate(assessoriaId, accountId, nome, idioma, categoria, corpo, variaveis);
+        var template =
+                new WhatsappTemplate(
+                        assessoriaId, accountId, nome, idioma, categoria, corpo, variaveis);
         return templateRepo.save(template);
     }
 
     @Transactional
     public WhatsappTemplate submit(UUID assessoriaId, UUID templateId) {
         WhatsappTemplate template = require(assessoriaId, templateId);
-        WhatsappAccount account = accountService.requireAccount(assessoriaId, template.getAccountId());
+        WhatsappAccount account =
+                accountService.requireAccount(assessoriaId, template.getAccountId());
         String token = accountService.decryptToken(account);
 
-        String metaId = meta.submitTemplate(account.getWabaId(), token,
-                template.getNome(), template.getIdioma(),
-                template.getCategoria(), template.getCorpo());
+        String metaId =
+                meta.submitTemplate(
+                        account.getWabaId(),
+                        token,
+                        template.getNome(),
+                        template.getIdioma(),
+                        template.getCategoria(),
+                        template.getCorpo());
 
         template.setMetaTemplateId(metaId);
         template.setStatus("PENDING");
@@ -70,7 +85,8 @@ public class WhatsappTemplateService {
                 WhatsappAccount account = accountRepo.findById(t.getAccountId()).orElse(null);
                 if (account == null) continue;
                 String token = accountService.decryptToken(account);
-                String status = meta.getTemplateStatus(account.getWabaId(), token, t.getMetaTemplateId());
+                String status =
+                        meta.getTemplateStatus(account.getWabaId(), token, t.getMetaTemplateId());
                 if (!status.equals(t.getStatus())) {
                     t.setStatus(status);
                     t.setAtualizadoEm(Instant.now());
@@ -83,7 +99,8 @@ public class WhatsappTemplateService {
     }
 
     private WhatsappTemplate require(UUID assessoriaId, UUID id) {
-        return templateRepo.findByIdAndAssessoriaId(id, assessoriaId)
+        return templateRepo
+                .findByIdAndAssessoriaId(id, assessoriaId)
                 .orElseThrow(BusinessException::notFound);
     }
 }

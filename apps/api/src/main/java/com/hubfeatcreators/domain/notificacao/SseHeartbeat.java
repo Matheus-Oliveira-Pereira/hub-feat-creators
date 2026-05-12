@@ -20,15 +20,19 @@ public class SseHeartbeat {
 
     @Scheduled(fixedDelay = 25_000)
     public void heartbeat() {
-        notificacaoService.getEmitters().forEach((usuarioId, emitters) -> {
-            Set<SseEmitter> copy = Set.copyOf(emitters);
-            copy.forEach(emitter -> {
-                try {
-                    emitter.send(SseEmitter.event().comment("heartbeat"));
-                } catch (Exception e) {
-                    notificacaoService.removeEmitter(usuarioId, emitter);
-                }
-            });
-        });
+        notificacaoService
+                .getEmitters()
+                .forEach(
+                        (usuarioId, emitters) -> {
+                            Set<SseEmitter> copy = Set.copyOf(emitters);
+                            copy.forEach(
+                                    emitter -> {
+                                        try {
+                                            emitter.send(SseEmitter.event().comment("heartbeat"));
+                                        } catch (Exception e) {
+                                            notificacaoService.removeEmitter(usuarioId, emitter);
+                                        }
+                                    });
+                        });
     }
 }

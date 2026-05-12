@@ -28,8 +28,15 @@ public class MembrosController {
     }
 
     record MembroResponse(
-            UUID id, String email, String role, String status, boolean mfaAtivo,
-            boolean emailVerificado, UUID profileId, Instant ultimoLoginEm, Instant createdAt) {}
+            UUID id,
+            String email,
+            String role,
+            String status,
+            boolean mfaAtivo,
+            boolean emailVerificado,
+            UUID profileId,
+            Instant ultimoLoginEm,
+            Instant createdAt) {}
 
     record AtualizarStatusRequest(String status) {}
 
@@ -51,7 +58,8 @@ public class MembrosController {
         Usuario membro = findInTenant(id, principal);
 
         if (membro.getId().equals(principal.usuarioId())) {
-            throw BusinessException.badRequest("SELF_STATUS", "Não é possível alterar o próprio status.");
+            throw BusinessException.badRequest(
+                    "SELF_STATUS", "Não é possível alterar o próprio status.");
         }
 
         Usuario.Status novoStatus = parseStatus(req.status());
@@ -60,11 +68,17 @@ public class MembrosController {
         membro.setUpdatedAt(Instant.now());
         usuarioRepo.save(membro);
 
-        AuditLog.Acao acao = novoStatus == Usuario.Status.ATIVO
-                ? AuditLog.Acao.MEMBER_ACTIVATED : AuditLog.Acao.MEMBER_DEACTIVATED;
-        auditLogService.logAuth(principal.assessoriaId(), principal.usuarioId(), acao,
+        AuditLog.Acao acao =
+                novoStatus == Usuario.Status.ATIVO
+                        ? AuditLog.Acao.MEMBER_ACTIVATED
+                        : AuditLog.Acao.MEMBER_DEACTIVATED;
+        auditLogService.logAuth(
+                principal.assessoriaId(),
+                principal.usuarioId(),
+                acao,
                 Map.of("membroId", id, "de", anterior.name(), "para", novoStatus.name()),
-                ip(http), ua(http));
+                ip(http),
+                ua(http));
 
         return toResponse(membro);
     }
@@ -85,24 +99,34 @@ public class MembrosController {
         membro.setUpdatedAt(Instant.now());
         usuarioRepo.save(membro);
 
-        auditLogService.logAuth(principal.assessoriaId(), principal.usuarioId(),
+        auditLogService.logAuth(
+                principal.assessoriaId(),
+                principal.usuarioId(),
                 AuditLog.Acao.MEMBER_REMOVED,
                 Map.of("membroId", id, "email", membro.getEmail()),
-                ip(http), ua(http));
+                ip(http),
+                ua(http));
     }
 
     // ── helpers ──────────────────────────────────────────────────────────
 
     private Usuario findInTenant(UUID id, AuthPrincipal principal) {
-        return usuarioRepo.findByIdAndAssessoriaId(id, principal.assessoriaId())
+        return usuarioRepo
+                .findByIdAndAssessoriaId(id, principal.assessoriaId())
                 .orElseThrow(() -> BusinessException.notFound("USUARIO"));
     }
 
     private MembroResponse toResponse(Usuario u) {
         return new MembroResponse(
-                u.getId(), u.getEmail(), u.getRole().name(), u.getStatus().name(),
-                u.isMfaAtivo(), u.isEmailVerificado(), u.getProfileId(),
-                u.getUltimoLoginEm(), u.getCreatedAt());
+                u.getId(),
+                u.getEmail(),
+                u.getRole().name(),
+                u.getStatus().name(),
+                u.isMfaAtivo(),
+                u.isEmailVerificado(),
+                u.getProfileId(),
+                u.getUltimoLoginEm(),
+                u.getCreatedAt());
     }
 
     private static Usuario.Status parseStatus(String s) {
@@ -118,5 +142,7 @@ public class MembrosController {
         return xff != null ? xff.split(",")[0].trim() : req.getRemoteAddr();
     }
 
-    private static String ua(HttpServletRequest req) { return req.getHeader("User-Agent"); }
+    private static String ua(HttpServletRequest req) {
+        return req.getHeader("User-Agent");
+    }
 }

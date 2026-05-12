@@ -1,7 +1,7 @@
 package com.hubfeatcreators.domain.notificacao;
 
-import com.hubfeatcreators.config.AppProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hubfeatcreators.config.AppProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.Map;
@@ -57,43 +57,70 @@ public class WebPushSender {
     @Transactional
     public void send(UUID usuarioId, String titulo, String mensagem, String targetUrl) {
         if (pushService == null) {
-            log.debug("webpush.send.skip usuarioId={} motivo=push_service_not_initialized", usuarioId);
+            log.debug(
+                    "webpush.send.skip usuarioId={} motivo=push_service_not_initialized",
+                    usuarioId);
             return;
         }
 
         byte[] payloadBytes;
         try {
-            payloadBytes = objectMapper.writeValueAsBytes(Map.of(
-                    "titulo", titulo,
-                    "mensagem", mensagem,
-                    "url", targetUrl != null ? targetUrl : "/"));
+            payloadBytes =
+                    objectMapper.writeValueAsBytes(
+                            Map.of(
+                                    "titulo", titulo,
+                                    "mensagem", mensagem,
+                                    "url", targetUrl != null ? targetUrl : "/"));
         } catch (Exception e) {
             log.error("webpush.payload.error msg={}", e.getMessage());
             return;
         }
 
-        subRepo.findByUsuarioIdAndAtivaTrue(usuarioId).forEach(sub -> {
-            try {
-                Notification notification = new Notification(
-                        sub.getEndpoint(), sub.getP256dh(), sub.getAuthSecret(), payloadBytes);
-                HttpResponse response = pushService.send(notification);
-                int statusCode = response.getStatusLine().getStatusCode();
+        subRepo.findByUsuarioIdAndAtivaTrue(usuarioId)
+                .forEach(
+                        sub -> {
+                            try {
+                                Notification notification =
+                                        new Notification(
+                                                sub.getEndpoint(),
+                                                sub.getP256dh(),
+                                                sub.getAuthSecret(),
+                                                payloadBytes);
+                                HttpResponse response = pushService.send(notification);
+                                int statusCode = response.getStatusLine().getStatusCode();
 
-                if (statusCode == 410 || statusCode == 404) {
-                    sub.setAtiva(false);
-                    subRepo.save(sub);
-                    log.info("webpush.subscription.expired usuarioId={} endpoint={}", usuarioId, sub.getEndpoint());
-                    meterRegistry.counter("webpush_enviado_total", "status", "expired").increment();
-                } else {
-                    sub.setLastUsedAt(Instant.now());
-                    subRepo.save(sub);
-                    meterRegistry.counter("webpush_enviado_total", "status", "ok").increment();
-                    log.debug("webpush.send.ok usuarioId={} status={}", usuarioId, statusCode);
-                }
-            } catch (Exception e) {
-                log.error("webpush.send.error usuarioId={} endpoint={} msg={}", usuarioId, sub.getEndpoint(), e.getMessage(), e);
-                meterRegistry.counter("webpush_enviado_total", "status", "erro").increment();
-            }
-        });
+                                if (statusCode == 410 || statusCode == 404) {
+                                    sub.setAtiva(false);
+                                    subRepo.save(sub);
+                                    log.info(
+                                            "webpush.subscription.expired usuarioId={} endpoint={}",
+                                            usuarioId,
+                                            sub.getEndpoint());
+                                    meterRegistry
+                                            .counter("webpush_enviado_total", "status", "expired")
+                                            .increment();
+                                } else {
+                                    sub.setLastUsedAt(Instant.now());
+                                    subRepo.save(sub);
+                                    meterRegistry
+                                            .counter("webpush_enviado_total", "status", "ok")
+                                            .increment();
+                                    log.debug(
+                                            "webpush.send.ok usuarioId={} status={}",
+                                            usuarioId,
+                                            statusCode);
+                                }
+                            } catch (Exception e) {
+                                log.error(
+                                        "webpush.send.error usuarioId={} endpoint={} msg={}",
+                                        usuarioId,
+                                        sub.getEndpoint(),
+                                        e.getMessage(),
+                                        e);
+                                meterRegistry
+                                        .counter("webpush_enviado_total", "status", "erro")
+                                        .increment();
+                            }
+                        });
     }
 }

@@ -132,13 +132,29 @@ class InfluenciadorIT extends IntegrationTestBase {
                 baseUrl("/api/v1/influenciadores"),
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new InfReq("Maria Fitness", Map.of(), "fitness", null, null, List.of(), "LEGITIMO_INTERESSE"), h),
+                        new InfReq(
+                                "Maria Fitness",
+                                Map.of(),
+                                "fitness",
+                                null,
+                                null,
+                                List.of(),
+                                "LEGITIMO_INTERESSE"),
+                        h),
                 InfResp.class);
         rest.exchange(
                 baseUrl("/api/v1/influenciadores"),
                 HttpMethod.POST,
                 new HttpEntity<>(
-                        new InfReq("Pedro Gamer", Map.of(), "games", null, null, List.of(), "LEGITIMO_INTERESSE"), h),
+                        new InfReq(
+                                "Pedro Gamer",
+                                Map.of(),
+                                "games",
+                                null,
+                                null,
+                                List.of(),
+                                "LEGITIMO_INTERESSE"),
+                        h),
                 InfResp.class);
 
         PageResp page =

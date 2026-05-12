@@ -1,8 +1,8 @@
 package com.hubfeatcreators.domain.compliance;
 
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
-import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
+import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,8 @@ public class ComplianceAdminController {
     private final DsrService dsrService;
     private final DataProcessingRecordRepository ropaRepo;
 
-    public ComplianceAdminController(DsrService dsrService, DataProcessingRecordRepository ropaRepo) {
+    public ComplianceAdminController(
+            DsrService dsrService, DataProcessingRecordRepository ropaRepo) {
         this.dsrService = dsrService;
         this.ropaRepo = ropaRepo;
     }
@@ -25,11 +26,12 @@ public class ComplianceAdminController {
     @PostMapping("/dsr")
     @RequirePermission(PermissionCodes.OWNR)
     public ResponseEntity<DsrTokenResponse> criarDsr(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestBody DsrRequest req) {
-        var result = dsrService.criarSolicitacao(
-                principal.assessoriaId(), req.titularTipo(), req.titularId(), req.tipo());
-        return ResponseEntity.ok(new DsrTokenResponse(result.solicitacao().getId(), result.rawToken()));
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody DsrRequest req) {
+        var result =
+                dsrService.criarSolicitacao(
+                        principal.assessoriaId(), req.titularTipo(), req.titularId(), req.tipo());
+        return ResponseEntity.ok(
+                new DsrTokenResponse(result.solicitacao().getId(), result.rawToken()));
     }
 
     /** List pending DSRs about to breach SLA (alerta 10d). */
@@ -37,9 +39,15 @@ public class ComplianceAdminController {
     @RequirePermission(PermissionCodes.OWNR)
     public ResponseEntity<List<DsrAlertaResponse>> alertas() {
         var vencendo = dsrService.alertarVencendo(10);
-        var response = vencendo.stream()
-                .map(s -> new DsrAlertaResponse(s.getId(), s.getTipo().name(), s.getPrazoLegalEm().toString()))
-                .toList();
+        var response =
+                vencendo.stream()
+                        .map(
+                                s ->
+                                        new DsrAlertaResponse(
+                                                s.getId(),
+                                                s.getTipo().name(),
+                                                s.getPrazoLegalEm().toString()))
+                        .toList();
         return ResponseEntity.ok(response);
     }
 
@@ -51,6 +59,8 @@ public class ComplianceAdminController {
     }
 
     public record DsrRequest(String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {}
+
     public record DsrTokenResponse(UUID solicitacaoId, String token) {}
+
     public record DsrAlertaResponse(UUID id, String tipo, String prazoLegalEm) {}
 }

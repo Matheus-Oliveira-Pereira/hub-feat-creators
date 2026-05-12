@@ -35,18 +35,33 @@ public class NotificacaoPreferencia {
 
     protected NotificacaoPreferencia() {}
 
-    public NotificacaoPreferencia(UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean habilitado) {
+    public NotificacaoPreferencia(
+            UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean habilitado) {
         this.usuarioId = usuarioId;
         this.tipo = tipo;
         this.canal = canal;
         this.habilitado = habilitado;
     }
 
-    public UUID getUsuarioId() { return usuarioId; }
-    public NotificacaoTipo getTipo() { return tipo; }
-    public NotificacaoCanal getCanal() { return canal; }
-    public boolean isHabilitado() { return habilitado; }
-    public void setHabilitado(boolean habilitado) { this.habilitado = habilitado; }
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public NotificacaoTipo getTipo() {
+        return tipo;
+    }
+
+    public NotificacaoCanal getCanal() {
+        return canal;
+    }
+
+    public boolean isHabilitado() {
+        return habilitado;
+    }
+
+    public void setHabilitado(boolean habilitado) {
+        this.habilitado = habilitado;
+    }
 
     public static class PK implements Serializable {
         private UUID usuarioId;
@@ -54,6 +69,7 @@ public class NotificacaoPreferencia {
         private NotificacaoCanal canal;
 
         public PK() {}
+
         public PK(UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal) {
             this.usuarioId = usuarioId;
             this.tipo = tipo;
@@ -64,12 +80,12 @@ public class NotificacaoPreferencia {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof PK pk)) return false;
-            return Objects.equals(usuarioId, pk.usuarioId)
-                    && tipo == pk.tipo
-                    && canal == pk.canal;
+            return Objects.equals(usuarioId, pk.usuarioId) && tipo == pk.tipo && canal == pk.canal;
         }
 
         @Override
-        public int hashCode() { return Objects.hash(usuarioId, tipo, canal); }
+        public int hashCode() {
+            return Objects.hash(usuarioId, tipo, canal);
+        }
     }
 }

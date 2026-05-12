@@ -24,10 +24,7 @@ public class ConviteController {
         this.conviteService = conviteService;
     }
 
-    record ConviteRequest(
-            @NotBlank @Email String email,
-            String role,
-            UUID perfilId) {}
+    record ConviteRequest(@NotBlank @Email String email, String role, UUID perfilId) {}
 
     record AceitarRequest(@NotBlank String token, @NotBlank @Size(min = 8) String senha) {}
 
@@ -41,16 +38,25 @@ public class ConviteController {
     public ConviteResponse convidar(
             @Valid @RequestBody ConviteRequest req,
             @AuthenticationPrincipal AuthPrincipal principal) {
-        Convite.Role role = req.role() != null ? Convite.Role.valueOf(req.role()) : Convite.Role.ASSESSOR;
+        Convite.Role role =
+                req.role() != null ? Convite.Role.valueOf(req.role()) : Convite.Role.ASSESSOR;
         Convite c = conviteService.convidar(principal, req.email(), role, req.perfilId());
-        return new ConviteResponse(c.getId(), c.getEmail(), c.getRole().name(), c.getPerfilId(), c.getExpiresAt());
+        return new ConviteResponse(
+                c.getId(), c.getEmail(), c.getRole().name(), c.getPerfilId(), c.getExpiresAt());
     }
 
     @GetMapping("/convites")
     @RequirePermission(PermissionCodes.INVT)
     public List<ConviteResponse> listar(@AuthenticationPrincipal AuthPrincipal principal) {
         return conviteService.listar(principal).stream()
-                .map(c -> new ConviteResponse(c.getId(), c.getEmail(), c.getRole().name(), c.getPerfilId(), c.getExpiresAt()))
+                .map(
+                        c ->
+                                new ConviteResponse(
+                                        c.getId(),
+                                        c.getEmail(),
+                                        c.getRole().name(),
+                                        c.getPerfilId(),
+                                        c.getExpiresAt()))
                 .toList();
     }
 

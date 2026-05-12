@@ -123,9 +123,7 @@ class NotificacaoIT extends IntegrationTestBase {
 
     @Test
     void webpush_public_key_endpoint_publico_retorna_200() {
-        var resp =
-                rest.getForEntity(
-                        baseUrl("/api/v1/webpush/public-key"), Map.class);
+        var resp = rest.getForEntity(baseUrl("/api/v1/webpush/public-key"), Map.class);
 
         // Pode ser 200 com chave vazia (dev sem VAPID configurado)
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);

@@ -42,20 +42,26 @@ public class RetentionJob {
         int auditPurgados = purgarAuditLogAntigo(hoje);
 
         List.of(
-                new RetentionRun(hoje, "influenciadores", infAnon, 0, 0),
-                new RetentionRun(hoje, "marcas", marcasAnon, 0, 0),
-                new RetentionRun(hoje, "contatos", contatosAnon, 0, 0),
-                new RetentionRun(hoje, "job", 0, jobsPurgados, 0),
-                new RetentionRun(hoje, "audit_log", 0, auditPurgados, 0)
-        ).forEach(runRepo::save);
+                        new RetentionRun(hoje, "influenciadores", infAnon, 0, 0),
+                        new RetentionRun(hoje, "marcas", marcasAnon, 0, 0),
+                        new RetentionRun(hoje, "contatos", contatosAnon, 0, 0),
+                        new RetentionRun(hoje, "job", 0, jobsPurgados, 0),
+                        new RetentionRun(hoje, "audit_log", 0, auditPurgados, 0))
+                .forEach(runRepo::save);
 
-        log.info("retention.job.fim infAnon={} marcasAnon={} contatosAnon={} jobsPurgados={} auditPurgados={}",
-                infAnon, marcasAnon, contatosAnon, jobsPurgados, auditPurgados);
+        log.info(
+                "retention.job.fim infAnon={} marcasAnon={} contatosAnon={} jobsPurgados={} auditPurgados={}",
+                infAnon,
+                marcasAnon,
+                contatosAnon,
+                jobsPurgados,
+                auditPurgados);
     }
 
     private int anonymizarInfluenciadores(LocalDate hoje) {
         Instant cutoff = hoje.minus(180, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return jdbc.update("""
+        return jdbc.update(
+                """
                 UPDATE influenciadores
                 SET nome = 'Titular #' || substring(id::text, 1, 8),
                     handles = '{}',
@@ -64,12 +70,14 @@ public class RetentionJob {
                 WHERE deleted_at IS NOT NULL
                   AND deleted_at < ?
                   AND nome NOT LIKE 'Titular #%'
-                """, cutoff);
+                """,
+                cutoff);
     }
 
     private int anonymizarMarcas(LocalDate hoje) {
         Instant cutoff = hoje.minus(180, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return jdbc.update("""
+        return jdbc.update(
+                """
                 UPDATE marcas
                 SET nome = 'Marca #' || substring(id::text, 1, 8),
                     site = NULL,
@@ -78,12 +86,14 @@ public class RetentionJob {
                 WHERE deleted_at IS NOT NULL
                   AND deleted_at < ?
                   AND nome NOT LIKE 'Marca #%'
-                """, cutoff);
+                """,
+                cutoff);
     }
 
     private int anonymizarContatos(LocalDate hoje) {
         Instant cutoff = hoje.minus(180, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return jdbc.update("""
+        return jdbc.update(
+                """
                 UPDATE contatos
                 SET nome = 'Titular #' || substring(id::text, 1, 8),
                     email = NULL,
@@ -92,27 +102,32 @@ public class RetentionJob {
                 WHERE deleted_at IS NOT NULL
                   AND deleted_at < ?
                   AND nome NOT LIKE 'Titular #%'
-                """, cutoff);
+                """,
+                cutoff);
     }
 
     private int purgarJobsAntigos(LocalDate hoje) {
         Instant cutoff = hoje.minus(7, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return jdbc.update("""
+        return jdbc.update(
+                """
                 DELETE FROM job
                 WHERE status IN ('OK','MORTO')
                   AND updated_at < ?
-                """, cutoff);
+                """,
+                cutoff);
     }
 
     private int purgarAuditLogAntigo(LocalDate hoje) {
         Instant cutoff = hoje.minus(180, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
         // Pseudonymize older entries rather than delete (preserve hash chain)
-        return jdbc.update("""
+        return jdbc.update(
+                """
                 UPDATE audit_log
                 SET usuario_id = NULL,
                     payload = '{}'::jsonb
                 WHERE created_at < ?
                   AND usuario_id IS NOT NULL
-                """, cutoff);
+                """,
+                cutoff);
     }
 }

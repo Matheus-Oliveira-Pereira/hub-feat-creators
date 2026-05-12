@@ -45,19 +45,25 @@ public class DsrService {
 
     /** Creates DSR and returns raw token (caller must send to titular via e-mail). */
     @Transactional
-    public DsrResult criarSolicitacao(UUID assessoriaId, String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {
+    public DsrResult criarSolicitacao(
+            UUID assessoriaId, String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {
         var solicitacao = new DsrSolicitacao(assessoriaId, titularTipo, titularId, tipo);
         solicitacao = solicitacaoRepo.save(solicitacao);
 
         String rawToken = generateRawToken();
         String tokenHash = hash(rawToken);
-        var dsrToken = new DsrToken(
-                solicitacao.getId(),
-                tokenHash,
-                Instant.now().plus(java.time.Duration.ofDays(TOKEN_VALIDITY_DAYS)));
+        var dsrToken =
+                new DsrToken(
+                        solicitacao.getId(),
+                        tokenHash,
+                        Instant.now().plus(java.time.Duration.ofDays(TOKEN_VALIDITY_DAYS)));
         tokenRepo.save(dsrToken);
 
-        log.info("dsr.criada solicitacaoId={} tipo={} titularId={}", solicitacao.getId(), tipo, titularId);
+        log.info(
+                "dsr.criada solicitacaoId={} tipo={} titularId={}",
+                solicitacao.getId(),
+                tipo,
+                titularId);
         return new DsrResult(solicitacao, rawToken);
     }
 
@@ -65,8 +71,10 @@ public class DsrService {
     @Transactional
     public DsrSolicitacao executarComToken(String rawToken) {
         String tokenHash = hash(rawToken);
-        DsrToken dsrToken = tokenRepo.findByTokenHash(tokenHash)
-                .orElseThrow(() -> BusinessException.notFound("DSR_TOKEN"));
+        DsrToken dsrToken =
+                tokenRepo
+                        .findByTokenHash(tokenHash)
+                        .orElseThrow(() -> BusinessException.notFound("DSR_TOKEN"));
 
         if (dsrToken.isExpired()) {
             throw BusinessException.unprocessable("DSR_TOKEN_EXPIRADO", "Token de DSR expirado.");
@@ -78,8 +86,10 @@ public class DsrService {
         dsrToken.setUsedAt(Instant.now());
         tokenRepo.save(dsrToken);
 
-        DsrSolicitacao solicitacao = solicitacaoRepo.findById(dsrToken.getSolicitacaoId())
-                .orElseThrow(() -> BusinessException.notFound("DSR_SOLICITACAO"));
+        DsrSolicitacao solicitacao =
+                solicitacaoRepo
+                        .findById(dsrToken.getSolicitacaoId())
+                        .orElseThrow(() -> BusinessException.notFound("DSR_SOLICITACAO"));
 
         solicitacao.setStatus(DsrSolicitacao.StatusDsr.EM_ANDAMENTO);
         solicitacao = solicitacaoRepo.save(solicitacao);
@@ -93,8 +103,10 @@ public class DsrService {
     public Map<String, Object> exportarDadosTitular(String titularTipo, UUID titularId) {
         return switch (titularTipo) {
             case "INFLUENCIADOR" -> {
-                Influenciador inf = influenciadorRepo.findById(titularId)
-                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
+                Influenciador inf =
+                        influenciadorRepo
+                                .findById(titularId)
+                                .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
                 yield Map.of(
                         "tipo", "INFLUENCIADOR",
                         "id", inf.getId(),
@@ -102,23 +114,32 @@ public class DsrService {
                         "handles", inf.getHandles(),
                         "nicho", inf.getNicho() != null ? inf.getNicho() : "",
                         "tags", List.of(inf.getTags()),
-                        "createdAt", inf.getCreatedAt()
-                );
+                        "createdAt", inf.getCreatedAt());
             }
             case "CONTATO" -> {
-                Contato c = contatoRepo.findById(titularId)
-                        .orElseThrow(() -> BusinessException.notFound("CONTATO"));
+                Contato c =
+                        contatoRepo
+                                .findById(titularId)
+                                .orElseThrow(() -> BusinessException.notFound("CONTATO"));
                 yield Map.of(
-                        "tipo", "CONTATO",
-                        "id", c.getId(),
-                        "nome", c.getNome(),
-                        "email", c.getEmail() != null ? c.getEmail() : "",
-                        "telefone", c.getTelefone() != null ? c.getTelefone() : "",
-                        "cargo", c.getCargo() != null ? c.getCargo() : "",
-                        "createdAt", c.getCreatedAt()
-                );
+                        "tipo",
+                        "CONTATO",
+                        "id",
+                        c.getId(),
+                        "nome",
+                        c.getNome(),
+                        "email",
+                        c.getEmail() != null ? c.getEmail() : "",
+                        "telefone",
+                        c.getTelefone() != null ? c.getTelefone() : "",
+                        "cargo",
+                        c.getCargo() != null ? c.getCargo() : "",
+                        "createdAt",
+                        c.getCreatedAt());
             }
-            default -> throw BusinessException.badRequest("TIPO_INVALIDO", "Tipo de titular desconhecido: " + titularTipo);
+            default ->
+                    throw BusinessException.badRequest(
+                            "TIPO_INVALIDO", "Tipo de titular desconhecido: " + titularTipo);
         };
     }
 
@@ -129,8 +150,10 @@ public class DsrService {
 
         switch (titularTipo) {
             case "INFLUENCIADOR" -> {
-                Influenciador inf = influenciadorRepo.findById(titularId)
-                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
+                Influenciador inf =
+                        influenciadorRepo
+                                .findById(titularId)
+                                .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
                 inf.setNome(anonNome);
                 inf.setHandles(Map.of());
                 inf.setObservacoes(null);
@@ -140,8 +163,10 @@ public class DsrService {
                 log.info("dsr.anonimizado titularTipo=INFLUENCIADOR titularId={}", titularId);
             }
             case "CONTATO" -> {
-                Contato c = contatoRepo.findById(titularId)
-                        .orElseThrow(() -> BusinessException.notFound("CONTATO"));
+                Contato c =
+                        contatoRepo
+                                .findById(titularId)
+                                .orElseThrow(() -> BusinessException.notFound("CONTATO"));
                 c.setNome(anonNome);
                 c.setEmail(null);
                 c.setTelefone(null);
@@ -150,7 +175,9 @@ public class DsrService {
                 contatoRepo.save(c);
                 log.info("dsr.anonimizado titularTipo=CONTATO titularId={}", titularId);
             }
-            default -> throw BusinessException.badRequest("TIPO_INVALIDO", "Tipo de titular desconhecido: " + titularTipo);
+            default ->
+                    throw BusinessException.badRequest(
+                            "TIPO_INVALIDO", "Tipo de titular desconhecido: " + titularTipo);
         }
     }
 
@@ -162,7 +189,8 @@ public class DsrService {
     private void executarAcao(DsrSolicitacao solicitacao) {
         try {
             switch (solicitacao.getTipo()) {
-                case EXCLUSAO -> anonimizarTitular(solicitacao.getTitularTipo(), solicitacao.getTitularId());
+                case EXCLUSAO ->
+                        anonimizarTitular(solicitacao.getTitularTipo(), solicitacao.getTitularId());
                 case ACESSO, PORTABILIDADE -> {
                     // Dados exportados via endpoint separado; marcar concluída
                 }

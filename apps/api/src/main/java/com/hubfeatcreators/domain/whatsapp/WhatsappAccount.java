@@ -59,9 +59,16 @@ public class WhatsappAccount {
 
     protected WhatsappAccount() {}
 
-    public WhatsappAccount(UUID assessoriaId, String wabaId, String phoneNumberId, String phoneE164,
-            String displayName, byte[] accessTokenEnc, byte[] tokenNonce,
-            byte[] appSecretEnc, byte[] appSecretNonce) {
+    public WhatsappAccount(
+            UUID assessoriaId,
+            String wabaId,
+            String phoneNumberId,
+            String phoneE164,
+            String displayName,
+            byte[] accessTokenEnc,
+            byte[] tokenNonce,
+            byte[] appSecretEnc,
+            byte[] appSecretNonce) {
         this.assessoriaId = assessoriaId;
         this.wabaId = wabaId;
         this.phoneNumberId = phoneNumberId;
@@ -73,7 +80,10 @@ public class WhatsappAccount {
         this.appSecretNonce = appSecretNonce;
     }
 
-    public boolean isAtivo() { return "ATIVO".equals(status); }
+    public boolean isAtivo() {
+        return "ATIVO".equals(status);
+    }
+
     public boolean isRateLimited() {
         if (dailyResetAt == null || Instant.now().isAfter(dailyResetAt)) return false;
         return dailySent >= dailyLimit;
@@ -88,27 +98,95 @@ public class WhatsappAccount {
         dailySent++;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getWabaId() { return wabaId; }
-    public String getPhoneNumberId() { return phoneNumberId; }
-    public String getPhoneE164() { return phoneE164; }
-    public String getDisplayName() { return displayName; }
-    public byte[] getAccessTokenEnc() { return accessTokenEnc; }
-    public byte[] getTokenNonce() { return tokenNonce; }
-    public byte[] getAppSecretEnc() { return appSecretEnc; }
-    public byte[] getAppSecretNonce() { return appSecretNonce; }
-    public String getStatus() { return status; }
-    public int getDailyLimit() { return dailyLimit; }
-    public int getDailySent() { return dailySent; }
-    public Instant getDailyResetAt() { return dailyResetAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getDeletedAt() { return deletedAt; }
-    public void setStatus(String status) { this.status = status; }
-    public void setAccessTokenEnc(byte[] v) { this.accessTokenEnc = v; }
-    public void setTokenNonce(byte[] v) { this.tokenNonce = v; }
-    public void setAppSecretEnc(byte[] v) { this.appSecretEnc = v; }
-    public void setAppSecretNonce(byte[] v) { this.appSecretNonce = v; }
-    public void setDisplayName(String v) { this.displayName = v; }
-    public void setDeletedAt(Instant v) { this.deletedAt = v; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getWabaId() {
+        return wabaId;
+    }
+
+    public String getPhoneNumberId() {
+        return phoneNumberId;
+    }
+
+    public String getPhoneE164() {
+        return phoneE164;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public byte[] getAccessTokenEnc() {
+        return accessTokenEnc;
+    }
+
+    public byte[] getTokenNonce() {
+        return tokenNonce;
+    }
+
+    public byte[] getAppSecretEnc() {
+        return appSecretEnc;
+    }
+
+    public byte[] getAppSecretNonce() {
+        return appSecretNonce;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public int getDailyLimit() {
+        return dailyLimit;
+    }
+
+    public int getDailySent() {
+        return dailySent;
+    }
+
+    public Instant getDailyResetAt() {
+        return dailyResetAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setAccessTokenEnc(byte[] v) {
+        this.accessTokenEnc = v;
+    }
+
+    public void setTokenNonce(byte[] v) {
+        this.tokenNonce = v;
+    }
+
+    public void setAppSecretEnc(byte[] v) {
+        this.appSecretEnc = v;
+    }
+
+    public void setAppSecretNonce(byte[] v) {
+        this.appSecretNonce = v;
+    }
+
+    public void setDisplayName(String v) {
+        this.displayName = v;
+    }
+
+    public void setDeletedAt(Instant v) {
+        this.deletedAt = v;
+    }
 }

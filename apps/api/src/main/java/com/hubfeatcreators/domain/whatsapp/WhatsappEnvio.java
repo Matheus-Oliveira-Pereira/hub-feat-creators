@@ -68,9 +68,15 @@ public class WhatsappEnvio {
 
     protected WhatsappEnvio() {}
 
-    public WhatsappEnvio(UUID assessoriaId, UUID accountId, UUID templateId,
-            String destinatarioE164, String tipo, String payload,
-            UUID idempotencyKey, UUID autorId) {
+    public WhatsappEnvio(
+            UUID assessoriaId,
+            UUID accountId,
+            UUID templateId,
+            String destinatarioE164,
+            String tipo,
+            String payload,
+            UUID idempotencyKey,
+            UUID autorId) {
         this.assessoriaId = assessoriaId;
         this.accountId = accountId;
         this.templateId = templateId;
@@ -81,29 +87,103 @@ public class WhatsappEnvio {
         this.autorId = autorId;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getAccountId() { return accountId; }
-    public UUID getTemplateId() { return templateId; }
-    public String getDestinatarioE164() { return destinatarioE164; }
-    public String getTipo() { return tipo; }
-    public String getPayload() { return payload; }
-    public UUID getIdempotencyKey() { return idempotencyKey; }
-    public String getStatus() { return status; }
-    public String getWamid() { return wamid; }
-    public String getContexto() { return contexto; }
-    public UUID getAutorId() { return autorId; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getSentAt() { return sentAt; }
-    public Instant getDeliveredAt() { return deliveredAt; }
-    public Instant getReadAt() { return readAt; }
-    public Instant getFailedAt() { return failedAt; }
-    public String getFalhaMotivo() { return falhaMotivo; }
-    public void setStatus(String v) { this.status = v; }
-    public void setWamid(String v) { this.wamid = v; }
-    public void setSentAt(Instant v) { this.sentAt = v; }
-    public void setDeliveredAt(Instant v) { this.deliveredAt = v; }
-    public void setReadAt(Instant v) { this.readAt = v; }
-    public void setFailedAt(Instant v) { this.failedAt = v; }
-    public void setFalhaMotivo(String v) { this.falhaMotivo = v; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public UUID getTemplateId() {
+        return templateId;
+    }
+
+    public String getDestinatarioE164() {
+        return destinatarioE164;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public UUID getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getWamid() {
+        return wamid;
+    }
+
+    public String getContexto() {
+        return contexto;
+    }
+
+    public UUID getAutorId() {
+        return autorId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getSentAt() {
+        return sentAt;
+    }
+
+    public Instant getDeliveredAt() {
+        return deliveredAt;
+    }
+
+    public Instant getReadAt() {
+        return readAt;
+    }
+
+    public Instant getFailedAt() {
+        return failedAt;
+    }
+
+    public String getFalhaMotivo() {
+        return falhaMotivo;
+    }
+
+    public void setStatus(String v) {
+        this.status = v;
+    }
+
+    public void setWamid(String v) {
+        this.wamid = v;
+    }
+
+    public void setSentAt(Instant v) {
+        this.sentAt = v;
+    }
+
+    public void setDeliveredAt(Instant v) {
+        this.deliveredAt = v;
+    }
+
+    public void setReadAt(Instant v) {
+        this.readAt = v;
+    }
+
+    public void setFailedAt(Instant v) {
+        this.failedAt = v;
+    }
+
+    public void setFalhaMotivo(String v) {
+        this.falhaMotivo = v;
+    }
 }

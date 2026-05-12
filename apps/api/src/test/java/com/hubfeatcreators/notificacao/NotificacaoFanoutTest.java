@@ -3,7 +3,6 @@ package com.hubfeatcreators.notificacao;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.hubfeatcreators.domain.notificacao.NotificacaoCanal;
 import com.hubfeatcreators.domain.notificacao.NotificacaoFanout;
 import com.hubfeatcreators.domain.notificacao.NotificacaoPrioridade;
 import com.hubfeatcreators.domain.notificacao.NotificacaoService;
@@ -76,7 +75,8 @@ class NotificacaoFanoutTest {
         var event =
                 new TarefaVencendoEvent(
                         UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Titulo");
-        when(notificacaoService.criar(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(notificacaoService.criar(
+                        any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("DB down"));
 
         // deve capturar silenciosamente

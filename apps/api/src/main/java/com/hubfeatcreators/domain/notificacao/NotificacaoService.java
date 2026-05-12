@@ -51,7 +51,10 @@ public class NotificacaoService {
         this.dedupeRepo = dedupeRepo;
         this.webPushSender = webPushSender;
         this.meterRegistry = meterRegistry;
-        Gauge.builder("sse_conexoes_ativas", emitters, m -> m.values().stream().mapToInt(Set::size).sum())
+        Gauge.builder(
+                        "sse_conexoes_ativas",
+                        emitters,
+                        m -> m.values().stream().mapToInt(Set::size).sum())
                 .register(meterRegistry);
     }
 
@@ -68,12 +71,17 @@ public class NotificacaoService {
             UUID alvoId) {
 
         if (usuarioId == null) {
-            log.debug("notificacao.skip tipo={} motivo=usuario_id_null (owner lookup pendente)", tipo);
+            log.debug(
+                    "notificacao.skip tipo={} motivo=usuario_id_null (owner lookup pendente)",
+                    tipo);
             return null;
         }
         boolean inappHabilitado = isHabilitado(usuarioId, tipo, NotificacaoCanal.INAPP, true);
         if (!inappHabilitado) {
-            log.debug("notificacao.skip usuarioId={} tipo={} canal=INAPP motivo=desabilitado", usuarioId, tipo);
+            log.debug(
+                    "notificacao.skip usuarioId={} tipo={} canal=INAPP motivo=desabilitado",
+                    usuarioId,
+                    tipo);
             return null;
         }
 
@@ -84,25 +92,40 @@ public class NotificacaoService {
             Instant threshold = Instant.now().minusSeconds(THROTTLE_MINUTOS * 60L);
             if (dedupeOpt.get().getLastEmitted().isAfter(threshold)) {
                 // Agrupar: incrementa agrupadas na última notificação não-lida do mesmo tipo+alvo
-                Page<Notificacao> pending = repo.findPendingForDedupe(
-                        assessoriaId, usuarioId, tipo, alvoId, PageRequest.of(0, 1));
+                Page<Notificacao> pending =
+                        repo.findPendingForDedupe(
+                                assessoriaId, usuarioId, tipo, alvoId, PageRequest.of(0, 1));
                 if (!pending.isEmpty()) {
                     Notificacao existente = pending.getContent().get(0);
                     existente.setAgrupadas(existente.getAgrupadas() + 1);
                     repo.save(existente);
                     dedupeOpt.get().setLastEmitted(Instant.now());
                     dedupeRepo.save(dedupeOpt.get());
-                    log.debug("notificacao.agrupada id={} agrupadas={}", existente.getId(), existente.getAgrupadas());
+                    log.debug(
+                            "notificacao.agrupada id={} agrupadas={}",
+                            existente.getId(),
+                            existente.getAgrupadas());
                     return existente;
                 }
             }
         }
 
-        Notificacao n = new Notificacao(assessoriaId, usuarioId, tipo, prioridade, titulo, mensagem, payload, alvoTipo, alvoId);
+        Notificacao n =
+                new Notificacao(
+                        assessoriaId,
+                        usuarioId,
+                        tipo,
+                        prioridade,
+                        titulo,
+                        mensagem,
+                        payload,
+                        alvoTipo,
+                        alvoId);
         repo.save(n);
 
         // Atualizar dedupe
-        NotificacaoDedupe dedupe = dedupeOpt.orElse(new NotificacaoDedupe(dedupeKey, Instant.now()));
+        NotificacaoDedupe dedupe =
+                dedupeOpt.orElse(new NotificacaoDedupe(dedupeKey, Instant.now()));
         dedupe.setLastEmitted(Instant.now());
         dedupeRepo.save(dedupe);
 
@@ -121,7 +144,13 @@ public class NotificacaoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Notificacao> listar(UUID assessoriaId, UUID usuarioId, NotificacaoTipo tipo, boolean apenasNaoLidas, int page, int size) {
+    public Page<Notificacao> listar(
+            UUID assessoriaId,
+            UUID usuarioId,
+            NotificacaoTipo tipo,
+            boolean apenasNaoLidas,
+            int page,
+            int size) {
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE));
         return repo.findFiltered(assessoriaId, usuarioId, tipo, apenasNaoLidas, pageable);
     }
@@ -133,8 +162,9 @@ public class NotificacaoService {
 
     @Transactional
     public void marcarLida(UUID assessoriaId, UUID notificacaoId, UUID usuarioId) {
-        Notificacao n = repo.findByIdAndAssessoriaIdAndUsuarioId(notificacaoId, assessoriaId, usuarioId)
-                .orElseThrow(() -> BusinessException.notFound("NOTIFICACAO"));
+        Notificacao n =
+                repo.findByIdAndAssessoriaIdAndUsuarioId(notificacaoId, assessoriaId, usuarioId)
+                        .orElseThrow(() -> BusinessException.notFound("NOTIFICACAO"));
         if (n.getLidaEm() == null) {
             n.setLidaEm(Instant.now());
             repo.save(n);
@@ -153,10 +183,11 @@ public class NotificacaoService {
     @Transactional(readOnly = true)
     public List<NotificacaoPreferencia> preferencias(UUID usuarioId) {
         List<NotificacaoPreferencia> saved = prefRepo.findByUsuarioId(usuarioId);
-        Map<NotificacaoTipo, Map<NotificacaoCanal, Boolean>> idx = new EnumMap<>(NotificacaoTipo.class);
+        Map<NotificacaoTipo, Map<NotificacaoCanal, Boolean>> idx =
+                new EnumMap<>(NotificacaoTipo.class);
         for (NotificacaoPreferencia p : saved) {
             idx.computeIfAbsent(p.getTipo(), k -> new EnumMap<>(NotificacaoCanal.class))
-               .put(p.getCanal(), p.isHabilitado());
+                    .put(p.getCanal(), p.isHabilitado());
         }
         List<NotificacaoPreferencia> result = new ArrayList<>(saved);
         for (NotificacaoTipo tipo : NotificacaoTipo.values()) {
@@ -171,9 +202,11 @@ public class NotificacaoService {
     }
 
     @Transactional
-    public NotificacaoPreferencia atualizarPreferencia(UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean habilitado) {
-        NotificacaoPreferencia pref = prefRepo.findByUsuarioIdAndTipoAndCanal(usuarioId, tipo, canal)
-                .orElse(new NotificacaoPreferencia(usuarioId, tipo, canal, habilitado));
+    public NotificacaoPreferencia atualizarPreferencia(
+            UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean habilitado) {
+        NotificacaoPreferencia pref =
+                prefRepo.findByUsuarioIdAndTipoAndCanal(usuarioId, tipo, canal)
+                        .orElse(new NotificacaoPreferencia(usuarioId, tipo, canal, habilitado));
         pref.setHabilitado(habilitado);
         return prefRepo.save(pref);
     }
@@ -204,18 +237,20 @@ public class NotificacaoService {
     public void notificarEmitters(UUID usuarioId) {
         Set<SseEmitter> set = emitters.get(usuarioId);
         if (set == null || set.isEmpty()) return;
-        set.forEach(emitter -> {
-            try {
-                emitter.send(SseEmitter.event().name("notificacao").data("update"));
-            } catch (Exception e) {
-                emitter.completeWithError(e);
-            }
-        });
+        set.forEach(
+                emitter -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("notificacao").data("update"));
+                    } catch (Exception e) {
+                        emitter.completeWithError(e);
+                    }
+                });
     }
 
     // Helpers
 
-    private boolean isHabilitado(UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean defaultValue) {
+    private boolean isHabilitado(
+            UUID usuarioId, NotificacaoTipo tipo, NotificacaoCanal canal, boolean defaultValue) {
         return prefRepo.findByUsuarioIdAndTipoAndCanal(usuarioId, tipo, canal)
                 .map(NotificacaoPreferencia::isHabilitado)
                 .orElse(defaultValue);

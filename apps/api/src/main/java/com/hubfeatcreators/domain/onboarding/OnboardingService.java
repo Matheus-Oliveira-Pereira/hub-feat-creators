@@ -51,8 +51,9 @@ public class OnboardingService {
         verifyRepo.invalidateExisting(usuario.getId());
 
         String raw = UUID.randomUUID().toString();
-        EmailVerifyToken token = new EmailVerifyToken(
-                usuario.getId(), sha256(raw), Instant.now().plus(24, ChronoUnit.HOURS));
+        EmailVerifyToken token =
+                new EmailVerifyToken(
+                        usuario.getId(), sha256(raw), Instant.now().plus(24, ChronoUnit.HOURS));
         verifyRepo.save(token);
 
         String url = props.getWeb().getBaseUrl() + "/verify-email?token=" + raw;
@@ -63,8 +64,13 @@ public class OnboardingService {
     @Transactional
     public void verifyEmail(String rawToken) {
         String hash = sha256(rawToken);
-        EmailVerifyToken token = verifyRepo.findByTokenHash(hash)
-                .orElseThrow(() -> BusinessException.badRequest("TOKEN_INVALIDO", "Token inválido."));
+        EmailVerifyToken token =
+                verifyRepo
+                        .findByTokenHash(hash)
+                        .orElseThrow(
+                                () ->
+                                        BusinessException.badRequest(
+                                                "TOKEN_INVALIDO", "Token inválido."));
 
         if (!token.isValid()) {
             throw BusinessException.gone("TOKEN_EXPIRADO", "Token expirado ou já utilizado.");
@@ -73,8 +79,10 @@ public class OnboardingService {
         token.setUsedAt(Instant.now());
         verifyRepo.save(token);
 
-        Usuario usuario = usuarioRepo.findById(token.getUsuarioId())
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(token.getUsuarioId())
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
         usuario.setEmailVerificadoEm(Instant.now());
         usuario.setUpdatedAt(Instant.now());
         usuarioRepo.save(usuario);
@@ -87,25 +95,36 @@ public class OnboardingService {
     @Transactional
     public void requestPasswordReset(String email) {
         // Always return OK (don't leak existence)
-        usuarioRepo.findByEmail(email)
+        usuarioRepo
+                .findByEmail(email)
                 .filter(u -> u.getDeletedAt() == null)
-                .ifPresent(u -> {
-                    resetRepo.invalidateExisting(u.getId());
-                    String raw = UUID.randomUUID().toString();
-                    PasswordResetToken token = new PasswordResetToken(
-                            u.getId(), sha256(raw), Instant.now().plus(1, ChronoUnit.HOURS));
-                    resetRepo.save(token);
-                    String url = props.getWeb().getBaseUrl() + "/reset-password?token=" + raw;
-                    mailService.sendPasswordReset(u.getEmail(), url);
-                    log.info("onboarding.reset.sent usuarioId={}", u.getId());
-                });
+                .ifPresent(
+                        u -> {
+                            resetRepo.invalidateExisting(u.getId());
+                            String raw = UUID.randomUUID().toString();
+                            PasswordResetToken token =
+                                    new PasswordResetToken(
+                                            u.getId(),
+                                            sha256(raw),
+                                            Instant.now().plus(1, ChronoUnit.HOURS));
+                            resetRepo.save(token);
+                            String url =
+                                    props.getWeb().getBaseUrl() + "/reset-password?token=" + raw;
+                            mailService.sendPasswordReset(u.getEmail(), url);
+                            log.info("onboarding.reset.sent usuarioId={}", u.getId());
+                        });
     }
 
     @Transactional
     public void resetPassword(String rawToken, String novaSenha) {
         String hash = sha256(rawToken);
-        PasswordResetToken token = resetRepo.findByTokenHash(hash)
-                .orElseThrow(() -> BusinessException.badRequest("TOKEN_INVALIDO", "Token inválido."));
+        PasswordResetToken token =
+                resetRepo
+                        .findByTokenHash(hash)
+                        .orElseThrow(
+                                () ->
+                                        BusinessException.badRequest(
+                                                "TOKEN_INVALIDO", "Token inválido."));
 
         if (!token.isValid()) {
             throw BusinessException.gone("TOKEN_EXPIRADO", "Token expirado ou já utilizado.");
@@ -114,8 +133,10 @@ public class OnboardingService {
         token.setUsedAt(Instant.now());
         resetRepo.save(token);
 
-        Usuario usuario = usuarioRepo.findById(token.getUsuarioId())
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(token.getUsuarioId())
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
         usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
         usuario.setUpdatedAt(Instant.now());
         usuarioRepo.save(usuario);

@@ -25,14 +25,16 @@ public class LoginLockoutService {
     /** Throws BusinessException if key is locked. */
     @Transactional
     public void checkLockout(String key) {
-        repo.findByKey(key).ifPresent(a -> {
-            if (a.isLocked()) {
-                log.warn("lockout.blocked key={}", key);
-                throw BusinessException.tooManyRequests(
-                        "ACCOUNT_LOCKED",
-                        "Conta bloqueada por excesso de tentativas. Tente novamente em 30 minutos.");
-            }
-        });
+        repo.findByKey(key)
+                .ifPresent(
+                        a -> {
+                            if (a.isLocked()) {
+                                log.warn("lockout.blocked key={}", key);
+                                throw BusinessException.tooManyRequests(
+                                        "ACCOUNT_LOCKED",
+                                        "Conta bloqueada por excesso de tentativas. Tente novamente em 30 minutos.");
+                            }
+                        });
     }
 
     /** Records a failed attempt. Locks if threshold reached. */
@@ -41,8 +43,9 @@ public class LoginLockoutService {
         LoginAttempt attempt = repo.findByKey(key).orElseGet(() -> new LoginAttempt(key));
 
         // Reset window if last attempt was outside window
-        if (attempt.getUpdatedAt() != null &&
-                attempt.getUpdatedAt().isBefore(Instant.now().minus(WINDOW_MINUTES, ChronoUnit.MINUTES))) {
+        if (attempt.getUpdatedAt() != null
+                && attempt.getUpdatedAt()
+                        .isBefore(Instant.now().minus(WINDOW_MINUTES, ChronoUnit.MINUTES))) {
             attempt.setCount(0);
             attempt.setLockedUntil(null);
         }

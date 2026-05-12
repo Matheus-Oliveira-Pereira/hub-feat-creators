@@ -17,16 +17,23 @@ class ComplianceIT extends IntegrationTestBase {
     String token;
 
     record SignupReq(String assessoriaNome, String slug, String email, String senha) {}
+
     record TokenResp(String accessToken) {}
 
     @BeforeEach
     void setup() {
         long ts = System.nanoTime();
-        token = rest.postForEntity(
-                baseUrl("/api/v1/auth/signup"),
-                new SignupReq("Compliance Test", "compliance-" + ts, "comp" + ts + "@test.com", "senha123456"),
-                TokenResp.class)
-                .getBody().accessToken();
+        token =
+                rest.postForEntity(
+                                baseUrl("/api/v1/auth/signup"),
+                                new SignupReq(
+                                        "Compliance Test",
+                                        "compliance-" + ts,
+                                        "comp" + ts + "@test.com",
+                                        "senha123456"),
+                                TokenResp.class)
+                        .getBody()
+                        .accessToken();
     }
 
     @Test
@@ -36,15 +43,17 @@ class ComplianceIT extends IntegrationTestBase {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // No baseLegal field → should fail validation
-        String body = """
+        String body =
+                """
                 {"nome": "Sem Base Legal", "handles": {}, "nicho": "fitness", "tags": []}
                 """;
 
-        ResponseEntity<Map> resp = rest.exchange(
-                baseUrl("/api/v1/influenciadores"),
-                HttpMethod.POST,
-                new HttpEntity<>(body, headers),
-                Map.class);
+        ResponseEntity<Map> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/influenciadores"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
 
         assertThat(resp.getStatusCode().value()).isIn(400, 422);
     }
@@ -55,16 +64,18 @@ class ComplianceIT extends IntegrationTestBase {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String body = """
+        String body =
+                """
                 {"nome": "Com Base Legal", "handles": {}, "nicho": "moda",
                  "tags": [], "baseLegal": "LEGITIMO_INTERESSE"}
                 """;
 
-        ResponseEntity<Map> resp = rest.exchange(
-                baseUrl("/api/v1/influenciadores"),
-                HttpMethod.POST,
-                new HttpEntity<>(body, headers),
-                Map.class);
+        ResponseEntity<Map> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/influenciadores"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
 
         assertThat(resp.getStatusCode().value()).isEqualTo(201);
     }
@@ -75,33 +86,34 @@ class ComplianceIT extends IntegrationTestBase {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String body = """
+        String body =
+                """
                 {"nome": "Marca sem base", "segmento": "tech", "tags": []}
                 """;
 
-        ResponseEntity<Map> resp = rest.exchange(
-                baseUrl("/api/v1/marcas"),
-                HttpMethod.POST,
-                new HttpEntity<>(body, headers),
-                Map.class);
+        ResponseEntity<Map> resp =
+                rest.exchange(
+                        baseUrl("/api/v1/marcas"),
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        Map.class);
 
         assertThat(resp.getStatusCode().value()).isIn(400, 422);
     }
 
     @Test
     void dsr_token_invalido_retorna_404() {
-        ResponseEntity<Map> resp = rest.postForEntity(
-                baseUrl("/api/v1/dsr/execute/token-invalido-nao-existe"),
-                null,
-                Map.class);
+        ResponseEntity<Map> resp =
+                rest.postForEntity(
+                        baseUrl("/api/v1/dsr/execute/token-invalido-nao-existe"), null, Map.class);
 
         assertThat(resp.getStatusCode().value()).isEqualTo(404);
     }
 
     @Test
     void ropa_endpoint_requer_autenticacao() {
-        ResponseEntity<Map> resp = rest.getForEntity(
-                baseUrl("/api/v1/admin/compliance/ropa"), Map.class);
+        ResponseEntity<Map> resp =
+                rest.getForEntity(baseUrl("/api/v1/admin/compliance/ropa"), Map.class);
         assertThat(resp.getStatusCode().value()).isEqualTo(403);
     }
 }

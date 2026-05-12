@@ -41,8 +41,13 @@ public class WhatsappEventoInbound {
 
     protected WhatsappEventoInbound() {}
 
-    public WhatsappEventoInbound(UUID assessoriaId, UUID accountId, String fromE164,
-            String wamid, String tipo, String payload) {
+    public WhatsappEventoInbound(
+            UUID assessoriaId,
+            UUID accountId,
+            String fromE164,
+            String wamid,
+            String tipo,
+            String payload) {
         this.assessoriaId = assessoriaId;
         this.accountId = accountId;
         this.fromE164 = fromE164;
@@ -51,14 +56,43 @@ public class WhatsappEventoInbound {
         this.payload = payload != null ? payload : "{}";
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getAccountId() { return accountId; }
-    public String getFromE164() { return fromE164; }
-    public String getWamid() { return wamid; }
-    public String getTipo() { return tipo; }
-    public String getPayload() { return payload; }
-    public Instant getProcessadoEm() { return processadoEm; }
-    public Instant getCreatedAt() { return createdAt; }
-    public void setProcessadoEm(Instant v) { this.processadoEm = v; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public String getFromE164() {
+        return fromE164;
+    }
+
+    public String getWamid() {
+        return wamid;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public Instant getProcessadoEm() {
+        return processadoEm;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setProcessadoEm(Instant v) {
+        this.processadoEm = v;
+    }
 }

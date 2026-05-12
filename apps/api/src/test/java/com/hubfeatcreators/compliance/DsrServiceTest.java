@@ -42,7 +42,9 @@ class DsrServiceTest {
         UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
 
-        var result = dsrService.criarSolicitacao(assessoriaId, "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
+        var result =
+                dsrService.criarSolicitacao(
+                        assessoriaId, "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
 
         assertThat(result.solicitacao()).isNotNull();
         assertThat(result.rawToken()).isNotBlank();
@@ -61,7 +63,12 @@ class DsrServiceTest {
         String hash = DsrService.hash(rawToken);
 
         DsrToken dsrToken = new DsrToken(solId, hash, Instant.now().plusSeconds(3600));
-        DsrSolicitacao sol = new DsrSolicitacao(UUID.randomUUID(), "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.EXCLUSAO);
+        DsrSolicitacao sol =
+                new DsrSolicitacao(
+                        UUID.randomUUID(),
+                        "INFLUENCIADOR",
+                        titularId,
+                        DsrSolicitacao.TipoDsr.EXCLUSAO);
 
         when(tokenRepo.findByTokenHash(hash)).thenReturn(Optional.of(dsrToken));
         when(solicitacaoRepo.findById(solId)).thenReturn(Optional.of(sol));
@@ -88,7 +95,8 @@ class DsrServiceTest {
     void executarComToken_rejeita_token_expirado() {
         String rawToken = "expired-token";
         String hash = DsrService.hash(rawToken);
-        DsrToken expiredToken = new DsrToken(UUID.randomUUID(), hash, Instant.now().minusSeconds(1));
+        DsrToken expiredToken =
+                new DsrToken(UUID.randomUUID(), hash, Instant.now().minusSeconds(1));
 
         when(tokenRepo.findByTokenHash(hash)).thenReturn(Optional.of(expiredToken));
 
@@ -114,7 +122,8 @@ class DsrServiceTest {
     @Test
     void anonimizarTitular_influenciador_limpa_pii() {
         UUID titularId = UUID.randomUUID();
-        Influenciador inf = new Influenciador(UUID.randomUUID(), "Maria Creator", UUID.randomUUID());
+        Influenciador inf =
+                new Influenciador(UUID.randomUUID(), "Maria Creator", UUID.randomUUID());
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
         when(influenciadorRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

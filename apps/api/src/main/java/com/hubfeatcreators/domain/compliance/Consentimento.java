@@ -37,7 +37,12 @@ public class Consentimento {
 
     public Consentimento() {}
 
-    public Consentimento(UUID assessoriaId, String titularTipo, UUID titularId, String finalidade, Map<String, Object> prova) {
+    public Consentimento(
+            UUID assessoriaId,
+            String titularTipo,
+            UUID titularId,
+            String finalidade,
+            Map<String, Object> prova) {
         this.assessoriaId = assessoriaId;
         this.titularTipo = titularTipo;
         this.titularId = titularId;
@@ -45,13 +50,39 @@ public class Consentimento {
         this.prova = prova;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getTitularTipo() { return titularTipo; }
-    public UUID getTitularId() { return titularId; }
-    public String getFinalidade() { return finalidade; }
-    public Instant getDadoEm() { return dadoEm; }
-    public Instant getRevogadoEm() { return revogadoEm; }
-    public void setRevogadoEm(Instant revogadoEm) { this.revogadoEm = revogadoEm; }
-    public Map<String, Object> getProva() { return prova; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getTitularTipo() {
+        return titularTipo;
+    }
+
+    public UUID getTitularId() {
+        return titularId;
+    }
+
+    public String getFinalidade() {
+        return finalidade;
+    }
+
+    public Instant getDadoEm() {
+        return dadoEm;
+    }
+
+    public Instant getRevogadoEm() {
+        return revogadoEm;
+    }
+
+    public void setRevogadoEm(Instant revogadoEm) {
+        this.revogadoEm = revogadoEm;
+    }
+
+    public Map<String, Object> getProva() {
+        return prova;
+    }
 }

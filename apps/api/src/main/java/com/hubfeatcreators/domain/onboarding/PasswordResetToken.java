@@ -32,15 +32,43 @@ public class PasswordResetToken {
         this.expiresAt = expiresAt;
     }
 
-    public boolean isExpired() { return Instant.now().isAfter(expiresAt); }
-    public boolean isUsed() { return usedAt != null; }
-    public boolean isValid() { return !isExpired() && !isUsed(); }
+    public boolean isExpired() {
+        return Instant.now().isAfter(expiresAt);
+    }
 
-    public UUID getId() { return id; }
-    public UUID getUsuarioId() { return usuarioId; }
-    public String getTokenHash() { return tokenHash; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getUsedAt() { return usedAt; }
-    public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
-    public Instant getCreatedAt() { return createdAt; }
+    public boolean isUsed() {
+        return usedAt != null;
+    }
+
+    public boolean isValid() {
+        return !isExpired() && !isUsed();
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Instant getUsedAt() {
+        return usedAt;
+    }
+
+    public void setUsedAt(Instant usedAt) {
+        this.usedAt = usedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

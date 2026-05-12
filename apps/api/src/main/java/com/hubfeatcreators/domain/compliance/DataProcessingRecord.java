@@ -38,12 +38,35 @@ public class DataProcessingRecord {
 
     public DataProcessingRecord() {}
 
-    public UUID getId() { return id; }
-    public String getFinalidade() { return finalidade; }
-    public BaseLegal getBaseLegal() { return baseLegal; }
-    public String[] getDadosColetados() { return dadosColetados; }
-    public int getRetencaoMeses() { return retencaoMeses; }
-    public String[] getCompartilhadoCom() { return compartilhadoCom; }
-    public boolean isVigente() { return vigente; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public String getFinalidade() {
+        return finalidade;
+    }
+
+    public BaseLegal getBaseLegal() {
+        return baseLegal;
+    }
+
+    public String[] getDadosColetados() {
+        return dadosColetados;
+    }
+
+    public int getRetencaoMeses() {
+        return retencaoMeses;
+    }
+
+    public String[] getCompartilhadoCom() {
+        return compartilhadoCom;
+    }
+
+    public boolean isVigente() {
+        return vigente;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

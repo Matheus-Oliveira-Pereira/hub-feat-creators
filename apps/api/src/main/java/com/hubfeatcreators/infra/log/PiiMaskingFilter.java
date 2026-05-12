@@ -6,8 +6,8 @@ import ch.qos.logback.core.spi.FilterReply;
 import java.util.regex.Pattern;
 
 /**
- * Logback filter that masks PII patterns in log messages before they are written.
- * AC-6: e-mail, CPF, BR phone masked in all log output.
+ * Logback filter that masks PII patterns in log messages before they are written. AC-6: e-mail,
+ * CPF, BR phone masked in all log output.
  */
 public class PiiMaskingFilter extends Filter<ILoggingEvent> {
 
@@ -32,16 +32,22 @@ public class PiiMaskingFilter extends Filter<ILoggingEvent> {
     /** Applies PII masking to a raw log message string. */
     public static String mask(String message) {
         if (message == null) return null;
-        String masked = EMAIL_PATTERN.matcher(message)
-                .replaceAll(m -> m.group(1).substring(0, 1) + "***@" + m.group(2));
-        masked = CPF_PATTERN.matcher(masked)
-                .replaceAll("***.***.***-**");
-        masked = PHONE_PATTERN.matcher(masked)
-                .replaceAll(m -> {
-                    String raw = m.group(1).replaceAll("[^\\d]", "");
-                    if (raw.length() < 4) return m.group(1);
-                    return raw.substring(0, 2) + "*****" + raw.substring(raw.length() - 4);
-                });
+        String masked =
+                EMAIL_PATTERN
+                        .matcher(message)
+                        .replaceAll(m -> m.group(1).substring(0, 1) + "***@" + m.group(2));
+        masked = CPF_PATTERN.matcher(masked).replaceAll("***.***.***-**");
+        masked =
+                PHONE_PATTERN
+                        .matcher(masked)
+                        .replaceAll(
+                                m -> {
+                                    String raw = m.group(1).replaceAll("[^\\d]", "");
+                                    if (raw.length() < 4) return m.group(1);
+                                    return raw.substring(0, 2)
+                                            + "*****"
+                                            + raw.substring(raw.length() - 4);
+                                });
         return masked;
     }
 }

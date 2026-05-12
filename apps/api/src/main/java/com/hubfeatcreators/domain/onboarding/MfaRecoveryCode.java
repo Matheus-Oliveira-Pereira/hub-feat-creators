@@ -28,12 +28,31 @@ public class MfaRecoveryCode {
         this.codeHash = codeHash;
     }
 
-    public boolean isUsed() { return usedAt != null; }
+    public boolean isUsed() {
+        return usedAt != null;
+    }
 
-    public UUID getId() { return id; }
-    public UUID getUsuarioId() { return usuarioId; }
-    public String getCodeHash() { return codeHash; }
-    public Instant getUsedAt() { return usedAt; }
-    public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public String getCodeHash() {
+        return codeHash;
+    }
+
+    public Instant getUsedAt() {
+        return usedAt;
+    }
+
+    public void setUsedAt(Instant usedAt) {
+        this.usedAt = usedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

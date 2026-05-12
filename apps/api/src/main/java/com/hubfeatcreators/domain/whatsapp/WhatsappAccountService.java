@@ -14,8 +14,8 @@ public class WhatsappAccountService {
     private final WhatsappCipherService cipher;
     private final MetaApiClient meta;
 
-    public WhatsappAccountService(WhatsappAccountRepository repo,
-            WhatsappCipherService cipher, MetaApiClient meta) {
+    public WhatsappAccountService(
+            WhatsappAccountRepository repo, WhatsappCipherService cipher, MetaApiClient meta) {
         this.repo = repo;
         this.cipher = cipher;
         this.meta = meta;
@@ -27,22 +27,36 @@ public class WhatsappAccountService {
     }
 
     @Transactional
-    public WhatsappAccount create(UUID assessoriaId, String wabaId, String phoneNumberId,
-            String phoneE164, String displayName, String accessToken, String appSecret) {
+    public WhatsappAccount create(
+            UUID assessoriaId,
+            String wabaId,
+            String phoneNumberId,
+            String phoneE164,
+            String displayName,
+            String accessToken,
+            String appSecret) {
         meta.validateToken(accessToken);
 
         var encToken = cipher.encrypt(accessToken);
         var encSecret = cipher.encrypt(appSecret);
 
-        var account = new WhatsappAccount(assessoriaId, wabaId, phoneNumberId, phoneE164,
-                displayName, encToken.ciphertext(), encToken.nonce(),
-                encSecret.ciphertext(), encSecret.nonce());
+        var account =
+                new WhatsappAccount(
+                        assessoriaId,
+                        wabaId,
+                        phoneNumberId,
+                        phoneE164,
+                        displayName,
+                        encToken.ciphertext(),
+                        encToken.nonce(),
+                        encSecret.ciphertext(),
+                        encSecret.nonce());
         return repo.save(account);
     }
 
     @Transactional
-    public WhatsappAccount update(UUID assessoriaId, UUID id, String displayName,
-            String accessToken, String appSecret) {
+    public WhatsappAccount update(
+            UUID assessoriaId, UUID id, String displayName, String accessToken, String appSecret) {
         WhatsappAccount account = requireAccount(assessoriaId, id);
 
         if (accessToken != null && !accessToken.isBlank()) {

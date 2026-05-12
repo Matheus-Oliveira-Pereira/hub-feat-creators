@@ -21,27 +21,35 @@ public class SystemMailService {
 
     @Async
     public void sendVerifyEmail(String to, String verifyUrl) {
-        send(to,
+        send(
+                to,
                 "Verifique seu e-mail — feat. creators",
-                "Clique no link para verificar sua conta:\n\n" + verifyUrl +
-                "\n\nO link expira em 24 horas.");
+                "Clique no link para verificar sua conta:\n\n"
+                        + verifyUrl
+                        + "\n\nO link expira em 24 horas.");
     }
 
     @Async
     public void sendPasswordReset(String to, String resetUrl) {
-        send(to,
+        send(
+                to,
                 "Redefinição de senha — feat. creators",
-                "Clique no link para redefinir sua senha:\n\n" + resetUrl +
-                "\n\nO link expira em 1 hora. Se não solicitou, ignore este e-mail.");
+                "Clique no link para redefinir sua senha:\n\n"
+                        + resetUrl
+                        + "\n\nO link expira em 1 hora. Se não solicitou, ignore este e-mail.");
     }
 
     @Async
     public void sendInvite(String to, String assessoriaNome, String inviteUrl) {
-        send(to,
+        send(
+                to,
                 "Convite para " + assessoriaNome + " — feat. creators",
-                "Você foi convidado para entrar em " + assessoriaNome + ".\n\n" +
-                "Clique no link para aceitar o convite:\n\n" + inviteUrl +
-                "\n\nO convite expira em 7 dias.");
+                "Você foi convidado para entrar em "
+                        + assessoriaNome
+                        + ".\n\n"
+                        + "Clique no link para aceitar o convite:\n\n"
+                        + inviteUrl
+                        + "\n\nO convite expira em 7 dias.");
     }
 
     private void send(String to, String subject, String body) {

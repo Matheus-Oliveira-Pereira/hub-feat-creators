@@ -33,10 +33,27 @@ public class PolicyAceite {
         this.userAgent = userAgent;
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public String getVersao() { return versao; }
-    public Instant getAceitoEm() { return aceitoEm; }
-    public String getIp() { return ip; }
-    public String getUserAgent() { return userAgent; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getVersao() {
+        return versao;
+    }
+
+    public Instant getAceitoEm() {
+        return aceitoEm;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
 }

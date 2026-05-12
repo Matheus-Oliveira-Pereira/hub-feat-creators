@@ -2,7 +2,6 @@ package com.hubfeatcreators.infra.security;
 
 import com.hubfeatcreators.domain.onboarding.MfaService;
 import com.hubfeatcreators.domain.onboarding.OnboardingService;
-import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -21,7 +20,8 @@ public class AuthController {
     private final OnboardingService onboardingService;
     private final MfaService mfaService;
 
-    public AuthController(AuthService authService, OnboardingService onboardingService, MfaService mfaService) {
+    public AuthController(
+            AuthService authService, OnboardingService onboardingService, MfaService mfaService) {
         this.authService = authService;
         this.onboardingService = onboardingService;
         this.mfaService = mfaService;
@@ -49,7 +49,8 @@ public class AuthController {
 
     record ForgotPasswordRequest(@NotBlank @Email String email) {}
 
-    record ResetPasswordRequest(@NotBlank String token, @NotBlank @Size(min = 8) String novaSenha) {}
+    record ResetPasswordRequest(
+            @NotBlank String token, @NotBlank @Size(min = 8) String novaSenha) {}
 
     record MfaSetupResponse(String secret, String qrCodeUri, List<String> recoveryCodes) {}
 
@@ -62,7 +63,9 @@ public class AuthController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public SignupResponse signup(@Valid @RequestBody SignupRequest req, HttpServletRequest http) {
-        var result = authService.signup(req.assessoriaNome(), req.slug(), req.email(), req.senha(), http);
+        var result =
+                authService.signup(
+                        req.assessoriaNome(), req.slug(), req.email(), req.senha(), http);
         return new SignupResponse(result.email(), result.emailVerificado());
     }
 

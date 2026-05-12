@@ -25,8 +25,7 @@ public class DsrController {
     /** Export titular data for ACESSO/PORTABILIDADE (token already consumed by /execute). */
     @GetMapping("/dados/{titularTipo}/{titularId}")
     public ResponseEntity<Map<String, Object>> dados(
-            @PathVariable String titularTipo,
-            @PathVariable UUID titularId) {
+            @PathVariable String titularTipo, @PathVariable UUID titularId) {
         Map<String, Object> dados = dsrService.exportarDadosTitular(titularTipo, titularId);
         return ResponseEntity.ok(dados);
     }

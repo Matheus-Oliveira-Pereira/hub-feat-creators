@@ -1,23 +1,21 @@
 package com.hubfeatcreators.onboarding;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
+
 import com.hubfeatcreators.domain.onboarding.LoginAttempt;
 import com.hubfeatcreators.domain.onboarding.LoginAttemptRepository;
 import com.hubfeatcreators.domain.onboarding.LoginLockoutService;
 import com.hubfeatcreators.infra.web.BusinessException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LoginLockoutServiceTest {

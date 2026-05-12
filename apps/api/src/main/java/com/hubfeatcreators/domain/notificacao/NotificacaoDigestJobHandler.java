@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Processa NOTIFICACAO_DIGEST: verifica se há não-lidas na assessoria e loga resumo.
- * Envio real por e-mail será integrado quando PRD-004 expuser API de envio interno.
+ * Processa NOTIFICACAO_DIGEST: verifica se há não-lidas na assessoria e loga resumo. Envio real por
+ * e-mail será integrado quando PRD-004 expuser API de envio interno.
  */
 @Component("NOTIFICACAO_DIGEST")
 public class NotificacaoDigestJobHandler implements JobHandler {
@@ -39,11 +39,18 @@ public class NotificacaoDigestJobHandler implements JobHandler {
         long naoLidas = notificacaoRepo.countNaoLidasByAssessoriaId(assessoriaId);
 
         if (naoLidas == 0) {
-            log.info("notificacao.digest.skip assessoriaId={} data={} motivo=sem_nao_lidas", assessoriaId, data);
+            log.info(
+                    "notificacao.digest.skip assessoriaId={} data={} motivo=sem_nao_lidas",
+                    assessoriaId,
+                    data);
             return;
         }
 
-        log.info("notificacao.digest.resumo assessoriaId={} data={} naoLidas={}", assessoriaId, data, naoLidas);
+        log.info(
+                "notificacao.digest.resumo assessoriaId={} data={} naoLidas={}",
+                assessoriaId,
+                data,
+                naoLidas);
         Counter.builder("notificacao_digest_processado_total").register(meterRegistry).increment();
     }
 }

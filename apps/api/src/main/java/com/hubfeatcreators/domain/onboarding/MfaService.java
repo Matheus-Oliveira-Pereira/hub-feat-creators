@@ -53,8 +53,10 @@ public class MfaService {
     /** Generates TOTP secret + QR + recovery codes. Does NOT activate MFA yet. */
     @Transactional
     public MfaSetupData setupMfa(UUID usuarioId) {
-        Usuario usuario = usuarioRepo.findById(usuarioId)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(usuarioId)
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         String secret = secretGenerator.generate();
         usuario.setMfaSecretEnc(secret); // TODO: encrypt with AES-GCM in prod
@@ -71,8 +73,10 @@ public class MfaService {
     /** Verifies TOTP code and activates MFA. */
     @Transactional
     public void activateMfa(UUID usuarioId, String totpCode) {
-        Usuario usuario = usuarioRepo.findById(usuarioId)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(usuarioId)
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         if (usuario.getMfaSecretEnc() == null) {
             throw BusinessException.badRequest("MFA_NOT_SETUP", "Execute /mfa/setup primeiro.");
@@ -91,8 +95,10 @@ public class MfaService {
 
     /** Verifies a TOTP code (at login). Returns true if valid. */
     public boolean verifyCode(UUID usuarioId, String totpCode) {
-        Usuario usuario = usuarioRepo.findById(usuarioId)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(usuarioId)
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         if (!usuario.isMfaAtivo() || usuario.getMfaSecretEnc() == null) return false;
         return codeVerifier.isValidCode(usuario.getMfaSecretEnc(), totpCode);
@@ -102,22 +108,26 @@ public class MfaService {
     @Transactional
     public boolean useRecoveryCode(UUID usuarioId, String rawCode) {
         String hash = sha256(rawCode.trim().toUpperCase());
-        return recoveryRepo.findByCodeHashAndUsedAtIsNull(hash)
+        return recoveryRepo
+                .findByCodeHashAndUsedAtIsNull(hash)
                 .filter(c -> c.getUsuarioId().equals(usuarioId))
-                .map(c -> {
-                    c.setUsedAt(Instant.now());
-                    recoveryRepo.save(c);
-                    log.info("mfa.recovery.used usuarioId={}", usuarioId);
-                    return true;
-                })
+                .map(
+                        c -> {
+                            c.setUsedAt(Instant.now());
+                            recoveryRepo.save(c);
+                            log.info("mfa.recovery.used usuarioId={}", usuarioId);
+                            return true;
+                        })
                 .orElse(false);
     }
 
     /** Disables MFA and clears secret + recovery codes. */
     @Transactional
     public void disableMfa(UUID usuarioId, String totpCode) {
-        Usuario usuario = usuarioRepo.findById(usuarioId)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        Usuario usuario =
+                usuarioRepo
+                        .findById(usuarioId)
+                        .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         if (!usuario.isMfaAtivo()) return;
 
@@ -138,14 +148,15 @@ public class MfaService {
 
     private String generateQrUri(String email, String secret) {
         try {
-            QrData data = new QrData.Builder()
-                    .label(email)
-                    .secret(secret)
-                    .issuer("feat. creators")
-                    .algorithm(HashingAlgorithm.SHA1)
-                    .digits(6)
-                    .period(30)
-                    .build();
+            QrData data =
+                    new QrData.Builder()
+                            .label(email)
+                            .secret(secret)
+                            .issuer("feat. creators")
+                            .algorithm(HashingAlgorithm.SHA1)
+                            .digits(6)
+                            .period(30)
+                            .build();
             QrGenerator generator = new ZxingPngQrGenerator();
             byte[] imageData = generator.generate(data);
             return Utils.getDataUriForImage(imageData, generator.getImageMimeType());

@@ -3,6 +3,7 @@ package com.hubfeatcreators.domain.notificacao;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
+import com.hubfeatcreators.infra.web.PageResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,13 +32,22 @@ public class NotificacaoController {
 
     @GetMapping
     @RequirePermission(PermissionCodes.B_NOT)
-    public Page<Notificacao> listar(
+    public PageResponse<Notificacao> listar(
             @AuthenticationPrincipal AuthPrincipal principal,
             @RequestParam(required = false) NotificacaoTipo tipo,
             @RequestParam(defaultValue = "false") boolean apenasNaoLidas,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return service.listar(principal.assessoriaId(), principal.usuarioId(), tipo, apenasNaoLidas, page, size);
+        Page<Notificacao> result =
+                service.listar(
+                        principal.assessoriaId(),
+                        principal.usuarioId(),
+                        tipo,
+                        apenasNaoLidas,
+                        page,
+                        size);
+        String nextCursor = result.hasNext() ? String.valueOf(page + 1) : null;
+        return PageResponse.of(result.getContent(), nextCursor, size);
     }
 
     @GetMapping("/contagem")
@@ -50,8 +60,7 @@ public class NotificacaoController {
     @PostMapping("/{id}/lida")
     @RequirePermission(PermissionCodes.B_NOT)
     public void marcarLida(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID id) {
+            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
         service.marcarLida(principal.assessoriaId(), id, principal.usuarioId());
     }
 
@@ -69,7 +78,8 @@ public class NotificacaoController {
 
     @GetMapping("/prefs")
     @RequirePermission(PermissionCodes.B_NOT)
-    public List<NotificacaoPreferencia> preferencias(@AuthenticationPrincipal AuthPrincipal principal) {
+    public List<NotificacaoPreferencia> preferencias(
+            @AuthenticationPrincipal AuthPrincipal principal) {
         return service.preferencias(principal.usuarioId());
     }
 

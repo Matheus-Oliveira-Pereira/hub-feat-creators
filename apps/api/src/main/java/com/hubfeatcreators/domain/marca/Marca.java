@@ -128,6 +128,11 @@ public class Marca {
         return createdBy;
     }
 
-    public BaseLegal getBaseLegal() { return baseLegal; }
-    public void setBaseLegal(BaseLegal baseLegal) { this.baseLegal = baseLegal; }
+    public BaseLegal getBaseLegal() {
+        return baseLegal;
+    }
+
+    public void setBaseLegal(BaseLegal baseLegal) {
+        this.baseLegal = baseLegal;
+    }
 }

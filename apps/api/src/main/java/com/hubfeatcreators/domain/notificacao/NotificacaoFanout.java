@@ -37,7 +37,11 @@ public class NotificacaoFanout {
                     "TAREFA",
                     e.tarefaId());
         } catch (Exception ex) {
-            log.error("fanout.tarefa_vencendo.error tarefaId={} msg={}", e.tarefaId(), ex.getMessage(), ex);
+            log.error(
+                    "fanout.tarefa_vencendo.error tarefaId={} msg={}",
+                    e.tarefaId(),
+                    ex.getMessage(),
+                    ex);
         }
     }
 
@@ -56,7 +60,11 @@ public class NotificacaoFanout {
                     "TAREFA",
                     e.tarefaId());
         } catch (Exception ex) {
-            log.error("fanout.tarefa_atrasada.error tarefaId={} msg={}", e.tarefaId(), ex.getMessage(), ex);
+            log.error(
+                    "fanout.tarefa_atrasada.error tarefaId={} msg={}",
+                    e.tarefaId(),
+                    ex.getMessage(),
+                    ex);
         }
     }
 
@@ -75,7 +83,11 @@ public class NotificacaoFanout {
                     "EMAIL_ACCOUNT",
                     e.accountId());
         } catch (Exception ex) {
-            log.error("fanout.email_auth_falhou.error accountId={} msg={}", e.accountId(), ex.getMessage(), ex);
+            log.error(
+                    "fanout.email_auth_falhou.error accountId={} msg={}",
+                    e.accountId(),
+                    ex.getMessage(),
+                    ex);
         }
     }
 
@@ -89,12 +101,22 @@ public class NotificacaoFanout {
                     NotificacaoTipo.PROSPECCAO_MUDOU_STATUS,
                     NotificacaoPrioridade.NORMAL,
                     "Prospecção atualizada",
-                    "\"" + e.prospeccaoTitulo() + "\" mudou de " + e.statusAnterior() + " para " + e.statusNovo() + ".",
+                    "\""
+                            + e.prospeccaoTitulo()
+                            + "\" mudou de "
+                            + e.statusAnterior()
+                            + " para "
+                            + e.statusNovo()
+                            + ".",
                     Map.of("de", e.statusAnterior(), "para", e.statusNovo()),
                     "PROSPECCAO",
                     e.prospeccaoId());
         } catch (Exception ex) {
-            log.error("fanout.prospeccao_status.error prospeccaoId={} msg={}", e.prospeccaoId(), ex.getMessage(), ex);
+            log.error(
+                    "fanout.prospeccao_status.error prospeccaoId={} msg={}",
+                    e.prospeccaoId(),
+                    ex.getMessage(),
+                    ex);
         }
     }
 }

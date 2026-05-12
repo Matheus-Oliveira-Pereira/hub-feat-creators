@@ -39,6 +39,7 @@ public class AuditLogService {
             String userAgent) {
         UUID targetId = usuarioId != null ? usuarioId : UUID.randomUUID();
         repository.save(
-                new AuditLog(assessoriaId, usuarioId, "auth", targetId, acao, payload, ip, userAgent));
+                new AuditLog(
+                        assessoriaId, usuarioId, "auth", targetId, acao, payload, ip, userAgent));
     }
 }

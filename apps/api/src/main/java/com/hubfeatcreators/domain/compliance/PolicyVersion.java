@@ -7,8 +7,7 @@ import java.time.Instant;
 @Table(name = "policy_versions")
 public class PolicyVersion {
 
-    @Id
-    private String versao;
+    @Id private String versao;
 
     @Column(nullable = false, columnDefinition = "text")
     private String texto;
@@ -31,9 +30,23 @@ public class PolicyVersion {
         this.material = material;
     }
 
-    public String getVersao() { return versao; }
-    public String getTexto() { return texto; }
-    public String getHash() { return hash; }
-    public boolean isMaterial() { return material; }
-    public Instant getVigenteDe() { return vigenteDe; }
+    public String getVersao() {
+        return versao;
+    }
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public boolean isMaterial() {
+        return material;
+    }
+
+    public Instant getVigenteDe() {
+        return vigenteDe;
+    }
 }

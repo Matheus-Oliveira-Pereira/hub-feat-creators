@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WhatsappTemplateRepository extends JpaRepository<WhatsappTemplate, UUID> {
     List<WhatsappTemplate> findByAssessoriaId(UUID assessoriaId);
+
     List<WhatsappTemplate> findByAccountIdAndStatus(UUID accountId, String status);
+
     Optional<WhatsappTemplate> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
+
     List<WhatsappTemplate> findByStatus(String status);
 }

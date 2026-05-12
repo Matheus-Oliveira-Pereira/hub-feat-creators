@@ -22,7 +22,8 @@ public class WhatsappController {
     private final WhatsappTemplateService templateService;
     private final WhatsappService whatsappService;
 
-    public WhatsappController(WhatsappAccountService accountService,
+    public WhatsappController(
+            WhatsappAccountService accountService,
             WhatsappTemplateService templateService,
             WhatsappService whatsappService) {
         this.accountService = accountService;
@@ -42,13 +43,26 @@ public class WhatsappController {
 
     public record AccountUpdateRequest(String displayName, String accessToken, String appSecret) {}
 
-    public record AccountResponse(UUID id, String wabaId, String phoneNumberId, String phoneE164,
-            String displayName, String status, int dailyLimit, int dailySent) {}
+    public record AccountResponse(
+            UUID id,
+            String wabaId,
+            String phoneNumberId,
+            String phoneE164,
+            String displayName,
+            String status,
+            int dailyLimit,
+            int dailySent) {}
 
     private AccountResponse toAccountResp(WhatsappAccount a) {
-        return new AccountResponse(a.getId(), a.getWabaId(), a.getPhoneNumberId(),
-                a.getPhoneE164(), a.getDisplayName(), a.getStatus(),
-                a.getDailyLimit(), a.getDailySent());
+        return new AccountResponse(
+                a.getId(),
+                a.getWabaId(),
+                a.getPhoneNumberId(),
+                a.getPhoneE164(),
+                a.getDisplayName(),
+                a.getStatus(),
+                a.getDailyLimit(),
+                a.getDailySent());
     }
 
     @RequirePermission(PermissionCodes.B_WAP)
@@ -60,19 +74,32 @@ public class WhatsappController {
     @RequirePermission(PermissionCodes.C_WAP)
     @PostMapping("/accounts")
     @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse createAccount(@AuthenticationPrincipal AuthPrincipal p,
-            @RequestBody @Valid AccountRequest req) {
-        return toAccountResp(accountService.create(p.assessoriaId(), req.wabaId(),
-                req.phoneNumberId(), req.phoneE164(), req.displayName(),
-                req.accessToken(), req.appSecret()));
+    public AccountResponse createAccount(
+            @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid AccountRequest req) {
+        return toAccountResp(
+                accountService.create(
+                        p.assessoriaId(),
+                        req.wabaId(),
+                        req.phoneNumberId(),
+                        req.phoneE164(),
+                        req.displayName(),
+                        req.accessToken(),
+                        req.appSecret()));
     }
 
     @RequirePermission(PermissionCodes.E_WAP)
     @PatchMapping("/accounts/{id}")
-    public AccountResponse updateAccount(@AuthenticationPrincipal AuthPrincipal p,
-            @PathVariable UUID id, @RequestBody AccountUpdateRequest req) {
-        return toAccountResp(accountService.update(p.assessoriaId(), id,
-                req.displayName(), req.accessToken(), req.appSecret()));
+    public AccountResponse updateAccount(
+            @AuthenticationPrincipal AuthPrincipal p,
+            @PathVariable UUID id,
+            @RequestBody AccountUpdateRequest req) {
+        return toAccountResp(
+                accountService.update(
+                        p.assessoriaId(),
+                        id,
+                        req.displayName(),
+                        req.accessToken(),
+                        req.appSecret()));
     }
 
     @RequirePermission(PermissionCodes.D_WAP)
@@ -92,14 +119,30 @@ public class WhatsappController {
             @NotBlank String corpo,
             String[] variaveis) {}
 
-    public record TemplateResponse(UUID id, UUID accountId, String nome, String idioma,
-            String categoria, String corpo, String[] variaveis, String status,
-            String metaTemplateId, String motivoRejeicao) {}
+    public record TemplateResponse(
+            UUID id,
+            UUID accountId,
+            String nome,
+            String idioma,
+            String categoria,
+            String corpo,
+            String[] variaveis,
+            String status,
+            String metaTemplateId,
+            String motivoRejeicao) {}
 
     private TemplateResponse toTemplateResp(WhatsappTemplate t) {
-        return new TemplateResponse(t.getId(), t.getAccountId(), t.getNome(), t.getIdioma(),
-                t.getCategoria(), t.getCorpo(), t.getVariaveis(), t.getStatus(),
-                t.getMetaTemplateId(), t.getMotivoRejeicao());
+        return new TemplateResponse(
+                t.getId(),
+                t.getAccountId(),
+                t.getNome(),
+                t.getIdioma(),
+                t.getCategoria(),
+                t.getCorpo(),
+                t.getVariaveis(),
+                t.getStatus(),
+                t.getMetaTemplateId(),
+                t.getMotivoRejeicao());
     }
 
     @RequirePermission(PermissionCodes.B_WAP)
@@ -111,17 +154,23 @@ public class WhatsappController {
     @RequirePermission(PermissionCodes.C_WAP)
     @PostMapping("/templates")
     @ResponseStatus(HttpStatus.CREATED)
-    public TemplateResponse createTemplate(@AuthenticationPrincipal AuthPrincipal p,
-            @RequestBody @Valid TemplateRequest req) {
-        return toTemplateResp(templateService.create(p.assessoriaId(), req.accountId(),
-                req.nome(), req.idioma() != null ? req.idioma() : "pt_BR",
-                req.categoria(), req.corpo(), req.variaveis()));
+    public TemplateResponse createTemplate(
+            @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid TemplateRequest req) {
+        return toTemplateResp(
+                templateService.create(
+                        p.assessoriaId(),
+                        req.accountId(),
+                        req.nome(),
+                        req.idioma() != null ? req.idioma() : "pt_BR",
+                        req.categoria(),
+                        req.corpo(),
+                        req.variaveis()));
     }
 
     @RequirePermission(PermissionCodes.C_WAP)
     @PostMapping("/templates/{id}/submit")
-    public TemplateResponse submitTemplate(@AuthenticationPrincipal AuthPrincipal p,
-            @PathVariable UUID id) {
+    public TemplateResponse submitTemplate(
+            @AuthenticationPrincipal AuthPrincipal p, @PathVariable UUID id) {
         return toTemplateResp(templateService.submit(p.assessoriaId(), id));
     }
 
@@ -140,33 +189,44 @@ public class WhatsappController {
             @NotBlank String text,
             UUID idempotencyKey) {}
 
-    public record EnvioResponse(UUID id, String tipo, String destinatarioE164, String status,
-            String wamid) {}
+    public record EnvioResponse(
+            UUID id, String tipo, String destinatarioE164, String status, String wamid) {}
 
     private EnvioResponse toEnvioResp(WhatsappEnvio e) {
-        return new EnvioResponse(e.getId(), e.getTipo(), e.getDestinatarioE164(),
-                e.getStatus(), e.getWamid());
+        return new EnvioResponse(
+                e.getId(), e.getTipo(), e.getDestinatarioE164(), e.getStatus(), e.getWamid());
     }
 
     @RequirePermission(PermissionCodes.C_WAP)
     @PostMapping("/envios/template")
     @ResponseStatus(HttpStatus.CREATED)
-    public EnvioResponse sendTemplate(@AuthenticationPrincipal AuthPrincipal p,
-            @RequestBody @Valid SendTemplateRequest req) {
+    public EnvioResponse sendTemplate(
+            @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid SendTemplateRequest req) {
         UUID key = req.idempotencyKey() != null ? req.idempotencyKey() : UUID.randomUUID();
-        return toEnvioResp(whatsappService.sendTemplate(p.assessoriaId(), req.accountId(),
-                req.templateId(), req.destinatarioE164(),
-                req.components() != null ? req.components() : Collections.emptyList(),
-                key, p.usuarioId()));
+        return toEnvioResp(
+                whatsappService.sendTemplate(
+                        p.assessoriaId(),
+                        req.accountId(),
+                        req.templateId(),
+                        req.destinatarioE164(),
+                        req.components() != null ? req.components() : Collections.emptyList(),
+                        key,
+                        p.usuarioId()));
     }
 
     @RequirePermission(PermissionCodes.C_WAP)
     @PostMapping("/envios/freeform")
     @ResponseStatus(HttpStatus.CREATED)
-    public EnvioResponse sendFreeform(@AuthenticationPrincipal AuthPrincipal p,
-            @RequestBody @Valid SendFreeformRequest req) {
+    public EnvioResponse sendFreeform(
+            @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid SendFreeformRequest req) {
         UUID key = req.idempotencyKey() != null ? req.idempotencyKey() : UUID.randomUUID();
-        return toEnvioResp(whatsappService.sendFreeform(p.assessoriaId(), req.accountId(),
-                req.destinatarioE164(), req.text(), key, p.usuarioId()));
+        return toEnvioResp(
+                whatsappService.sendFreeform(
+                        p.assessoriaId(),
+                        req.accountId(),
+                        req.destinatarioE164(),
+                        req.text(),
+                        key,
+                        p.usuarioId()));
     }
 }
