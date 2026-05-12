@@ -82,6 +82,7 @@ app:
     upload-dir: ${IMPORT_UPLOAD_DIR:${java.io.tmpdir}/hub-imports}
   features:
     portal-enabled: ${FEATURE_PORTAL_ENABLED:false}
+    mobile-enabled: ${FEATURE_MOBILE_ENABLED:false}
   storage:
     upload-dir: ${STORAGE_UPLOAD_DIR:${java.io.tmpdir}/hub-attachments}
   webpush:

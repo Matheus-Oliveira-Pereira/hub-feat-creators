@@ -1,5 +1,7 @@
 package com.hubfeatcreators.domain.notificacao;
 
+import com.hubfeatcreators.config.AppProperties;
+import com.hubfeatcreators.infra.push.ExpoPushSender;
 import com.hubfeatcreators.infra.web.BusinessException;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,6 +36,8 @@ public class NotificacaoService {
     private final WebpushSubscriptionRepository subRepo;
     private final NotificacaoDedupeRepository dedupeRepo;
     private final WebPushSender webPushSender;
+    private final ExpoPushSender expoPushSender;
+    private final AppProperties appProperties;
     private final MeterRegistry meterRegistry;
 
     private final Map<UUID, Set<SseEmitter>> emitters = new ConcurrentHashMap<>();
@@ -44,12 +48,16 @@ public class NotificacaoService {
             WebpushSubscriptionRepository subRepo,
             NotificacaoDedupeRepository dedupeRepo,
             WebPushSender webPushSender,
+            ExpoPushSender expoPushSender,
+            AppProperties appProperties,
             MeterRegistry meterRegistry) {
         this.repo = repo;
         this.prefRepo = prefRepo;
         this.subRepo = subRepo;
         this.dedupeRepo = dedupeRepo;
         this.webPushSender = webPushSender;
+        this.expoPushSender = expoPushSender;
+        this.appProperties = appProperties;
         this.meterRegistry = meterRegistry;
         Gauge.builder(
                         "sse_conexoes_ativas",
@@ -135,9 +143,14 @@ public class NotificacaoService {
         // SSE
         notificarEmitters(usuarioId);
 
-        // Web Push
+        // Web Push (browser VAPID)
         if (isHabilitado(usuarioId, tipo, NotificacaoCanal.PUSH, false)) {
             webPushSender.send(usuarioId, titulo, mensagem, buildAlvoUrl(alvoTipo, alvoId));
+        }
+
+        // Expo Push (mobile FCM/APNs)
+        if (appProperties.getFeatures().isMobileEnabled()) {
+            expoPushSender.send(usuarioId, titulo, mensagem, buildAlvoUrl(alvoTipo, alvoId));
         }
 
         return n;

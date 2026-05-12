@@ -209,6 +209,7 @@ public class AppProperties {
         }
 
         private boolean portalEnabled = false;
+        private boolean mobileEnabled = false;
 
         public boolean isPortalEnabled() {
             return portalEnabled;
@@ -216,6 +217,14 @@ public class AppProperties {
 
         public void setPortalEnabled(boolean portalEnabled) {
             this.portalEnabled = portalEnabled;
+        }
+
+        public boolean isMobileEnabled() {
+            return mobileEnabled;
+        }
+
+        public void setMobileEnabled(boolean mobileEnabled) {
+            this.mobileEnabled = mobileEnabled;
         }
     }
 
