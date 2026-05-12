@@ -47,6 +47,9 @@ public class Tarefa {
     @Column(name = "concluida_em")
     private Instant concluidaEm;
 
+    @Column(name = "visivel_para_creator", nullable = false)
+    private boolean visivelParaCreator = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -170,4 +173,7 @@ public class Tarefa {
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
     }
+
+    public boolean isVisivelParaCreator() { return visivelParaCreator; }
+    public void setVisivelParaCreator(boolean visivelParaCreator) { this.visivelParaCreator = visivelParaCreator; }
 }

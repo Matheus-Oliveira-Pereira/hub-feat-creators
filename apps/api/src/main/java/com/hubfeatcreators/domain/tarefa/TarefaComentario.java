@@ -22,6 +22,15 @@ public class TarefaComentario {
     @Column(nullable = false)
     private String texto;
 
+    @Column(nullable = false)
+    private boolean interno = true;
+
+    @Column(name = "autor_tipo", nullable = false)
+    private String autorTipo = "USUARIO";
+
+    @Column(name = "creator_user_id")
+    private UUID creatorUserId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -32,6 +41,18 @@ public class TarefaComentario {
         this.assessoriaId = assessoriaId;
         this.autorId = autorId;
         this.texto = texto;
+    }
+
+    public static TarefaComentario fromCreator(UUID tarefaId, UUID assessoriaId, UUID creatorUserId, String texto) {
+        TarefaComentario c = new TarefaComentario();
+        c.tarefaId = tarefaId;
+        c.assessoriaId = assessoriaId;
+        c.autorId = creatorUserId;
+        c.creatorUserId = creatorUserId;
+        c.texto = texto;
+        c.interno = false;
+        c.autorTipo = "CREATOR";
+        return c;
     }
 
     public UUID getId() {
@@ -54,7 +75,9 @@ public class TarefaComentario {
         return texto;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public Instant getCreatedAt() { return createdAt; }
+    public boolean isInterno() { return interno; }
+    public void setInterno(boolean interno) { this.interno = interno; }
+    public String getAutorTipo() { return autorTipo; }
+    public UUID getCreatorUserId() { return creatorUserId; }
 }

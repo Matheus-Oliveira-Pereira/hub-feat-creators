@@ -41,7 +41,8 @@ public class TarefaController {
             UUID entidadeId,
             Instant concluidaEm,
             Instant createdAt,
-            Instant updatedAt) {}
+            Instant updatedAt,
+            boolean visivelParaCreator) {}
 
     public record TarefaRequest(
             @NotBlank String titulo,
@@ -185,6 +186,17 @@ public class TarefaController {
         service.deletar(principal, id);
     }
 
+    @PatchMapping("/{id}/visivel-para-creator")
+    @RequirePermission(PermissionCodes.C_TAR)
+    public TarefaResponse toggleVisivelParaCreator(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID id,
+            @RequestBody VisivelParaCreatorRequest req) {
+        return toResponse(service.toggleVisivelParaCreator(principal, id, req.visivel()));
+    }
+
+    public record VisivelParaCreatorRequest(boolean visivel) {}
+
     // ─── Comentários ────────────────────────────────────────────────────────
 
     @GetMapping("/{id}/comentarios")
@@ -238,7 +250,8 @@ public class TarefaController {
                 t.getEntidadeId(),
                 t.getConcluidaEm(),
                 t.getCreatedAt(),
-                t.getUpdatedAt());
+                t.getUpdatedAt(),
+                t.isVisivelParaCreator());
     }
 
     private ComentarioResponse toComentarioResponse(TarefaComentario c) {

@@ -46,7 +46,9 @@ public class SecurityConfig {
                                                 "/api/v1/email/track/**",
                                                 "/api/v1/email/unsubscribe",
                                                 "/api/v1/dsr/**",
-                                                "/api/v1/whatsapp/webhook")
+                                                "/api/v1/whatsapp/webhook",
+                                                "/api/v1/portal/auth/**",
+                                                "/api/v1/portal/branding/**")
                                         .permitAll()
                                         .requestMatchers("/api/v1/webpush/public-key")
                                         .permitAll()

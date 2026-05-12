@@ -207,6 +207,16 @@ public class AppProperties {
         public void setImportEnabled(boolean importEnabled) {
             this.importEnabled = importEnabled;
         }
+
+        private boolean portalEnabled = false;
+
+        public boolean isPortalEnabled() {
+            return portalEnabled;
+        }
+
+        public void setPortalEnabled(boolean portalEnabled) {
+            this.portalEnabled = portalEnabled;
+        }
     }
 
     public Features getFeatures() {

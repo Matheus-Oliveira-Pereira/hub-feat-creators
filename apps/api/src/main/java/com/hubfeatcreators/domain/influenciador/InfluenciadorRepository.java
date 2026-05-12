@@ -12,6 +12,9 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
 
     Optional<Influenciador> findByIdAndDeletedAtIsNull(UUID id);
 
+    @Query("SELECT i FROM Influenciador i WHERE i.id = :id AND i.assessoriaId = :assessoriaId AND i.deletedAt IS NULL")
+    Optional<Influenciador> findByIdAndAssessoriaId(@Param("id") UUID id, @Param("assessoriaId") UUID assessoriaId);
+
     @Query(
             """
       SELECT i FROM Influenciador i

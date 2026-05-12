@@ -174,6 +174,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `historico/` → tabela `eventos` append-only, EventoService + cursor `(ts,id)` base64, BHIS permission, Timeline component em drawers — PRD-010
 - ✅ `importacao/` → CSV/XLSX bulk import (univocity + POI), dry-run, SSE progress, CPF/CNPJ/phone validation, templates — PRD-011
 - ✅ `relatorios/` → funil prospecção, performance assessor, SLA tarefas + comparativo anterior, CSV export (EXPT), save relatórios, MVs refresh diário — PRD-012
+- ✅ `portal/` → portal creator: JWT tipo=CREATOR, CreatorUser/Invite/Entregavel, `FEATURE_PORTAL_ENABLED`, AttachmentStorage, visivel_para_creator, comentarios externos, branding por assessoria — PRD-013
 - ⏳ `mobile/` → Expo (usuário final) — ADR-007
 
 ### Pendentes / Desativados
@@ -257,6 +258,11 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **Cursor histórico `(ts, id)`**: `encodeCursor` retorna base64 de `"epochMilli:uuid"`. Instant precisa ser truncado para millis antes de comparar em testes (nano-precision se perde no encode)
 - **EventoTipo naming conflict**: `domain.prospeccao.EventoTipo` (STATUS_CHANGE/COMMENT) ≠ `domain.historico.EventoTipo` (PROSPECCAO_CRIADA etc.). Em ProspeccaoService usar FQCN `com.hubfeatcreators.domain.historico.EventoTipo.*`
 - **ASSESSOR visibility em historico**: MVP filtra por `autor_id = userId` (não por entidades relacionadas). Owner vê tudo. Sem join com prospeccoes/tarefas para checar responsável
+- **Portal JWT tipo=CREATOR**: `JwtAuthFilter` diferencia tokens por claim `tipo`. Creator → `CreatorPrincipal` + `ROLE_CREATOR`. Token expira em 24h (vs 60min interno). `PortalController` usa `@PreAuthorize("hasRole('CREATOR')")`. `@RequirePermission` não funciona com CREATOR tokens (aspect lê `AuthPrincipal`)
+- **Portal feature flag**: `FEATURE_PORTAL_ENABLED=false` (default). Ativar em prod deliberadamente. Login/convite checam a flag; controllers públicos (branding, auth) não
+- **creator_users UNIQUE influenciador_id**: um influenciador = uma conta de creator por assessoria. Tentativa de aceitar segundo convite → 409 CREATOR_ALREADY_EXISTS
+- **AttachmentStorage path traversal**: `LocalVolumeAttachmentStorage.load()` valida `file.startsWith(root)` para impedir traversal. Caminho gerado: `{root}/{assessoriaId}/{year}/{month}/{uuid}-{filename}`
+- **Portal `download` via token na URL**: `portalMe.downloadUrl()` appenda `?token=` na URL pois browser fetch direto não envia Authorization header. `JwtAuthFilter` aceita `?token=` como fallback quando header `Authorization` ausente — cobre download e SSE de portal
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:

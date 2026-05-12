@@ -298,6 +298,16 @@ public class TarefaService {
                 .orElse(new UsuarioPreferencia(principal.usuarioId()));
     }
 
+    // ─── Portal visibility ───────────────────────────────────────────────────
+
+    @Transactional
+    public Tarefa toggleVisivelParaCreator(AuthPrincipal principal, UUID tarefaId, boolean visivel) {
+        Tarefa t = buscar(principal, tarefaId);
+        t.setVisivelParaCreator(visivel);
+        t.setUpdatedAt(Instant.now());
+        return repo.save(t);
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     private void ensureTenant(AuthPrincipal principal, Tarefa t) {

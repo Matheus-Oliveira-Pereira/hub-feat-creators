@@ -934,3 +934,167 @@ export const relatorios = {
     api.post<RelatorioSalvo>('/api/v1/relatorios-salvos', { nome, tipo, filtros }),
   deletarSalvo: (id: string) => api.delete(`/api/v1/relatorios-salvos/${id}`),
 };
+
+// ─── Portal Creator ───────────────────────────────────────────────────────────
+
+export interface CreatorTokenResponse {
+  token: string;
+  creatorUserId: string;
+  email: string;
+  influenciadorId: string;
+}
+
+export interface InviteInfo {
+  email: string;
+  nomeInfluenciador: string;
+}
+
+export interface AssessoriaBranding {
+  assessoriaId: string;
+  logoUrl: string | null;
+  corPrimaria: string | null;
+}
+
+export interface PortalTarefa {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  prazo: string;
+  prioridade: 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
+  status: string;
+  visivelParaCreator: boolean;
+}
+
+export interface PortalComentario {
+  id: string;
+  texto: string;
+  autorTipo: 'USUARIO' | 'CREATOR';
+  createdAt: string;
+}
+
+export interface CreatorEntregavel {
+  id: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  status: 'ENVIADO' | 'EM_REVISAO' | 'APROVADO' | 'SOLICITADA_REVISAO';
+  feedback: string | null;
+  criadoEm: string;
+}
+
+let creatorToken: string | null = null;
+
+export function setCreatorToken(token: string | null) {
+  creatorToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) localStorage.setItem('creatorToken', token);
+    else localStorage.removeItem('creatorToken');
+  }
+}
+
+export function getCreatorToken(): string | null {
+  if (creatorToken) return creatorToken;
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('creatorToken');
+  }
+  return null;
+}
+
+async function creatorRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getCreatorToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw { status: res.status, ...body };
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+export const portalAuth = {
+  login: (email: string, senha: string) =>
+    fetch(`${API_URL}/api/v1/portal/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha }),
+    }).then(async (r) => {
+      if (!r.ok) throw await r.json().catch(() => ({}));
+      return r.json() as Promise<CreatorTokenResponse>;
+    }),
+
+  aceitarConvite: (token: string, senha: string) =>
+    fetch(`${API_URL}/api/v1/portal/auth/convite/aceitar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, senha }),
+    }).then(async (r) => {
+      if (!r.ok) throw await r.json().catch(() => ({}));
+      return r.json() as Promise<CreatorTokenResponse>;
+    }),
+
+  infoConvite: (token: string) =>
+    fetch(`${API_URL}/api/v1/portal/auth/convite/info?token=${encodeURIComponent(token)}`)
+      .then(async (r) => {
+        if (!r.ok) throw await r.json().catch(() => ({}));
+        return r.json() as Promise<InviteInfo>;
+      }),
+
+  branding: (slug: string) =>
+    fetch(`${API_URL}/api/v1/portal/branding/${encodeURIComponent(slug)}`)
+      .then(async (r) => {
+        if (!r.ok) throw await r.json().catch(() => ({}));
+        return r.json() as Promise<AssessoriaBranding>;
+      }),
+};
+
+export const portalMe = {
+  tarefas: () => creatorRequest<PortalTarefa[]>('/api/v1/portal/me/tarefas'),
+  tarefa: (id: string) => creatorRequest<PortalTarefa>(`/api/v1/portal/me/tarefas/${id}`),
+
+  comentarios: (tarefaId: string) =>
+    creatorRequest<PortalComentario[]>(`/api/v1/portal/me/tarefas/${tarefaId}/comentarios`),
+  comentar: (tarefaId: string, texto: string) =>
+    creatorRequest<PortalComentario>(`/api/v1/portal/me/tarefas/${tarefaId}/comentarios`, {
+      method: 'POST',
+      body: JSON.stringify({ texto }),
+    }),
+
+  entregaveis: (tarefaId: string) =>
+    creatorRequest<CreatorEntregavel[]>(`/api/v1/portal/me/tarefas/${tarefaId}/entregaveis`),
+  enviarEntregavel: (tarefaId: string, file: File) => {
+    const token = getCreatorToken();
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${API_URL}/api/v1/portal/me/tarefas/${tarefaId}/entregaveis`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }).then(async (r) => {
+      if (!r.ok) throw await r.json().catch(() => ({}));
+      return r.json() as Promise<CreatorEntregavel>;
+    });
+  },
+  downloadUrl: (entregavelId: string) => {
+    const token = getCreatorToken();
+    return `${API_URL}/api/v1/portal/me/entregaveis/${entregavelId}/download${token ? `?token=${token}` : ''}`;
+  },
+};
+
+// ─── Assessora: invite + branding ─────────────────────────────────────────────
+
+export const portalAdmin = {
+  convidar: (influenciadorId: string, email: string) =>
+    api.post<{ id: string }>('/api/v1/portal/convites', { influenciadorId, email }),
+  setBranding: (logoUrl: string | null, corPrimaria: string | null) =>
+    api.put<AssessoriaBranding>('/api/v1/portal/branding', { logoUrl, corPrimaria }),
+  revisarEntregavel: (entregavelId: string, status: string, feedback?: string) =>
+    api.patch<CreatorEntregavel>(`/api/v1/portal/entregaveis/${entregavelId}/revisao`, { status, feedback }),
+};

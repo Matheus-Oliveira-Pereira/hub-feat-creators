@@ -3,8 +3,9 @@ spring:
     name: hub-feat-creators-api
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      max-file-size: 500MB
+      max-request-size: 510MB
+      file-size-threshold: 1MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/hub_feat_creators}
     username: ${DATABASE_USERNAME:hub_app}
@@ -79,6 +80,10 @@ app:
     import-enabled: ${FEATURE_IMPORT_ENABLED:true}
   import:
     upload-dir: ${IMPORT_UPLOAD_DIR:${java.io.tmpdir}/hub-imports}
+  features:
+    portal-enabled: ${FEATURE_PORTAL_ENABLED:false}
+  storage:
+    upload-dir: ${STORAGE_UPLOAD_DIR:${java.io.tmpdir}/hub-attachments}
   webpush:
     public-key: ${WEBPUSH_PUBLIC_KEY:}
     private-key: ${WEBPUSH_PRIVATE_KEY:}

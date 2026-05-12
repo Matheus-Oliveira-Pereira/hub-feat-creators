@@ -1,5 +1,6 @@
 package com.hubfeatcreators.infra.security;
 
+import com.hubfeatcreators.infra.security.CreatorPrincipal;
 import com.hubfeatcreators.infra.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -32,25 +33,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String authHeader = request.getHeader("Authorization");
+            String tokenParam = request.getParameter("token");
+            if (authHeader == null && tokenParam != null && !tokenParam.isBlank()) {
+                authHeader = "Bearer " + tokenParam;
+            }
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 if (jwtService.isTokenValid(token)) {
                     Claims claims = jwtService.parseToken(token);
-                    UUID usuarioId = UUID.fromString(claims.getSubject());
+                    String tipo = claims.get("tipo", String.class);
                     UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
-                    String role = claims.get("role", String.class);
-                    Set<String> permissions = readPerms(claims);
-
-                    AuthPrincipal principal =
-                            new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
                     TenantContext.setAssessoriaId(assessoriaId);
 
-                    var auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    principal,
-                                    null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    if ("CREATOR".equals(tipo)) {
+                        UUID creatorUserId = UUID.fromString(claims.getSubject());
+                        UUID influenciadorId = UUID.fromString(claims.get("inf", String.class));
+                        CreatorPrincipal principal = new CreatorPrincipal(creatorUserId, assessoriaId, influenciadorId);
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                principal, null, List.of(new SimpleGrantedAuthority("ROLE_CREATOR")));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    } else {
+                        UUID usuarioId = UUID.fromString(claims.getSubject());
+                        String role = claims.get("role", String.class);
+                        Set<String> permissions = readPerms(claims);
+                        AuthPrincipal principal = new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
             }
         } catch (Exception e) {

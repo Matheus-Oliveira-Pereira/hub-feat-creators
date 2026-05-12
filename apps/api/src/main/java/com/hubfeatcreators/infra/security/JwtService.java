@@ -80,4 +80,27 @@ public class JwtService {
             return false;
         }
     }
+
+    /** Generates a short-lived access token for portal creator users. */
+    public String generateCreatorToken(UUID creatorUserId, UUID assessoriaId, UUID influenciadorId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + 24L * 60 * 60 * 1000); // 24h for creators
+        return Jwts.builder()
+                .setSubject(creatorUserId.toString())
+                .claim("ass", assessoriaId.toString())
+                .claim("inf", influenciadorId.toString())
+                .claim("tipo", "CREATOR")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isCreatorToken(String token) {
+        try {
+            return "CREATOR".equals(parseToken(token).get("tipo", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
