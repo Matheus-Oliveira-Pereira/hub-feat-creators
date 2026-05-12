@@ -175,7 +175,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `importacao/` → CSV/XLSX bulk import (univocity + POI), dry-run, SSE progress, CPF/CNPJ/phone validation, templates — PRD-011
 - ✅ `relatorios/` → funil prospecção, performance assessor, SLA tarefas + comparativo anterior, CSV export (EXPT), save relatórios, MVs refresh diário — PRD-012
 - ✅ `portal/` → portal creator: JWT tipo=CREATOR, CreatorUser/Invite/Entregavel, `FEATURE_PORTAL_ENABLED`, AttachmentStorage, visivel_para_creator, comentarios externos, branding por assessoria — PRD-013
-- ⏳ `mobile/` → Expo (usuário final) — ADR-007
+- ✅ `mobile/` → Expo SDK 51, expo-router, auth SecureStore, push FCM/APNs via ExpoPushSender, upload entregável + retry, biometria, offline cache — PRD-014, ADR-007
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
@@ -263,6 +263,12 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **creator_users UNIQUE influenciador_id**: um influenciador = uma conta de creator por assessoria. Tentativa de aceitar segundo convite → 409 CREATOR_ALREADY_EXISTS
 - **AttachmentStorage path traversal**: `LocalVolumeAttachmentStorage.load()` valida `file.startsWith(root)` para impedir traversal. Caminho gerado: `{root}/{assessoriaId}/{year}/{month}/{uuid}-{filename}`
 - **Portal `download` via token na URL**: `portalMe.downloadUrl()` appenda `?token=` na URL pois browser fetch direto não envia Authorization header. `JwtAuthFilter` aceita `?token=` como fallback quando header `Authorization` ausente — cobre download e SSE de portal
+- **Mobile SecureStore keys**: `creator_token` (JWT) + `biometria_enabled` ('true'/'false') — mudança de nome invalida sessões existentes sem migração
+- **expo-notifications cold start**: `Notifications.getExpoPushTokenAsync()` exige `projectId` válido do EAS. Em dev sem EAS configurado, retorna erro silencioso — não crashar, apenas logar
+- **Mobile upload retry**: delays são [1min, 5min, 30min, 2h] — máx 4 tentativas. `expo-file-system.uploadAsync` não suporta pause/resume nativo; cancelamento só por timeout
+- **FEATURE_MOBILE_ENABLED**: controla dispatch do `ExpoPushSender` em `NotificacaoService`. Token de creator funciona mesmo com flag=false — flag afeta só o envio de push, não auth
+- **DeviceSubscriptionController principal**: aceita `CreatorPrincipal` (ROLE_CREATOR) e `AuthPrincipal` (INTERNO) — resolve userId/userTipo polimorficamente. Sem `@RequirePermission` pois CREATOR não tem permissions map
+- **Expo Router typedRoutes**: `app.json` tem `experiments.typedRoutes: true` — `href` em `router.push()` de telas dinâmicas precisa cast `as any` temporariamente até gerar tipos pelo EAS
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:
