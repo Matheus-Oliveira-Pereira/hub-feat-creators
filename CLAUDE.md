@@ -75,6 +75,7 @@ Monorepo:
 - `/memory <search|index|stats>` → memória semântica L4
 
 ## Workflow Rules
+- **v1 = grátis para usuário, sem monetização** (ADR-016). Dependência paga só nas 4 exceções: WhatsApp Cloud API, Anthropic API, Hosting paid tier, Domínio + e-mail transacional HUB. Adicionar nova dependência paga = ADR novo
 - Rodar `./mvnw verify` (api) e `pnpm lint && pnpm test` (web) antes de cada commit
 - Nunca commitar `.env`, segredos, dump de DB
 - Mudança em `/apps/*` que afeta produto exige update em `/docs`
@@ -181,7 +182,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
-- 📐 `marketplace/` → PRD-017 Fase 4 — ADRs propostos (016 gateway Pagar.me, 017 assinatura Clicksign, 018 NF NFE.io, 019 regulatório facilitador, 020 take rate variável por plano, 021 KYC Idwall); aguarda aprovação + legal review
+- ❌ `marketplace/` → fora de v1 (ADR-016 free-tier policy); volta como PRD novo quando monetizar
 - ❌ `i18n/` → MVP só pt-BR
 
 ## Model Presets (L4)
