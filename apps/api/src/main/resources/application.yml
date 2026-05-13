@@ -85,6 +85,9 @@ app:
     portal-enabled: ${FEATURE_PORTAL_ENABLED:false}
     mobile-enabled: ${FEATURE_MOBILE_ENABLED:false}
     social-enabled: ${FEATURE_SOCIAL_ENABLED:false}
+    ai-match-enabled: ${FEATURE_AI_MATCH_ENABLED:false}
+  ai-worker:
+    url: ${AI_WORKER_URL:}
   storage:
     upload-dir: ${STORAGE_UPLOAD_DIR:${java.io.tmpdir}/hub-attachments}
   webpush:

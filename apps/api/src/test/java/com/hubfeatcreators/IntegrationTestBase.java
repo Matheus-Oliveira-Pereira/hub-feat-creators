@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class IntegrationTestBase {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("pgvector/pgvector:pg16");
 
     @LocalServerPort protected int port;
 

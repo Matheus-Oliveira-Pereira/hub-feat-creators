@@ -254,6 +254,16 @@ public class AppProperties {
         public void setSocialEnabled(boolean socialEnabled) {
             this.socialEnabled = socialEnabled;
         }
+
+        private boolean aiMatchEnabled = false;
+
+        public boolean isAiMatchEnabled() {
+            return aiMatchEnabled;
+        }
+
+        public void setAiMatchEnabled(boolean aiMatchEnabled) {
+            this.aiMatchEnabled = aiMatchEnabled;
+        }
     }
 
     public Features getFeatures() {

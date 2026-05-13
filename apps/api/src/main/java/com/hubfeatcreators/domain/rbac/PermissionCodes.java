@@ -88,6 +88,10 @@ public final class PermissionCodes {
     public static final String B_IMP = "BIMP";
     public static final String C_IMP = "CIMP";
 
+    // IA Match (PRD-016)
+    public static final String MTCH_R = "MTCR"; // ler sugestões de match
+    public static final String MTCH_W = "MTCW"; // executar match / briefings / feedback
+
     /** Conjunto de todas roles válidas — usado pra validar entrada em PerfilController. */
     public static final Set<String> ALL =
             Set.copyOf(
@@ -96,7 +100,7 @@ public final class PermissionCodes {
                             D_MAR, B_INF, C_INF, E_INF, D_INF, B_CON, C_CON, E_CON, D_CON, B_USU,
                             C_USU, E_USU, D_USU, B_PRF, C_PRF, E_PRF, D_PRF, B_TAR, C_TAR, E_TAR,
                             D_TAR, B_EML, C_EML, E_EML, D_EML, B_WAP, C_WAP, E_WAP, D_WAP, B_REL,
-                            B_NOT, B_HIS, B_IMP, C_IMP));
+                            B_NOT, B_HIS, B_IMP, C_IMP, MTCH_R, MTCH_W));
 
     /** Default roles dos perfis seed (idêntico ao backfill da V3). */
     public static final Set<String> OWNER_DEFAULT = Set.copyOf(ALL);
@@ -104,8 +108,11 @@ public final class PermissionCodes {
     public static final Set<String> ASSESSOR_DEFAULT =
             Set.of(
                     B_PRO, C_PRO, E_PRO, B_MAR, B_INF, B_CON, C_CON, E_CON, B_USU, B_REL, B_TAR,
-                    C_TAR, E_TAR, B_EML, C_EML, E_EML, B_WAP, C_WAP, B_NOT, B_HIS, B_IMP, C_IMP);
+                    C_TAR, E_TAR, B_EML, C_EML, E_EML, B_WAP, C_WAP, B_NOT, B_HIS, B_IMP, C_IMP,
+                    MTCH_R, MTCH_W);
 
     public static final Set<String> LEITOR_DEFAULT =
-            Set.of(B_PRO, B_MAR, B_INF, B_CON, B_USU, B_REL, B_TAR, B_EML, B_WAP, B_NOT, B_HIS, B_IMP);
+            Set.of(
+                    B_PRO, B_MAR, B_INF, B_CON, B_USU, B_REL, B_TAR, B_EML, B_WAP, B_NOT, B_HIS,
+                    B_IMP, MTCH_R);
 }

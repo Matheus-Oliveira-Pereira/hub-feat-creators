@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class ApiApplicationTests {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("pgvector/pgvector:pg16");
 
     @DynamicPropertySource
     static void datasourceProps(DynamicPropertyRegistry registry) {
