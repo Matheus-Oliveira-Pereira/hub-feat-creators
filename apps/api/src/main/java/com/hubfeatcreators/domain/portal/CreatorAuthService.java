@@ -61,8 +61,11 @@ public class CreatorAuthService {
         if (!props.getFeatures().isPortalEnabled()) {
             throw BusinessException.forbidden("PORTAL_DISABLED", "Portal não habilitado.");
         }
-        CreatorUser user = creatorUserRepo.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> BusinessException.unauthorized("Credenciais inválidas."));
+        CreatorUser user =
+                creatorUserRepo
+                        .findByEmail(email.toLowerCase())
+                        .orElseThrow(
+                                () -> BusinessException.unauthorized("Credenciais inválidas."));
 
         if (!"ATIVO".equals(user.getStatus())) {
             throw BusinessException.unauthorized("Conta inativa ou bloqueada.");
@@ -71,8 +74,9 @@ public class CreatorAuthService {
             throw BusinessException.unauthorized("Credenciais inválidas.");
         }
 
-        String token = jwtService.generateCreatorToken(
-                user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
+        String token =
+                jwtService.generateCreatorToken(
+                        user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 
@@ -91,7 +95,8 @@ public class CreatorAuthService {
         }
 
         if (email == null || email.isBlank()) {
-            throw BusinessException.badRequest("INVITE_NO_EMAIL", "E-mail do destinatário é obrigatório.");
+            throw BusinessException.badRequest(
+                    "INVITE_NO_EMAIL", "E-mail do destinatário é obrigatório.");
         }
         String targetEmail = email.toLowerCase();
 
@@ -99,14 +104,24 @@ public class CreatorAuthService {
         String tokenHash = sha256(rawToken);
         Instant expiresAt = Instant.now().plus(INVITE_DAYS, ChronoUnit.DAYS);
 
-        CreatorInvite invite = new CreatorInvite(
-                influenciadorId, assessoriaId, targetEmail, tokenHash, expiresAt,
-                principal.usuarioId());
+        CreatorInvite invite =
+                new CreatorInvite(
+                        influenciadorId,
+                        assessoriaId,
+                        targetEmail,
+                        tokenHash,
+                        expiresAt,
+                        principal.usuarioId());
         inviteRepo.save(invite);
 
-        var assessoria = assessoriaRepo.findById(assessoriaId).orElseThrow(BusinessException::notFound);
-        String portalUrl = props.getWeb().getBaseUrl() + "/portal/" + assessoria.getSlug()
-                + "/convite?token=" + rawToken;
+        var assessoria =
+                assessoriaRepo.findById(assessoriaId).orElseThrow(BusinessException::notFound);
+        String portalUrl =
+                props.getWeb().getBaseUrl()
+                        + "/portal/"
+                        + assessoria.getSlug()
+                        + "/convite?token="
+                        + rawToken;
 
         mailService.sendInvite(targetEmail, assessoria.getNome(), portalUrl);
 
@@ -118,8 +133,10 @@ public class CreatorAuthService {
     @Transactional
     public TokenResponse aceitarConvite(String rawToken, String senha) {
         String tokenHash = sha256(rawToken);
-        CreatorInvite invite = inviteRepo.findByTokenHash(tokenHash)
-                .orElseThrow(() -> BusinessException.notFound());
+        CreatorInvite invite =
+                inviteRepo
+                        .findByTokenHash(tokenHash)
+                        .orElseThrow(() -> BusinessException.notFound());
 
         if (!invite.isValido()) {
             throw BusinessException.gone("INVITE_EXPIRED", "Convite expirado ou já utilizado.");
@@ -131,16 +148,20 @@ public class CreatorAuthService {
         }
 
         String senhaHash = passwordEncoder.encode(senha);
-        CreatorUser user = new CreatorUser(
-                invite.getInfluenciadorId(), invite.getAssessoriaId(),
-                invite.getEmail(), senhaHash);
+        CreatorUser user =
+                new CreatorUser(
+                        invite.getInfluenciadorId(),
+                        invite.getAssessoriaId(),
+                        invite.getEmail(),
+                        senhaHash);
         creatorUserRepo.save(user);
 
         invite.setAceitoEm(Instant.now());
         inviteRepo.save(invite);
 
-        String token = jwtService.generateCreatorToken(
-                user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
+        String token =
+                jwtService.generateCreatorToken(
+                        user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 
@@ -149,13 +170,16 @@ public class CreatorAuthService {
     @Transactional(readOnly = true)
     public InviteInfo infoConvite(String rawToken) {
         String tokenHash = sha256(rawToken);
-        CreatorInvite invite = inviteRepo.findByTokenHash(tokenHash)
-                .orElseThrow(BusinessException::notFound);
+        CreatorInvite invite =
+                inviteRepo.findByTokenHash(tokenHash).orElseThrow(BusinessException::notFound);
         if (!invite.isValido()) {
             throw BusinessException.gone("INVITE_EXPIRED", "Convite expirado ou já utilizado.");
         }
-        String nomeInfluenciador = influenciadorRepo.findById(invite.getInfluenciadorId())
-                .map(Influenciador::getNome).orElse("");
+        String nomeInfluenciador =
+                influenciadorRepo
+                        .findById(invite.getInfluenciadorId())
+                        .map(Influenciador::getNome)
+                        .orElse("");
         return new InviteInfo(invite.getEmail(), nomeInfluenciador);
     }
 
@@ -178,7 +202,8 @@ public class CreatorAuthService {
 
     // ─── DTOs ─────────────────────────────────────────────────────────────────
 
-    public record TokenResponse(String token, UUID creatorUserId, String email, UUID influenciadorId) {}
+    public record TokenResponse(
+            String token, UUID creatorUserId, String email, UUID influenciadorId) {}
 
     public record InviteInfo(String email, String nomeInfluenciador) {}
 }

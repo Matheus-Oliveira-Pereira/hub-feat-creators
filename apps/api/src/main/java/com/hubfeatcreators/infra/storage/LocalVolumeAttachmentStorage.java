@@ -23,7 +23,8 @@ public class LocalVolumeAttachmentStorage implements AttachmentStorage {
     private final Path root;
 
     public LocalVolumeAttachmentStorage(
-            @Value("${app.storage.upload-dir:${java.io.tmpdir}/hub-attachments}") String uploadDir) {
+            @Value("${app.storage.upload-dir:${java.io.tmpdir}/hub-attachments}")
+                    String uploadDir) {
         this.root = Paths.get(uploadDir);
         try {
             Files.createDirectories(this.root);
@@ -33,13 +34,18 @@ public class LocalVolumeAttachmentStorage implements AttachmentStorage {
     }
 
     @Override
-    public StoredFile store(String assessoriaId, String filename, String contentType,
-                            InputStream data, long contentLength) {
+    public StoredFile store(
+            String assessoriaId,
+            String filename,
+            String contentType,
+            InputStream data,
+            long contentLength) {
         LocalDate today = LocalDate.now();
         String safeFilename = UUID.randomUUID() + "-" + sanitize(filename);
-        Path dir = root.resolve(assessoriaId)
-                .resolve(String.valueOf(today.getYear()))
-                .resolve(String.format("%02d", today.getMonthValue()));
+        Path dir =
+                root.resolve(assessoriaId)
+                        .resolve(String.valueOf(today.getYear()))
+                        .resolve(String.format("%02d", today.getMonthValue()));
         try {
             Files.createDirectories(dir);
             Path dest = dir.resolve(safeFilename);
@@ -48,7 +54,8 @@ public class LocalVolumeAttachmentStorage implements AttachmentStorage {
             log.info("storage.stored path={} size={}", storagePath, written);
             return new StoredFile(storagePath, written);
         } catch (IOException e) {
-            throw BusinessException.internalError("STORAGE_WRITE_FAILED", "Falha ao gravar arquivo.");
+            throw BusinessException.internalError(
+                    "STORAGE_WRITE_FAILED", "Falha ao gravar arquivo.");
         }
     }
 

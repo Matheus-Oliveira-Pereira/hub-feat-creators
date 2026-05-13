@@ -1,7 +1,7 @@
 package com.hubfeatcreators.domain.portal;
 
-import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
+import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import java.util.UUID;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,7 +23,8 @@ public class EntregavelController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
             @RequestBody RevisaoRequest req) {
-        return portalService.revisarEntregavel(principal.assessoriaId(), id, req.status(), req.feedback());
+        return portalService.revisarEntregavel(
+                principal.assessoriaId(), id, req.status(), req.feedback());
     }
 
     public record RevisaoRequest(String status, String feedback) {}

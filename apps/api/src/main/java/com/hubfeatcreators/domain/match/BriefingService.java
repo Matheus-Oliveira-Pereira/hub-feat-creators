@@ -14,7 +14,9 @@ public class BriefingService {
     private final EmbeddingService embeddingService;
     private final VectorRepository vectorRepo;
 
-    public BriefingService(BriefingRepository briefingRepo, EmbeddingService embeddingService,
+    public BriefingService(
+            BriefingRepository briefingRepo,
+            EmbeddingService embeddingService,
             VectorRepository vectorRepo) {
         this.briefingRepo = briefingRepo;
         this.embeddingService = embeddingService;
@@ -22,14 +24,29 @@ public class BriefingService {
     }
 
     @Transactional
-    public Briefing upsertByProspeccao(UUID assessoriaId, UUID prospeccaoId,
-            String vertical, String objetivo, Map<String, Object> audiencia,
-            String formato, Long budgetMin, Long budgetMax, String texto) {
-        Briefing briefing = briefingRepo.findByProspeccaoId(prospeccaoId)
-                .orElse(null);
+    public Briefing upsertByProspeccao(
+            UUID assessoriaId,
+            UUID prospeccaoId,
+            String vertical,
+            String objetivo,
+            Map<String, Object> audiencia,
+            String formato,
+            Long budgetMin,
+            Long budgetMax,
+            String texto) {
+        Briefing briefing = briefingRepo.findByProspeccaoId(prospeccaoId).orElse(null);
         if (briefing == null) {
-            briefing = new Briefing(assessoriaId, prospeccaoId, vertical, objetivo,
-                    audiencia, formato, budgetMin, budgetMax, texto);
+            briefing =
+                    new Briefing(
+                            assessoriaId,
+                            prospeccaoId,
+                            vertical,
+                            objetivo,
+                            audiencia,
+                            formato,
+                            budgetMin,
+                            budgetMax,
+                            texto);
         } else {
             assertAssessoria(assessoriaId, briefing.getAssessoriaId());
             briefing.update(vertical, objetivo, audiencia, formato, budgetMin, budgetMax, texto);
@@ -45,8 +62,10 @@ public class BriefingService {
 
     @Transactional(readOnly = true)
     public Briefing getByProspeccao(UUID assessoriaId, UUID prospeccaoId) {
-        Briefing briefing = briefingRepo.findByProspeccaoId(prospeccaoId)
-                .orElseThrow(() -> BusinessException.notFound("BRIEFING"));
+        Briefing briefing =
+                briefingRepo
+                        .findByProspeccaoId(prospeccaoId)
+                        .orElseThrow(() -> BusinessException.notFound("BRIEFING"));
         assertAssessoria(assessoriaId, briefing.getAssessoriaId());
         return briefing;
     }
@@ -57,11 +76,13 @@ public class BriefingService {
     }
 
     private String buildText(String vertical, String objetivo, String formato, String texto) {
-        return String.join(" ",
-                vertical != null ? vertical : "",
-                objetivo != null ? objetivo : "",
-                formato != null ? formato : "",
-                texto != null ? texto : "").trim();
+        return String.join(
+                        " ",
+                        vertical != null ? vertical : "",
+                        objetivo != null ? objetivo : "",
+                        formato != null ? formato : "",
+                        texto != null ? texto : "")
+                .trim();
     }
 
     private void assertAssessoria(UUID expected, UUID actual) {

@@ -8,7 +8,6 @@ import com.hubfeatcreators.domain.tarefa.TarefaRepository;
 import com.hubfeatcreators.infra.storage.AttachmentStorage;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -38,7 +37,8 @@ public class PortalService {
 
     @Transactional(readOnly = true)
     public List<Tarefa> listarTarefas(UUID assessoriaId, UUID influenciadorId) {
-        return tarefaRepo.findByEntidade(assessoriaId, EntidadeTipo.INFLUENCIADOR, influenciadorId)
+        return tarefaRepo
+                .findByEntidade(assessoriaId, EntidadeTipo.INFLUENCIADOR, influenciadorId)
                 .stream()
                 .filter(Tarefa::isVisivelParaCreator)
                 .toList();
@@ -46,8 +46,7 @@ public class PortalService {
 
     @Transactional(readOnly = true)
     public Tarefa detalharTarefa(UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
-        Tarefa t = tarefaRepo.findById(tarefaId)
-                .orElseThrow(BusinessException::notFound);
+        Tarefa t = tarefaRepo.findById(tarefaId).orElseThrow(BusinessException::notFound);
         if (!t.getAssessoriaId().equals(assessoriaId)) throw BusinessException.notFound();
         if (!t.isVisivelParaCreator()) throw BusinessException.notFound();
         if (!influenciadorId.equals(t.getEntidadeId())) throw BusinessException.notFound();
@@ -57,61 +56,79 @@ public class PortalService {
     // ─── Comentários ─────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<TarefaComentario> listarComentarios(UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
+    public List<TarefaComentario> listarComentarios(
+            UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
         detalharTarefa(assessoriaId, influenciadorId, tarefaId); // validates access
-        return comentarioRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId)
-                .stream()
+        return comentarioRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId).stream()
                 .filter(c -> !c.isInterno())
                 .toList();
     }
 
     @Transactional
-    public TarefaComentario comentar(UUID assessoriaId, UUID influenciadorId,
-            UUID tarefaId, UUID creatorUserId, String texto) {
+    public TarefaComentario comentar(
+            UUID assessoriaId,
+            UUID influenciadorId,
+            UUID tarefaId,
+            UUID creatorUserId,
+            String texto) {
         detalharTarefa(assessoriaId, influenciadorId, tarefaId); // validates access
-        TarefaComentario c = TarefaComentario.fromCreator(tarefaId, assessoriaId, creatorUserId, texto);
+        TarefaComentario c =
+                TarefaComentario.fromCreator(tarefaId, assessoriaId, creatorUserId, texto);
         return comentarioRepo.save(c);
     }
 
     // ─── Entregáveis ──────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<CreatorEntregavel> listarEntregaveis(UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
+    public List<CreatorEntregavel> listarEntregaveis(
+            UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
         detalharTarefa(assessoriaId, influenciadorId, tarefaId);
         return entregavelRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId);
     }
 
     @Transactional
-    public CreatorEntregavel enviarEntregavel(UUID assessoriaId, UUID influenciadorId,
-            UUID tarefaId, UUID creatorUserId, MultipartFile file) {
+    public CreatorEntregavel enviarEntregavel(
+            UUID assessoriaId,
+            UUID influenciadorId,
+            UUID tarefaId,
+            UUID creatorUserId,
+            MultipartFile file) {
         detalharTarefa(assessoriaId, influenciadorId, tarefaId);
 
         AttachmentStorage.StoredFile stored;
         try (InputStream is = file.getInputStream()) {
-            stored = storage.store(
-                    assessoriaId.toString(),
-                    file.getOriginalFilename(),
-                    file.getContentType(),
-                    is,
-                    file.getSize());
+            stored =
+                    storage.store(
+                            assessoriaId.toString(),
+                            file.getOriginalFilename(),
+                            file.getContentType(),
+                            is,
+                            file.getSize());
         } catch (Exception e) {
             throw BusinessException.internalError("STORAGE_ERROR", "Falha ao salvar arquivo.");
         }
 
-        CreatorEntregavel entregavel = new CreatorEntregavel(
-                tarefaId, creatorUserId, assessoriaId,
-                stored.storagePath(), file.getOriginalFilename(),
-                file.getContentType(), stored.sizeBytes());
+        CreatorEntregavel entregavel =
+                new CreatorEntregavel(
+                        tarefaId,
+                        creatorUserId,
+                        assessoriaId,
+                        stored.storagePath(),
+                        file.getOriginalFilename(),
+                        file.getContentType(),
+                        stored.sizeBytes());
         return entregavelRepo.save(entregavel);
     }
 
     // ─── Revisão de entregável (assessora) ────────────────────────────────────
 
     @Transactional
-    public CreatorEntregavel revisarEntregavel(UUID assessoriaId, UUID entregavelId,
-            String novoStatus, String feedback) {
-        CreatorEntregavel e = entregavelRepo.findByIdAndAssessoriaId(entregavelId, assessoriaId)
-                .orElseThrow(BusinessException::notFound);
+    public CreatorEntregavel revisarEntregavel(
+            UUID assessoriaId, UUID entregavelId, String novoStatus, String feedback) {
+        CreatorEntregavel e =
+                entregavelRepo
+                        .findByIdAndAssessoriaId(entregavelId, assessoriaId)
+                        .orElseThrow(BusinessException::notFound);
         e.setStatus(novoStatus);
         if (feedback != null) e.setFeedback(feedback);
         return entregavelRepo.save(e);
@@ -121,11 +138,14 @@ public class PortalService {
 
     @Transactional(readOnly = true)
     public DownloadResult downloadEntregavel(UUID assessoriaId, UUID entregavelId) {
-        CreatorEntregavel e = entregavelRepo.findByIdAndAssessoriaId(entregavelId, assessoriaId)
-                .orElseThrow(BusinessException::notFound);
+        CreatorEntregavel e =
+                entregavelRepo
+                        .findByIdAndAssessoriaId(entregavelId, assessoriaId)
+                        .orElseThrow(BusinessException::notFound);
         InputStream stream = storage.load(e.getArquivoPath());
         return new DownloadResult(stream, e.getFilename(), e.getContentType(), e.getSizeBytes());
     }
 
-    public record DownloadResult(InputStream stream, String filename, String contentType, long sizeBytes) {}
+    public record DownloadResult(
+            InputStream stream, String filename, String contentType, long sizeBytes) {}
 }

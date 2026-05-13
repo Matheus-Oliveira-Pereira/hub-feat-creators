@@ -8,7 +8,8 @@ public interface TarefaComentarioRepository extends JpaRepository<TarefaComentar
 
     List<TarefaComentario> findByTarefaIdOrderByCreatedAtDesc(UUID tarefaId);
 
-    List<TarefaComentario> findByTarefaIdAndAssessoriaIdOrderByCreatedAtAsc(UUID tarefaId, UUID assessoriaId);
+    List<TarefaComentario> findByTarefaIdAndAssessoriaIdOrderByCreatedAtAsc(
+            UUID tarefaId, UUID assessoriaId);
 
     default List<TarefaComentario> findByTarefaIdAndAssessoriaId(UUID tarefaId, UUID assessoriaId) {
         return findByTarefaIdAndAssessoriaIdOrderByCreatedAtAsc(tarefaId, assessoriaId);

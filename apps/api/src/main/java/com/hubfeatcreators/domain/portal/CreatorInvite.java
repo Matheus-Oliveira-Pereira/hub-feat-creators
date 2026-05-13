@@ -36,8 +36,13 @@ public class CreatorInvite {
 
     protected CreatorInvite() {}
 
-    public CreatorInvite(UUID influenciadorId, UUID assessoriaId, String email,
-                         String tokenHash, Instant expiresAt, UUID criadoPorId) {
+    public CreatorInvite(
+            UUID influenciadorId,
+            UUID assessoriaId,
+            String email,
+            String tokenHash,
+            Instant expiresAt,
+            UUID criadoPorId) {
         this.influenciadorId = influenciadorId;
         this.assessoriaId = assessoriaId;
         this.email = email;
@@ -46,16 +51,45 @@ public class CreatorInvite {
         this.criadoPorId = criadoPorId;
     }
 
-    public UUID getId() { return id; }
-    public UUID getInfluenciadorId() { return influenciadorId; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getEmail() { return email; }
-    public String getTokenHash() { return tokenHash; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getAceitoEm() { return aceitoEm; }
-    public void setAceitoEm(Instant aceitoEm) { this.aceitoEm = aceitoEm; }
-    public UUID getCriadoPorId() { return criadoPorId; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getInfluenciadorId() {
+        return influenciadorId;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Instant getAceitoEm() {
+        return aceitoEm;
+    }
+
+    public void setAceitoEm(Instant aceitoEm) {
+        this.aceitoEm = aceitoEm;
+    }
+
+    public UUID getCriadoPorId() {
+        return criadoPorId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 
     public boolean isValido() {
         return aceitoEm == null && Instant.now().isBefore(expiresAt);

@@ -30,9 +30,7 @@ public class ImportController {
     // ---- DTOs ---
 
     record MapeamentoRequest(
-            Map<String, String> mapeamento,
-            String baseLegal,
-            String dedupStrategy) {}
+            Map<String, String> mapeamento, String baseLegal, String dedupStrategy) {}
 
     record TemplateCreateRequest(String nome, String entidade, Map<String, String> mapeamento) {}
 
@@ -51,7 +49,12 @@ public class ImportController {
 
     record LinhaResponse(int linha, String status, UUID entidadeId, List<String> erros) {}
 
-    record TemplateResponse(UUID id, String nome, String entidade, Map<String, String> mapeamento, Instant createdAt) {}
+    record TemplateResponse(
+            UUID id,
+            String nome,
+            String entidade,
+            Map<String, String> mapeamento,
+            Instant createdAt) {}
 
     record DryRunPageResponse(List<LinhaResponse> linhas, long total, boolean hasMore) {}
 
@@ -76,8 +79,7 @@ public class ImportController {
     @GetMapping("/{id}/probe")
     @RequirePermission(PermissionCodes.B_IMP)
     public ImportService.ProbeResponse probe(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return service.probe(principal, id);
     }
 
@@ -89,8 +91,9 @@ public class ImportController {
             @PathVariable UUID id,
             @RequestBody MapeamentoRequest req,
             @AuthenticationPrincipal AuthPrincipal principal) {
-        return toJobResponse(service.setMapeamento(
-                principal, id, req.mapeamento(), req.baseLegal(), req.dedupStrategy()));
+        return toJobResponse(
+                service.setMapeamento(
+                        principal, id, req.mapeamento(), req.baseLegal(), req.dedupStrategy()));
     }
 
     // ---- Dry-run ---
@@ -98,8 +101,7 @@ public class ImportController {
     @PostMapping("/{id}/dry-run")
     @RequirePermission(PermissionCodes.C_IMP)
     public JobResponse dryRun(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return toJobResponse(service.dryRun(principal, id));
     }
 
@@ -120,8 +122,7 @@ public class ImportController {
     @PostMapping("/{id}/execute")
     @RequirePermission(PermissionCodes.C_IMP)
     public JobResponse execute(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return toJobResponse(service.execute(principal, id));
     }
 
@@ -130,8 +131,7 @@ public class ImportController {
     @DeleteMapping("/{id}")
     @RequirePermission(PermissionCodes.C_IMP)
     public JobResponse cancel(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return toJobResponse(service.cancel(principal, id));
     }
 
@@ -140,8 +140,7 @@ public class ImportController {
     @GetMapping("/{id}")
     @RequirePermission(PermissionCodes.B_IMP)
     public JobResponse get(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return toJobResponse(service.get(principal, id));
     }
 
@@ -165,7 +164,8 @@ public class ImportController {
     public void relatorio(
             @PathVariable UUID id,
             @AuthenticationPrincipal AuthPrincipal principal,
-            HttpServletResponse response) throws Exception {
+            HttpServletResponse response)
+            throws Exception {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=\"import-" + id + ".csv\"");
         try (PrintWriter writer = response.getWriter()) {
@@ -178,29 +178,35 @@ public class ImportController {
     @GetMapping(value = "/{id}/progress", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @RequirePermission(PermissionCodes.B_IMP)
     public SseEmitter progress(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
 
         SseEmitter emitter = new SseEmitter(120_000L);
-        Thread.ofVirtual().start(() -> {
-            try {
-                for (int i = 0; i < 60; i++) {
-                    ImportJob job = service.get(principal, id);
-                    emitter.send(new ProgressResponse(
-                            job.getProcessadas(),
-                            job.getTotalLinhas() != null ? job.getTotalLinhas() : 0,
-                            job.getSucesso(),
-                            job.getFalha(),
-                            job.getStatus()));
-                    String s = job.getStatus();
-                    if ("CONCLUIDO".equals(s) || "CANCELADO".equals(s) || "FALHOU".equals(s)) break;
-                    Thread.sleep(2000);
-                }
-                emitter.complete();
-            } catch (Exception e) {
-                emitter.completeWithError(e);
-            }
-        });
+        Thread.ofVirtual()
+                .start(
+                        () -> {
+                            try {
+                                for (int i = 0; i < 60; i++) {
+                                    ImportJob job = service.get(principal, id);
+                                    emitter.send(
+                                            new ProgressResponse(
+                                                    job.getProcessadas(),
+                                                    job.getTotalLinhas() != null
+                                                            ? job.getTotalLinhas()
+                                                            : 0,
+                                                    job.getSucesso(),
+                                                    job.getFalha(),
+                                                    job.getStatus()));
+                                    String s = job.getStatus();
+                                    if ("CONCLUIDO".equals(s)
+                                            || "CANCELADO".equals(s)
+                                            || "FALHOU".equals(s)) break;
+                                    Thread.sleep(2000);
+                                }
+                                emitter.complete();
+                            } catch (Exception e) {
+                                emitter.completeWithError(e);
+                            }
+                        });
         return emitter;
     }
 
@@ -230,8 +236,7 @@ public class ImportController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @RequirePermission(PermissionCodes.C_IMP)
     public void deleteTemplate(
-            @PathVariable UUID templateId,
-            @AuthenticationPrincipal AuthPrincipal principal) {
+            @PathVariable UUID templateId, @AuthenticationPrincipal AuthPrincipal principal) {
         service.deleteTemplate(principal, templateId);
     }
 
@@ -239,9 +244,17 @@ public class ImportController {
 
     private JobResponse toJobResponse(ImportJob j) {
         return new JobResponse(
-                j.getId(), j.getEntidade(), j.getArquivoNome(), j.getStatus(),
-                j.getTotalLinhas(), j.getProcessadas(), j.getSucesso(), j.getFalha(),
-                j.getIniciadoEm(), j.getConcluidoEm(), j.getCreatedAt());
+                j.getId(),
+                j.getEntidade(),
+                j.getArquivoNome(),
+                j.getStatus(),
+                j.getTotalLinhas(),
+                j.getProcessadas(),
+                j.getSucesso(),
+                j.getFalha(),
+                j.getIniciadoEm(),
+                j.getConcluidoEm(),
+                j.getCreatedAt());
     }
 
     private LinhaResponse toLinhaResponse(ImportJobLinha l) {

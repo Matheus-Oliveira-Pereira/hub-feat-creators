@@ -43,7 +43,8 @@ public class TarefaComentario {
         this.texto = texto;
     }
 
-    public static TarefaComentario fromCreator(UUID tarefaId, UUID assessoriaId, UUID creatorUserId, String texto) {
+    public static TarefaComentario fromCreator(
+            UUID tarefaId, UUID assessoriaId, UUID creatorUserId, String texto) {
         TarefaComentario c = new TarefaComentario();
         c.tarefaId = tarefaId;
         c.assessoriaId = assessoriaId;
@@ -75,9 +76,23 @@ public class TarefaComentario {
         return texto;
     }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public boolean isInterno() { return interno; }
-    public void setInterno(boolean interno) { this.interno = interno; }
-    public String getAutorTipo() { return autorTipo; }
-    public UUID getCreatorUserId() { return creatorUserId; }
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public boolean isInterno() {
+        return interno;
+    }
+
+    public void setInterno(boolean interno) {
+        this.interno = interno;
+    }
+
+    public String getAutorTipo() {
+        return autorTipo;
+    }
+
+    public UUID getCreatorUserId() {
+        return creatorUserId;
+    }
 }

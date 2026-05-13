@@ -3,7 +3,6 @@ package com.hubfeatcreators.domain.match;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -53,9 +52,13 @@ public class CreatorProfileFeature {
         this.assessoriaId = assessoriaId;
     }
 
-    public void update(String verticalInferido, String[] topTemas,
-            Map<String, Object> audienceGeo, Map<String, Object> audienceDemo,
-            BigDecimal engagement30d, BigDecimal freqPost30d) {
+    public void update(
+            String verticalInferido,
+            String[] topTemas,
+            Map<String, Object> audienceGeo,
+            Map<String, Object> audienceDemo,
+            BigDecimal engagement30d,
+            BigDecimal freqPost30d) {
         this.verticalInferido = verticalInferido;
         this.topTemas = topTemas;
         this.audienceGeo = audienceGeo;
@@ -65,14 +68,43 @@ public class CreatorProfileFeature {
         this.atualizadoEm = Instant.now();
     }
 
-    public UUID getId() { return id; }
-    public UUID getInfluenciadorId() { return influenciadorId; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getVerticalInferido() { return verticalInferido; }
-    public String[] getTopTemas() { return topTemas; }
-    public Map<String, Object> getAudienceGeo() { return audienceGeo; }
-    public Map<String, Object> getAudienceDemo() { return audienceDemo; }
-    public BigDecimal getEngagement30d() { return engagement30d; }
-    public BigDecimal getFreqPost30d() { return freqPost30d; }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getInfluenciadorId() {
+        return influenciadorId;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getVerticalInferido() {
+        return verticalInferido;
+    }
+
+    public String[] getTopTemas() {
+        return topTemas;
+    }
+
+    public Map<String, Object> getAudienceGeo() {
+        return audienceGeo;
+    }
+
+    public Map<String, Object> getAudienceDemo() {
+        return audienceDemo;
+    }
+
+    public BigDecimal getEngagement30d() {
+        return engagement30d;
+    }
+
+    public BigDecimal getFreqPost30d() {
+        return freqPost30d;
+    }
+
+    public Instant getAtualizadoEm() {
+        return atualizadoEm;
+    }
 }

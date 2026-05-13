@@ -5,7 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CreatorProfileFeatureRepository extends JpaRepository<CreatorProfileFeature, UUID> {
+public interface CreatorProfileFeatureRepository
+        extends JpaRepository<CreatorProfileFeature, UUID> {
 
     Optional<CreatorProfileFeature> findByInfluenciadorId(UUID influenciadorId);
 

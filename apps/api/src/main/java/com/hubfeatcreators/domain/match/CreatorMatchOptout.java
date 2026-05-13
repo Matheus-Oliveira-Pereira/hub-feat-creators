@@ -25,7 +25,15 @@ public class CreatorMatchOptout {
         this.motivo = motivo;
     }
 
-    public UUID getInfluenciadorId() { return influenciadorId; }
-    public String getMotivo() { return motivo; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getInfluenciadorId() {
+        return influenciadorId;
+    }
+
+    public String getMotivo() {
+        return motivo;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

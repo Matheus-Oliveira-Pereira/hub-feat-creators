@@ -1,6 +1,5 @@
 package com.hubfeatcreators.domain.match;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,13 +18,15 @@ public class VectorRepository {
     public void upsertBriefingEmbedding(UUID briefingId, float[] embedding) {
         jdbc.update(
                 "UPDATE briefings SET embedding = ?::vector WHERE id = ?",
-                toVectorString(embedding), briefingId);
+                toVectorString(embedding),
+                briefingId);
     }
 
     public void upsertCreatorEmbedding(UUID influenciadorId, float[] embedding) {
         jdbc.update(
                 "UPDATE creator_profile_features SET embedding = ?::vector WHERE influenciador_id = ?",
-                toVectorString(embedding), influenciadorId);
+                toVectorString(embedding),
+                influenciadorId);
     }
 
     public List<Map<String, Object>> findSimilarCreators(

@@ -2,7 +2,6 @@ package com.hubfeatcreators.domain.match;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -52,8 +51,15 @@ public class Briefing {
 
     protected Briefing() {}
 
-    public Briefing(UUID assessoriaId, UUID prospeccaoId, String vertical, String objetivo,
-            Map<String, Object> audiencia, String formato, Long budgetMin, Long budgetMax,
+    public Briefing(
+            UUID assessoriaId,
+            UUID prospeccaoId,
+            String vertical,
+            String objetivo,
+            Map<String, Object> audiencia,
+            String formato,
+            Long budgetMin,
+            Long budgetMax,
             String texto) {
         this.assessoriaId = assessoriaId;
         this.prospeccaoId = prospeccaoId;
@@ -66,8 +72,14 @@ public class Briefing {
         this.texto = texto;
     }
 
-    public void update(String vertical, String objetivo, Map<String, Object> audiencia,
-            String formato, Long budgetMin, Long budgetMax, String texto) {
+    public void update(
+            String vertical,
+            String objetivo,
+            Map<String, Object> audiencia,
+            String formato,
+            Long budgetMin,
+            Long budgetMax,
+            String texto) {
         this.vertical = vertical;
         this.objetivo = objetivo;
         this.audiencia = audiencia;
@@ -78,16 +90,51 @@ public class Briefing {
         this.atualizadoEm = Instant.now();
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getProspeccaoId() { return prospeccaoId; }
-    public String getVertical() { return vertical; }
-    public String getObjetivo() { return objetivo; }
-    public Map<String, Object> getAudiencia() { return audiencia; }
-    public String getFormato() { return formato; }
-    public Long getBudgetMin() { return budgetMin; }
-    public Long getBudgetMax() { return budgetMax; }
-    public String getTexto() { return texto; }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getProspeccaoId() {
+        return prospeccaoId;
+    }
+
+    public String getVertical() {
+        return vertical;
+    }
+
+    public String getObjetivo() {
+        return objetivo;
+    }
+
+    public Map<String, Object> getAudiencia() {
+        return audiencia;
+    }
+
+    public String getFormato() {
+        return formato;
+    }
+
+    public Long getBudgetMin() {
+        return budgetMin;
+    }
+
+    public Long getBudgetMax() {
+        return budgetMax;
+    }
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public Instant getAtualizadoEm() {
+        return atualizadoEm;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

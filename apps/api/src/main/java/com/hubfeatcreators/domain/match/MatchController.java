@@ -1,7 +1,7 @@
 package com.hubfeatcreators.domain.match;
 
-import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
+import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -24,8 +24,7 @@ public class MatchController {
     @PostMapping("/run")
     @RequirePermission("MTCW")
     public ResponseEntity<List<SugestaoDto>> runMatch(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestParam UUID prospeccaoId) {
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID prospeccaoId) {
         List<MatchSugestao> sugestoes =
                 matchService.runMatch(principal.assessoriaId(), prospeccaoId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
@@ -34,8 +33,7 @@ public class MatchController {
     @GetMapping
     @RequirePermission("MTCR")
     public ResponseEntity<List<SugestaoDto>> getSugestoes(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestParam UUID prospeccaoId) {
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID prospeccaoId) {
         List<MatchSugestao> sugestoes =
                 matchService.getSugestoes(principal.assessoriaId(), prospeccaoId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
@@ -44,8 +42,7 @@ public class MatchController {
     @GetMapping("/reverse")
     @RequirePermission("MTCR")
     public ResponseEntity<List<SugestaoDto>> getReverse(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestParam UUID influenciadorId) {
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID influenciadorId) {
         List<MatchSugestao> sugestoes =
                 matchService.getReverse(principal.assessoriaId(), influenciadorId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
@@ -54,18 +51,21 @@ public class MatchController {
     @PostMapping("/feedback")
     @RequirePermission("MTCW")
     public ResponseEntity<FeedbackDto> addFeedback(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestBody FeedbackRequest req) {
-        MatchFeedback fb = matchService.addFeedback(
-                principal.assessoriaId(), req.sugestaoId(), principal.usuarioId(), req.sinal(), req.comentario());
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody FeedbackRequest req) {
+        MatchFeedback fb =
+                matchService.addFeedback(
+                        principal.assessoriaId(),
+                        req.sugestaoId(),
+                        principal.usuarioId(),
+                        req.sinal(),
+                        req.comentario());
         return ResponseEntity.ok(FeedbackDto.from(fb));
     }
 
     @PostMapping("/optout/{influenciadorId}")
     @RequirePermission("MTCW")
     public ResponseEntity<Void> optout(
-            @PathVariable UUID influenciadorId,
-            @RequestParam(required = false) String motivo) {
+            @PathVariable UUID influenciadorId, @RequestParam(required = false) String motivo) {
         matchService.optout(influenciadorId, motivo);
         return ResponseEntity.noContent().build();
     }
@@ -86,17 +86,28 @@ public class MatchController {
             String modeloVersao,
             Instant geradoEm) {
         static SugestaoDto from(MatchSugestao s) {
-            return new SugestaoDto(s.getId(), s.getProspeccaoId(), s.getInfluenciadorId(),
-                    s.getScore(), s.getRazoes(), s.getModeloVersao(), s.getGeradoEm());
+            return new SugestaoDto(
+                    s.getId(),
+                    s.getProspeccaoId(),
+                    s.getInfluenciadorId(),
+                    s.getScore(),
+                    s.getRazoes(),
+                    s.getModeloVersao(),
+                    s.getGeradoEm());
         }
     }
 
     record FeedbackRequest(UUID sugestaoId, String sinal, String comentario) {}
 
-    record FeedbackDto(UUID id, UUID sugestaoId, String sinal, String comentario, Instant createdAt) {
+    record FeedbackDto(
+            UUID id, UUID sugestaoId, String sinal, String comentario, Instant createdAt) {
         static FeedbackDto from(MatchFeedback fb) {
-            return new FeedbackDto(fb.getId(), fb.getSugestaoId(), fb.getSinal(),
-                    fb.getComentario(), fb.getCreatedAt());
+            return new FeedbackDto(
+                    fb.getId(),
+                    fb.getSugestaoId(),
+                    fb.getSinal(),
+                    fb.getComentario(),
+                    fb.getCreatedAt());
         }
     }
 }

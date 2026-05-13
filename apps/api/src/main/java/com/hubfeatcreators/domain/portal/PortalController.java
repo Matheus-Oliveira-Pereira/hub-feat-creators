@@ -37,18 +37,18 @@ public class PortalController {
 
     @GetMapping("/tarefas/{tarefaId}")
     public Tarefa detalharTarefa(
-            @AuthenticationPrincipal CreatorPrincipal principal,
-            @PathVariable UUID tarefaId) {
-        return portalService.detalharTarefa(principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+            @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
+        return portalService.detalharTarefa(
+                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
     }
 
     // ─── Comentários ──────────────────────────────────────────────────────────
 
     @GetMapping("/tarefas/{tarefaId}/comentarios")
     public List<TarefaComentario> listarComentarios(
-            @AuthenticationPrincipal CreatorPrincipal principal,
-            @PathVariable UUID tarefaId) {
-        return portalService.listarComentarios(principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+            @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
+        return portalService.listarComentarios(
+                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
     }
 
     @PostMapping("/tarefas/{tarefaId}/comentarios")
@@ -58,17 +58,20 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @Valid @RequestBody ComentarioRequest req) {
         return portalService.comentar(
-                principal.assessoriaId(), principal.influenciadorId(),
-                tarefaId, principal.creatorUserId(), req.texto());
+                principal.assessoriaId(),
+                principal.influenciadorId(),
+                tarefaId,
+                principal.creatorUserId(),
+                req.texto());
     }
 
     // ─── Entregáveis ──────────────────────────────────────────────────────────
 
     @GetMapping("/tarefas/{tarefaId}/entregaveis")
     public List<CreatorEntregavel> listarEntregaveis(
-            @AuthenticationPrincipal CreatorPrincipal principal,
-            @PathVariable UUID tarefaId) {
-        return portalService.listarEntregaveis(principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+            @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
+        return portalService.listarEntregaveis(
+                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
     }
 
     @PostMapping("/tarefas/{tarefaId}/entregaveis")
@@ -78,20 +81,27 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @RequestParam("file") MultipartFile file) {
         return portalService.enviarEntregavel(
-                principal.assessoriaId(), principal.influenciadorId(),
-                tarefaId, principal.creatorUserId(), file);
+                principal.assessoriaId(),
+                principal.influenciadorId(),
+                tarefaId,
+                principal.creatorUserId(),
+                file);
     }
 
     @GetMapping("/entregaveis/{entregavelId}/download")
     public ResponseEntity<InputStreamResource> download(
-            @AuthenticationPrincipal CreatorPrincipal principal,
-            @PathVariable UUID entregavelId) {
-        PortalService.DownloadResult dl = portalService.downloadEntregavel(
-                principal.assessoriaId(), entregavelId);
+            @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID entregavelId) {
+        PortalService.DownloadResult dl =
+                portalService.downloadEntregavel(principal.assessoriaId(), entregavelId);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dl.filename() + "\"")
-                .contentType(MediaType.parseMediaType(
-                        dl.contentType() != null ? dl.contentType() : "application/octet-stream"))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + dl.filename() + "\"")
+                .contentType(
+                        MediaType.parseMediaType(
+                                dl.contentType() != null
+                                        ? dl.contentType()
+                                        : "application/octet-stream"))
                 .contentLength(dl.sizeBytes())
                 .body(new InputStreamResource(dl.stream()));
     }

@@ -1,5 +1,7 @@
 package com.hubfeatcreators.importacao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hubfeatcreators.domain.importacao.CsvXlsxParser;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,19 +12,18 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CsvXlsxParserTest {
 
     private final CsvXlsxParser parser = new CsvXlsxParser();
 
-    @TempDir
-    Path tmp;
+    @TempDir Path tmp;
 
     @Test
     void probeCsv_utf8_comma() throws IOException {
         Path f = tmp.resolve("test.csv");
-        Files.writeString(f, "nome,email,telefone\nJoão,joao@x.com,11999\n", StandardCharsets.UTF_8);
+        Files.writeString(
+                f, "nome,email,telefone\nJoão,joao@x.com,11999\n", StandardCharsets.UTF_8);
 
         CsvXlsxParser.ParseResult r = parser.probe(f);
         assertThat(r.headers()).containsExactly("nome", "email", "telefone");
@@ -52,7 +53,9 @@ class CsvXlsxParserTest {
     @Test
     void streamCsv_mapsColumns() throws IOException {
         Path f = tmp.resolve("test.csv");
-        Files.writeString(f, "Nome Completo,E-mail\nJoão Silva,joao@x.com\nMaria,maria@x.com\n",
+        Files.writeString(
+                f,
+                "Nome Completo,E-mail\nJoão Silva,joao@x.com\nMaria,maria@x.com\n",
                 StandardCharsets.UTF_8);
 
         Map<String, String> mapeamento = Map.of("Nome Completo", "nome", "E-mail", "email");
@@ -61,8 +64,12 @@ class CsvXlsxParserTest {
         parser.stream(f, mapeamento, "UTF-8", ',', (idx, row) -> rows.add(row));
 
         assertThat(rows).hasSize(2);
-        assertThat(rows.get(0)).containsEntry("nome", "João Silva").containsEntry("email", "joao@x.com");
-        assertThat(rows.get(1)).containsEntry("nome", "Maria").containsEntry("email", "maria@x.com");
+        assertThat(rows.get(0))
+                .containsEntry("nome", "João Silva")
+                .containsEntry("email", "joao@x.com");
+        assertThat(rows.get(1))
+                .containsEntry("nome", "Maria")
+                .containsEntry("email", "maria@x.com");
     }
 
     @Test
@@ -93,7 +100,7 @@ class CsvXlsxParserTest {
     void probeCsv_utf8Bom() throws IOException {
         Path f = tmp.resolve("bom.csv");
         // UTF-8 BOM + content
-        byte[] bom = {(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
         byte[] content = "nome,email\nJoão,j@x.com\n".getBytes(StandardCharsets.UTF_8);
         byte[] all = new byte[bom.length + content.length];
         System.arraycopy(bom, 0, all, 0, bom.length);

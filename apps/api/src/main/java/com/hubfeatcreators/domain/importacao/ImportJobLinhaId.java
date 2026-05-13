@@ -22,8 +22,13 @@ public class ImportJobLinhaId implements Serializable {
         this.linha = linha;
     }
 
-    public UUID getJobId() { return jobId; }
-    public int getLinha() { return linha; }
+    public UUID getJobId() {
+        return jobId;
+    }
+
+    public int getLinha() {
+        return linha;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -33,5 +38,7 @@ public class ImportJobLinhaId implements Serializable {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(jobId, linha); }
+    public int hashCode() {
+        return Objects.hash(jobId, linha);
+    }
 }

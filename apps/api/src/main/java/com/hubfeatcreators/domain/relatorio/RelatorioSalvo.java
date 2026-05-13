@@ -37,7 +37,12 @@ public class RelatorioSalvo {
 
     protected RelatorioSalvo() {}
 
-    public RelatorioSalvo(UUID assessoriaId, UUID usuarioId, String nome, String relatorioTipo, Map<String, Object> filtros) {
+    public RelatorioSalvo(
+            UUID assessoriaId,
+            UUID usuarioId,
+            String nome,
+            String relatorioTipo,
+            Map<String, Object> filtros) {
         this.assessoriaId = assessoriaId;
         this.usuarioId = usuarioId;
         this.nome = nome;
@@ -45,15 +50,47 @@ public class RelatorioSalvo {
         this.filtros = filtros;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getUsuarioId() { return usuarioId; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public String getRelatorioTipo() { return relatorioTipo; }
-    public Map<String, Object> getFiltros() { return filtros; }
-    public void setFiltros(Map<String, Object> filtros) { this.filtros = filtros; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getUsuarioId() {
+        return usuarioId;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getRelatorioTipo() {
+        return relatorioTipo;
+    }
+
+    public Map<String, Object> getFiltros() {
+        return filtros;
+    }
+
+    public void setFiltros(Map<String, Object> filtros) {
+        this.filtros = filtros;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

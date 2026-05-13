@@ -174,6 +174,11 @@ public class Tarefa {
         this.deletedAt = deletedAt;
     }
 
-    public boolean isVisivelParaCreator() { return visivelParaCreator; }
-    public void setVisivelParaCreator(boolean visivelParaCreator) { this.visivelParaCreator = visivelParaCreator; }
+    public boolean isVisivelParaCreator() {
+        return visivelParaCreator;
+    }
+
+    public void setVisivelParaCreator(boolean visivelParaCreator) {
+        this.visivelParaCreator = visivelParaCreator;
+    }
 }

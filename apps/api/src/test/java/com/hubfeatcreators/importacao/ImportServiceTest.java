@@ -1,5 +1,8 @@
 package com.hubfeatcreators.importacao;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.hubfeatcreators.config.AppProperties;
 import com.hubfeatcreators.domain.contato.ContatoRepository;
 import com.hubfeatcreators.domain.importacao.*;
@@ -8,9 +11,7 @@ import com.hubfeatcreators.domain.marca.MarcaRepository;
 import com.hubfeatcreators.infra.job.JobService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.web.BusinessException;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ImportServiceTest {
@@ -53,11 +51,22 @@ class ImportServiceTest {
         props.getImport().setUploadDir(tmpDir.toString());
         props.getFeatures().setImportEnabled(true);
 
-        service = new ImportService(jobRepo, linhaRepo, templateRepo, csvParser, props, jdbc,
-                infRepo, marcaRepo, contatoRepo, jobService);
+        service =
+                new ImportService(
+                        jobRepo,
+                        linhaRepo,
+                        templateRepo,
+                        csvParser,
+                        props,
+                        jdbc,
+                        infRepo,
+                        marcaRepo,
+                        contatoRepo,
+                        jobService);
 
-        principal = new AuthPrincipal(UUID.randomUUID(), UUID.randomUUID(), "ASSESSOR",
-                Set.of("CIMP", "BIMP"));
+        principal =
+                new AuthPrincipal(
+                        UUID.randomUUID(), UUID.randomUUID(), "ASSESSOR", Set.of("CIMP", "BIMP"));
     }
 
     // ---- upload ---
@@ -67,8 +76,11 @@ class ImportServiceTest {
         props.getFeatures().setImportEnabled(false);
 
         org.springframework.mock.web.MockMultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.csv",
-                        "text/csv", "nome\nJoão\n".getBytes(StandardCharsets.UTF_8));
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file",
+                        "test.csv",
+                        "text/csv",
+                        "nome\nJoão\n".getBytes(StandardCharsets.UTF_8));
 
         assertThatThrownBy(() -> service.upload(principal, file, "INFLUENCIADOR"))
                 .isInstanceOf(BusinessException.class)
@@ -78,8 +90,8 @@ class ImportServiceTest {
     @Test
     void upload_unsupportedFormat_throws() {
         org.springframework.mock.web.MockMultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.pdf",
-                        "application/pdf", "data".getBytes());
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file", "test.pdf", "application/pdf", "data".getBytes());
 
         assertThatThrownBy(() -> service.upload(principal, file, "INFLUENCIADOR"))
                 .isInstanceOf(BusinessException.class)
@@ -89,8 +101,8 @@ class ImportServiceTest {
     @Test
     void upload_invalidEntidade_throws() {
         org.springframework.mock.web.MockMultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.csv",
-                        "text/csv", "nome\n".getBytes());
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file", "test.csv", "text/csv", "nome\n".getBytes());
 
         assertThatThrownBy(() -> service.upload(principal, file, "INVALIDO"))
                 .isInstanceOf(BusinessException.class);
@@ -100,11 +112,13 @@ class ImportServiceTest {
     void upload_ok_createsJob() throws Exception {
         byte[] csvData = "nome,email\nJoão,j@x.com\n".getBytes(StandardCharsets.UTF_8);
         org.springframework.mock.web.MockMultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.csv",
-                        "text/csv", csvData);
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file", "test.csv", "text/csv", csvData);
 
-        when(csvParser.probe(any())).thenReturn(
-                new CsvXlsxParser.ParseResult(new String[]{"nome", "email"}, 1, "UTF-8", ','));
+        when(csvParser.probe(any()))
+                .thenReturn(
+                        new CsvXlsxParser.ParseResult(
+                                new String[] {"nome", "email"}, 1, "UTF-8", ','));
         when(jobRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         ImportJob result = service.upload(principal, file, "INFLUENCIADOR");
@@ -122,8 +136,14 @@ class ImportServiceTest {
         ImportJob job = makeJob("UPLOADADO");
         when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
 
-        assertThatThrownBy(() -> service.setMapeamento(principal, job.getId(),
-                Map.of("nome", "nome"), "INVALIDA", "SKIP"))
+        assertThatThrownBy(
+                        () ->
+                                service.setMapeamento(
+                                        principal,
+                                        job.getId(),
+                                        Map.of("nome", "nome"),
+                                        "INVALIDA",
+                                        "SKIP"))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -132,8 +152,14 @@ class ImportServiceTest {
         ImportJob job = makeJob("EXECUTANDO");
         when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
 
-        assertThatThrownBy(() -> service.setMapeamento(principal, job.getId(),
-                Map.of("nome", "nome"), "LEGITIMO_INTERESSE", "SKIP"))
+        assertThatThrownBy(
+                        () ->
+                                service.setMapeamento(
+                                        principal,
+                                        job.getId(),
+                                        Map.of("nome", "nome"),
+                                        "LEGITIMO_INTERESSE",
+                                        "SKIP"))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -172,10 +198,12 @@ class ImportServiceTest {
         when(jobRepo.countExecutandoByAssessoria(any())).thenReturn(0L);
         when(jobRepo.countExecutandoByUsuario(any())).thenReturn(0L);
         // Return a job with a non-null ID so the service can call getId().toString()
-        when(jobRepo.save(any())).thenAnswer(inv -> {
-            ImportJob j = inv.getArgument(0);
-            return withId(j, UUID.randomUUID());
-        });
+        when(jobRepo.save(any()))
+                .thenAnswer(
+                        inv -> {
+                            ImportJob j = inv.getArgument(0);
+                            return withId(j, UUID.randomUUID());
+                        });
 
         service.execute(principal, job.getId());
 
@@ -222,8 +250,9 @@ class ImportServiceTest {
     void saveTemplate_ok() {
         when(templateRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        ImportTemplate t = service.saveTemplate(principal, "Meu template", "INFLUENCIADOR",
-                Map.of("Nome", "nome"));
+        ImportTemplate t =
+                service.saveTemplate(
+                        principal, "Meu template", "INFLUENCIADOR", Map.of("Nome", "nome"));
 
         assertThat(t.getNome()).isEqualTo("Meu template");
         assertThat(t.getEntidade()).isEqualTo("INFLUENCIADOR");
@@ -249,9 +278,13 @@ class ImportServiceTest {
         when(infRepo.findByHandleAndAssessoria(any(), eq("instagram"), any()))
                 .thenReturn(Optional.of(existing));
 
-        UUID result = service.persistInfluenciador(
-                Map.of("nome", "João", "instagram", "joao_ig"),
-                principal.assessoriaId(), principal.usuarioId(), "LEGITIMO_INTERESSE", "SKIP");
+        UUID result =
+                service.persistInfluenciador(
+                        Map.of("nome", "João", "instagram", "joao_ig"),
+                        principal.assessoriaId(),
+                        principal.usuarioId(),
+                        "LEGITIMO_INTERESSE",
+                        "SKIP");
 
         assertThat(result).isNull();
     }
@@ -261,9 +294,13 @@ class ImportServiceTest {
         // No instagram/email in row → no dedup lookup; Influenciador.id is initialized inline
         when(infRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UUID result = service.persistInfluenciador(
-                Map.of("nome", "João"),
-                principal.assessoriaId(), principal.usuarioId(), "LEGITIMO_INTERESSE", "SKIP");
+        UUID result =
+                service.persistInfluenciador(
+                        Map.of("nome", "João"),
+                        principal.assessoriaId(),
+                        principal.usuarioId(),
+                        "LEGITIMO_INTERESSE",
+                        "SKIP");
 
         // Influenciador sets id = UUID.randomUUID() in field initializer
         assertThat(result).isNotNull();
@@ -272,8 +309,13 @@ class ImportServiceTest {
     // ---- Helpers ---
 
     private ImportJob makeJob(String status) {
-        ImportJob job = new ImportJob(principal.assessoriaId(), principal.usuarioId(),
-                "INFLUENCIADOR", tmpDir + "/test.csv", "test.csv");
+        ImportJob job =
+                new ImportJob(
+                        principal.assessoriaId(),
+                        principal.usuarioId(),
+                        "INFLUENCIADOR",
+                        tmpDir + "/test.csv",
+                        "test.csv");
         job.setStatus(status);
         return job;
     }

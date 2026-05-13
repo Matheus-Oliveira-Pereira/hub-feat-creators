@@ -1,7 +1,7 @@
 package com.hubfeatcreators.domain.match;
 
-import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
+import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -27,17 +27,24 @@ public class BriefingController {
     public ResponseEntity<BriefingDto> upsert(
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody BriefingRequest req) {
-        Briefing briefing = briefingService.upsertByProspeccao(
-                principal.assessoriaId(), req.prospeccaoId(), req.vertical(), req.objetivo(),
-                req.audiencia(), req.formato(), req.budgetMin(), req.budgetMax(), req.texto());
+        Briefing briefing =
+                briefingService.upsertByProspeccao(
+                        principal.assessoriaId(),
+                        req.prospeccaoId(),
+                        req.vertical(),
+                        req.objetivo(),
+                        req.audiencia(),
+                        req.formato(),
+                        req.budgetMin(),
+                        req.budgetMax(),
+                        req.texto());
         return ResponseEntity.ok(BriefingDto.from(briefing));
     }
 
     @GetMapping("/by-prospeccao/{prospeccaoId}")
     @RequirePermission("MTCR")
     public ResponseEntity<BriefingDto> getByProspeccao(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID prospeccaoId) {
+            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID prospeccaoId) {
         Briefing briefing = briefingService.getByProspeccao(principal.assessoriaId(), prospeccaoId);
         return ResponseEntity.ok(BriefingDto.from(briefing));
     }
@@ -72,9 +79,17 @@ public class BriefingController {
             String texto,
             Instant atualizadoEm) {
         static BriefingDto from(Briefing b) {
-            return new BriefingDto(b.getId(), b.getProspeccaoId(), b.getVertical(),
-                    b.getObjetivo(), b.getAudiencia(), b.getFormato(),
-                    b.getBudgetMin(), b.getBudgetMax(), b.getTexto(), b.getAtualizadoEm());
+            return new BriefingDto(
+                    b.getId(),
+                    b.getProspeccaoId(),
+                    b.getVertical(),
+                    b.getObjetivo(),
+                    b.getAudiencia(),
+                    b.getFormato(),
+                    b.getBudgetMin(),
+                    b.getBudgetMax(),
+                    b.getTexto(),
+                    b.getAtualizadoEm());
         }
     }
 }

@@ -10,8 +10,7 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "import_job_linhas")
 public class ImportJobLinha {
 
-    @EmbeddedId
-    private ImportJobLinhaId id;
+    @EmbeddedId private ImportJobLinhaId id;
 
     @Column(nullable = false)
     private String status;
@@ -25,17 +24,35 @@ public class ImportJobLinha {
 
     protected ImportJobLinha() {}
 
-    public ImportJobLinha(UUID jobId, int linha, String status, UUID entidadeId, List<String> erros) {
+    public ImportJobLinha(
+            UUID jobId, int linha, String status, UUID entidadeId, List<String> erros) {
         this.id = new ImportJobLinhaId(jobId, linha);
         this.status = status;
         this.entidadeId = entidadeId;
         this.erros = erros != null ? erros : List.of();
     }
 
-    public ImportJobLinhaId getId() { return id; }
-    public UUID getJobId() { return id.getJobId(); }
-    public int getLinha() { return id.getLinha(); }
-    public String getStatus() { return status; }
-    public UUID getEntidadeId() { return entidadeId; }
-    public List<String> getErros() { return erros; }
+    public ImportJobLinhaId getId() {
+        return id;
+    }
+
+    public UUID getJobId() {
+        return id.getJobId();
+    }
+
+    public int getLinha() {
+        return id.getLinha();
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public UUID getEntidadeId() {
+        return entidadeId;
+    }
+
+    public List<String> getErros() {
+        return erros;
+    }
 }

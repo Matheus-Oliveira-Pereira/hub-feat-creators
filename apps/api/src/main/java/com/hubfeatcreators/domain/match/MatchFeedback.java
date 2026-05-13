@@ -36,10 +36,27 @@ public class MatchFeedback {
         this.comentario = comentario;
     }
 
-    public UUID getId() { return id; }
-    public UUID getSugestaoId() { return sugestaoId; }
-    public UUID getAutorId() { return autorId; }
-    public String getSinal() { return sinal; }
-    public String getComentario() { return comentario; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getSugestaoId() {
+        return sugestaoId;
+    }
+
+    public UUID getAutorId() {
+        return autorId;
+    }
+
+    public String getSinal() {
+        return sinal;
+    }
+
+    public String getComentario() {
+        return comentario;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

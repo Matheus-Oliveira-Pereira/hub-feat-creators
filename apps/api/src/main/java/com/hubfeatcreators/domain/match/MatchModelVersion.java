@@ -10,8 +10,7 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "match_model_versions")
 public class MatchModelVersion {
 
-    @Id
-    private String versao;
+    @Id private String versao;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "pesos", nullable = false, columnDefinition = "jsonb")
@@ -42,9 +41,23 @@ public class MatchModelVersion {
         return desativadaEm == null;
     }
 
-    public String getVersao() { return versao; }
-    public Map<String, Double> getPesos() { return pesos; }
-    public String getDescricao() { return descricao; }
-    public Instant getAtivadaEm() { return ativadaEm; }
-    public Instant getDesativadaEm() { return desativadaEm; }
+    public String getVersao() {
+        return versao;
+    }
+
+    public Map<String, Double> getPesos() {
+        return pesos;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public Instant getAtivadaEm() {
+        return ativadaEm;
+    }
+
+    public Instant getDesativadaEm() {
+        return desativadaEm;
+    }
 }

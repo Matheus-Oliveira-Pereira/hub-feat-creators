@@ -82,7 +82,8 @@ public class JwtService {
     }
 
     /** Generates a short-lived access token for portal creator users. */
-    public String generateCreatorToken(UUID creatorUserId, UUID assessoriaId, UUID influenciadorId) {
+    public String generateCreatorToken(
+            UUID creatorUserId, UUID assessoriaId, UUID influenciadorId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + 24L * 60 * 60 * 1000); // 24h for creators
         return Jwts.builder()

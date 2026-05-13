@@ -1,6 +1,5 @@
 package com.hubfeatcreators.infra.security;
 
-import com.hubfeatcreators.infra.security.CreatorPrincipal;
 import com.hubfeatcreators.infra.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -48,17 +47,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if ("CREATOR".equals(tipo)) {
                         UUID creatorUserId = UUID.fromString(claims.getSubject());
                         UUID influenciadorId = UUID.fromString(claims.get("inf", String.class));
-                        CreatorPrincipal principal = new CreatorPrincipal(creatorUserId, assessoriaId, influenciadorId);
-                        var auth = new UsernamePasswordAuthenticationToken(
-                                principal, null, List.of(new SimpleGrantedAuthority("ROLE_CREATOR")));
+                        CreatorPrincipal principal =
+                                new CreatorPrincipal(creatorUserId, assessoriaId, influenciadorId);
+                        var auth =
+                                new UsernamePasswordAuthenticationToken(
+                                        principal,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_CREATOR")));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     } else {
                         UUID usuarioId = UUID.fromString(claims.getSubject());
                         String role = claims.get("role", String.class);
                         Set<String> permissions = readPerms(claims);
-                        AuthPrincipal principal = new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
-                        var auth = new UsernamePasswordAuthenticationToken(
-                                principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        AuthPrincipal principal =
+                                new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
+                        var auth =
+                                new UsernamePasswordAuthenticationToken(
+                                        principal,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
                 }

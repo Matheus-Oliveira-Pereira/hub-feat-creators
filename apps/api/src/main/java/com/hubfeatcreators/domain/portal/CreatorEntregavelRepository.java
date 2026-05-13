@@ -11,5 +11,6 @@ public interface CreatorEntregavelRepository extends JpaRepository<CreatorEntreg
 
     Optional<CreatorEntregavel> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
 
-    List<CreatorEntregavel> findByCreatorUserIdAndAssessoriaId(UUID creatorUserId, UUID assessoriaId);
+    List<CreatorEntregavel> findByCreatorUserIdAndAssessoriaId(
+            UUID creatorUserId, UUID assessoriaId);
 }

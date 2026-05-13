@@ -301,7 +301,8 @@ public class TarefaService {
     // ─── Portal visibility ───────────────────────────────────────────────────
 
     @Transactional
-    public Tarefa toggleVisivelParaCreator(AuthPrincipal principal, UUID tarefaId, boolean visivel) {
+    public Tarefa toggleVisivelParaCreator(
+            AuthPrincipal principal, UUID tarefaId, boolean visivel) {
         Tarefa t = buscar(principal, tarefaId);
         t.setVisivelParaCreator(visivel);
         t.setUpdatedAt(Instant.now());

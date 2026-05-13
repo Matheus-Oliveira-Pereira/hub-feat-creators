@@ -25,7 +25,8 @@ public class ImportJobHandler implements JobHandler {
     private final ImportService importService;
     private final CsvXlsxParser parser;
 
-    public ImportJobHandler(ImportJobRepository jobRepo, ImportService importService, CsvXlsxParser parser) {
+    public ImportJobHandler(
+            ImportJobRepository jobRepo, ImportService importService, CsvXlsxParser parser) {
         this.jobRepo = jobRepo;
         this.importService = importService;
         this.parser = parser;
@@ -35,14 +36,20 @@ public class ImportJobHandler implements JobHandler {
     public void handle(Job job) throws Exception {
         UUID jobId = UUID.fromString((String) job.getPayload().get("importJobId"));
 
-        com.hubfeatcreators.domain.importacao.ImportJob importJob = jobRepo.findById(jobId)
-                .orElseThrow(() -> new IllegalStateException("ImportJob não encontrado: " + jobId));
+        com.hubfeatcreators.domain.importacao.ImportJob importJob =
+                jobRepo.findById(jobId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "ImportJob não encontrado: " + jobId));
 
         String entidade = importJob.getEntidade();
         UUID assessoriaId = importJob.getAssessoriaId();
         UUID usuarioId = importJob.getUsuarioId();
-        String baseLegal = importJob.getBaseLegal() != null ? importJob.getBaseLegal() : "LEGITIMO_INTERESSE";
-        String dedupStrategy = importJob.getDedupStrategy() != null ? importJob.getDedupStrategy() : "SKIP";
+        String baseLegal =
+                importJob.getBaseLegal() != null ? importJob.getBaseLegal() : "LEGITIMO_INTERESSE";
+        String dedupStrategy =
+                importJob.getDedupStrategy() != null ? importJob.getDedupStrategy() : "SKIP";
         Map<String, String> mapeamento = importJob.getMapeamento();
 
         String encoding = "UTF-8";
@@ -70,8 +77,8 @@ public class ImportJobHandler implements JobHandler {
                 (rowIdx, row) -> {
                     // Re-check cancel mid-execution
                     if (rowIdx % CHUNK == 0) {
-                        com.hubfeatcreators.domain.importacao.ImportJob current = jobRepo
-                                .findById(jobId).orElseThrow();
+                        com.hubfeatcreators.domain.importacao.ImportJob current =
+                                jobRepo.findById(jobId).orElseThrow();
                         if ("CANCELADO".equals(current.getStatus())) {
                             throw new RuntimeException("Job cancelado");
                         }
@@ -83,7 +90,14 @@ public class ImportJobHandler implements JobHandler {
 
                     if (erros.isEmpty()) {
                         try {
-                            entidadeId = persist(entidade, row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+                            entidadeId =
+                                    persist(
+                                            entidade,
+                                            row,
+                                            assessoriaId,
+                                            usuarioId,
+                                            baseLegal,
+                                            dedupStrategy);
                             status = entidadeId != null ? "OK" : "SKIP";
                         } catch (Exception e) {
                             erros = List.of("Erro ao persistir: " + e.getMessage());
@@ -114,7 +128,12 @@ public class ImportJobHandler implements JobHandler {
         importJob.setUpdatedAt(Instant.now());
         jobRepo.save(importJob);
 
-        log.info("import.concluido jobId={} total={} ok={} falha={}", jobId, counters[0], counters[1], counters[2]);
+        log.info(
+                "import.concluido jobId={} total={} ok={} falha={}",
+                jobId,
+                counters[0],
+                counters[1],
+                counters[2]);
     }
 
     private void flushChunk(
@@ -122,7 +141,8 @@ public class ImportJobHandler implements JobHandler {
             List<ImportJobLinha> chunk,
             int[] counters) {
         importService.executeChunk(
-                importJob.getId(), chunk,
+                importJob.getId(),
+                chunk,
                 importJob.getEntidade(),
                 importJob.getAssessoriaId(),
                 importJob.getUsuarioId(),
@@ -139,12 +159,23 @@ public class ImportJobHandler implements JobHandler {
         };
     }
 
-    private UUID persist(String entidade, Map<String, String> row, UUID assessoriaId, UUID usuarioId,
-            String baseLegal, String dedupStrategy) {
+    private UUID persist(
+            String entidade,
+            Map<String, String> row,
+            UUID assessoriaId,
+            UUID usuarioId,
+            String baseLegal,
+            String dedupStrategy) {
         return switch (entidade) {
-            case "INFLUENCIADOR" -> importService.persistInfluenciador(row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
-            case "MARCA" -> importService.persistMarca(row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
-            case "CONTATO" -> importService.persistContato(row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+            case "INFLUENCIADOR" ->
+                    importService.persistInfluenciador(
+                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+            case "MARCA" ->
+                    importService.persistMarca(
+                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+            case "CONTATO" ->
+                    importService.persistContato(
+                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
             default -> null;
         };
     }

@@ -22,8 +22,7 @@ public class DeviceSubscriptionController {
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(
-            @AuthenticationPrincipal Object principal,
-            @Valid @RequestBody RegisterRequest req) {
+            @AuthenticationPrincipal Object principal, @Valid @RequestBody RegisterRequest req) {
         UUID userId = resolveUserId(principal);
         String userTipo = resolveUserTipo(principal);
         service.register(userId, userTipo, req.canal(), req.token(), req.plataforma());

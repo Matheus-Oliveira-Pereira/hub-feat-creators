@@ -27,10 +27,29 @@ public class AssessoriaBranding {
         this.assessoriaId = assessoriaId;
     }
 
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getLogoUrl() { return logoUrl; }
-    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; this.atualizadoEm = Instant.now(); }
-    public String getCorPrimaria() { return corPrimaria; }
-    public void setCorPrimaria(String corPrimaria) { this.corPrimaria = corPrimaria; this.atualizadoEm = Instant.now(); }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+        this.atualizadoEm = Instant.now();
+    }
+
+    public String getCorPrimaria() {
+        return corPrimaria;
+    }
+
+    public void setCorPrimaria(String corPrimaria) {
+        this.corPrimaria = corPrimaria;
+        this.atualizadoEm = Instant.now();
+    }
+
+    public Instant getAtualizadoEm() {
+        return atualizadoEm;
+    }
 }

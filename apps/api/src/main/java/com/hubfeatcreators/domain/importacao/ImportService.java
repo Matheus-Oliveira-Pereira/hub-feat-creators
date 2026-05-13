@@ -88,7 +88,8 @@ public class ImportService {
 
         String filename = sanitizeFilename(file.getOriginalFilename());
         if (!isSupportedExtension(filename)) {
-            throw BusinessException.badRequest("IMPORT_FORMAT_UNSUPPORTED", "Formato não suportado. Use CSV ou XLSX.");
+            throw BusinessException.badRequest(
+                    "IMPORT_FORMAT_UNSUPPORTED", "Formato não suportado. Use CSV ou XLSX.");
         }
 
         Path uploadDir = ensureUploadDir();
@@ -107,21 +108,23 @@ public class ImportService {
             probe = parser.probe(dest);
         } catch (IOException e) {
             silentDelete(dest);
-            throw BusinessException.badRequest("IMPORT_PARSE_ERROR", "Erro ao ler arquivo: " + e.getMessage());
+            throw BusinessException.badRequest(
+                    "IMPORT_PARSE_ERROR", "Erro ao ler arquivo: " + e.getMessage());
         }
 
         if (probe.estimatedTotal() > MAX_LINHAS) {
             silentDelete(dest);
-            throw BusinessException.badRequest("IMPORT_TOO_MANY_ROWS",
-                    "Arquivo excede " + MAX_LINHAS + " linhas.");
+            throw BusinessException.badRequest(
+                    "IMPORT_TOO_MANY_ROWS", "Arquivo excede " + MAX_LINHAS + " linhas.");
         }
 
-        ImportJob job = new ImportJob(
-                principal.assessoriaId(),
-                principal.usuarioId(),
-                entidade,
-                dest.toString(),
-                filename);
+        ImportJob job =
+                new ImportJob(
+                        principal.assessoriaId(),
+                        principal.usuarioId(),
+                        entidade,
+                        dest.toString(),
+                        filename);
         job.setTotalLinhas(probe.estimatedTotal());
         return jobRepo.save(job);
     }
@@ -134,7 +137,8 @@ public class ImportService {
         try {
             CsvXlsxParser.ParseResult r = parser.probe(Paths.get(job.getArquivoPath()));
             List<ColumnSuggestion> suggestions = buildSuggestions(r.headers(), job.getEntidade());
-            return new ProbeResponse(List.of(r.headers()), r.encoding(), r.separator(), suggestions);
+            return new ProbeResponse(
+                    List.of(r.headers()), r.encoding(), r.separator(), suggestions);
         } catch (IOException e) {
             throw BusinessException.badRequest("IMPORT_PARSE_ERROR", e.getMessage());
         }
@@ -172,8 +176,18 @@ public class ImportService {
 
     private List<String> entityFields(String entidade) {
         return switch (entidade) {
-            case "INFLUENCIADOR" -> List.of("nome", "email", "telefone", "instagram", "youtube",
-                    "tiktok", "nicho", "audiencia_total", "observacoes", "cpf");
+            case "INFLUENCIADOR" ->
+                    List.of(
+                            "nome",
+                            "email",
+                            "telefone",
+                            "instagram",
+                            "youtube",
+                            "tiktok",
+                            "nicho",
+                            "audiencia_total",
+                            "observacoes",
+                            "cpf");
             case "MARCA" -> List.of("nome", "cnpj", "segmento", "site", "observacoes");
             case "CONTATO" -> List.of("nome", "email", "telefone", "cargo", "marca_id");
             default -> List.of();
@@ -266,7 +280,8 @@ public class ImportService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ImportJobLinha> listLinhas(AuthPrincipal principal, UUID jobId, int page, int size) {
+    public Page<ImportJobLinha> listLinhas(
+            AuthPrincipal principal, UUID jobId, int page, int size) {
         requireJob(principal, jobId);
         return linhaRepo.findByIdJobId(jobId, PageRequest.of(page, size));
     }
@@ -279,12 +294,13 @@ public class ImportService {
         requireStatus(job, "PRONTO_DRY_RUN");
 
         if (jobRepo.countExecutandoByAssessoria(principal.assessoriaId()) >= 5) {
-            throw BusinessException.tooManyRequests("IMPORT_CONCURRENT_TENANT",
+            throw BusinessException.tooManyRequests(
+                    "IMPORT_CONCURRENT_TENANT",
                     "Limite de 5 imports simultâneos por assessoria atingido.");
         }
         if (jobRepo.countExecutandoByUsuario(principal.usuarioId()) >= 1) {
-            throw BusinessException.tooManyRequests("IMPORT_CONCURRENT_USER",
-                    "Aguarde o import em andamento concluir.");
+            throw BusinessException.tooManyRequests(
+                    "IMPORT_CONCURRENT_USER", "Aguarde o import em andamento concluir.");
         }
 
         UUID batchId = UUID.randomUUID();
@@ -312,8 +328,10 @@ public class ImportService {
     public ImportJob cancel(AuthPrincipal principal, UUID jobId) {
         ImportJob job = requireJob(principal, jobId);
 
-        if (!List.of("UPLOADADO", "VALIDANDO", "PRONTO_DRY_RUN", "EXECUTANDO").contains(job.getStatus())) {
-            throw BusinessException.unprocessable("IMPORT_CANNOT_CANCEL",
+        if (!List.of("UPLOADADO", "VALIDANDO", "PRONTO_DRY_RUN", "EXECUTANDO")
+                .contains(job.getStatus())) {
+            throw BusinessException.unprocessable(
+                    "IMPORT_CANNOT_CANCEL",
                     "Job em status " + job.getStatus() + " não pode ser cancelado.");
         }
 
@@ -328,20 +346,44 @@ public class ImportService {
     }
 
     private void softDeleteCreated(String entidade, List<ImportJobLinha> criadas) {
-        List<UUID> ids = criadas.stream()
-                .map(ImportJobLinha::getEntidadeId)
-                .filter(id -> id != null)
-                .toList();
+        List<UUID> ids =
+                criadas.stream()
+                        .map(ImportJobLinha::getEntidadeId)
+                        .filter(id -> id != null)
+                        .toList();
         if (ids.isEmpty()) return;
 
         Instant now = Instant.now();
         switch (entidade) {
-            case "INFLUENCIADOR" -> ids.forEach(id ->
-                    infRepo.findById(id).ifPresent(inf -> { inf.setDeletedAt(now); infRepo.save(inf); }));
-            case "MARCA" -> ids.forEach(id ->
-                    marcaRepo.findById(id).ifPresent(m -> { m.setDeletedAt(now); marcaRepo.save(m); }));
-            case "CONTATO" -> ids.forEach(id ->
-                    contatoRepo.findById(id).ifPresent(c -> { c.setDeletedAt(now); contatoRepo.save(c); }));
+            case "INFLUENCIADOR" ->
+                    ids.forEach(
+                            id ->
+                                    infRepo.findById(id)
+                                            .ifPresent(
+                                                    inf -> {
+                                                        inf.setDeletedAt(now);
+                                                        infRepo.save(inf);
+                                                    }));
+            case "MARCA" ->
+                    ids.forEach(
+                            id ->
+                                    marcaRepo
+                                            .findById(id)
+                                            .ifPresent(
+                                                    m -> {
+                                                        m.setDeletedAt(now);
+                                                        marcaRepo.save(m);
+                                                    }));
+            case "CONTATO" ->
+                    ids.forEach(
+                            id ->
+                                    contatoRepo
+                                            .findById(id)
+                                            .ifPresent(
+                                                    c -> {
+                                                        c.setDeletedAt(now);
+                                                        contatoRepo.save(c);
+                                                    }));
         }
     }
 
@@ -351,14 +393,19 @@ public class ImportService {
         ImportJob job = requireJob(principal, jobId);
 
         writer.println("linha,status,entidade_id,erros");
-        linhaRepo.findByIdJobId(jobId, PageRequest.of(0, Integer.MAX_VALUE)).forEach(l -> {
-            String erros = l.getErros() == null ? "" : String.join("|", l.getErros());
-            writer.printf("%d,%s,%s,\"%s\"%n",
-                    l.getLinha(),
-                    l.getStatus(),
-                    l.getEntidadeId() != null ? l.getEntidadeId() : "",
-                    erros.replace("\"", "\"\""));
-        });
+        linhaRepo
+                .findByIdJobId(jobId, PageRequest.of(0, Integer.MAX_VALUE))
+                .forEach(
+                        l -> {
+                            String erros =
+                                    l.getErros() == null ? "" : String.join("|", l.getErros());
+                            writer.printf(
+                                    "%d,%s,%s,\"%s\"%n",
+                                    l.getLinha(),
+                                    l.getStatus(),
+                                    l.getEntidadeId() != null ? l.getEntidadeId() : "",
+                                    erros.replace("\"", "\"\""));
+                        });
     }
 
     // ---- Status ---
@@ -395,17 +442,25 @@ public class ImportService {
 
     @Transactional
     public void deleteTemplate(AuthPrincipal principal, UUID templateId) {
-        ImportTemplate t = templateRepo
-                .findByIdAndAssessoriaIdAndDeletedAtIsNull(templateId, principal.assessoriaId())
-                .orElseThrow(BusinessException::notFound);
+        ImportTemplate t =
+                templateRepo
+                        .findByIdAndAssessoriaIdAndDeletedAtIsNull(
+                                templateId, principal.assessoriaId())
+                        .orElseThrow(BusinessException::notFound);
         t.setDeletedAt(Instant.now());
         templateRepo.save(t);
     }
 
     // ---- Internal used by ImportJobHandler ---
 
-    public void executeChunk(UUID jobId, List<ImportJobLinha> linhas, String entidade,
-            UUID assessoriaId, UUID usuarioId, String baseLegal, String dedupStrategy) {
+    public void executeChunk(
+            UUID jobId,
+            List<ImportJobLinha> linhas,
+            String entidade,
+            UUID assessoriaId,
+            UUID usuarioId,
+            String baseLegal,
+            String dedupStrategy) {
 
         ImportJob job = jobRepo.findById(jobId).orElseThrow();
         if ("CANCELADO".equals(job.getStatus())) return;
@@ -432,8 +487,11 @@ public class ImportService {
     }
 
     public UUID persistInfluenciador(
-            Map<String, String> row, UUID assessoriaId, UUID usuarioId,
-            String baseLegal, String dedupStrategy) {
+            Map<String, String> row,
+            UUID assessoriaId,
+            UUID usuarioId,
+            String baseLegal,
+            String dedupStrategy) {
 
         String nome = row.getOrDefault("nome", "");
         String email = row.get("email");
@@ -465,19 +523,27 @@ public class ImportService {
         return createInfluenciador(row, assessoriaId, usuarioId, baseLegal);
     }
 
-    private UUID createInfluenciador(Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
-        Influenciador inf = new Influenciador(assessoriaId, row.getOrDefault("nome", ""), usuarioId);
+    private UUID createInfluenciador(
+            Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
+        Influenciador inf =
+                new Influenciador(assessoriaId, row.getOrDefault("nome", ""), usuarioId);
         applyInfluenciadorFields(inf, row, baseLegal);
         return infRepo.save(inf).getId();
     }
 
-    private void applyInfluenciadorFields(Influenciador inf, Map<String, String> row, String baseLegal) {
+    private void applyInfluenciadorFields(
+            Influenciador inf, Map<String, String> row, String baseLegal) {
         inf.setNome(row.getOrDefault("nome", inf.getNome()));
-        Map<String, String> handles = new LinkedHashMap<>(inf.getHandles() != null ? inf.getHandles() : Map.of());
-        if (row.containsKey("email") && !row.get("email").isBlank()) handles.put("email", row.get("email"));
-        if (row.containsKey("instagram") && !row.get("instagram").isBlank()) handles.put("instagram", row.get("instagram"));
-        if (row.containsKey("youtube") && !row.get("youtube").isBlank()) handles.put("youtube", row.get("youtube"));
-        if (row.containsKey("tiktok") && !row.get("tiktok").isBlank()) handles.put("tiktok", row.get("tiktok"));
+        Map<String, String> handles =
+                new LinkedHashMap<>(inf.getHandles() != null ? inf.getHandles() : Map.of());
+        if (row.containsKey("email") && !row.get("email").isBlank())
+            handles.put("email", row.get("email"));
+        if (row.containsKey("instagram") && !row.get("instagram").isBlank())
+            handles.put("instagram", row.get("instagram"));
+        if (row.containsKey("youtube") && !row.get("youtube").isBlank())
+            handles.put("youtube", row.get("youtube"));
+        if (row.containsKey("tiktok") && !row.get("tiktok").isBlank())
+            handles.put("tiktok", row.get("tiktok"));
         if (row.containsKey("telefone") && !row.get("telefone").isBlank()) {
             String phone = ImportValidator.normalizePhone(row.get("telefone"));
             if (phone != null) handles.put("telefone", phone);
@@ -486,16 +552,21 @@ public class ImportService {
         if (row.containsKey("nicho")) inf.setNicho(row.get("nicho"));
         try {
             inf.setBaseLegal(BaseLegal.valueOf(baseLegal));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public UUID persistMarca(
-            Map<String, String> row, UUID assessoriaId, UUID usuarioId,
-            String baseLegal, String dedupStrategy) {
+            Map<String, String> row,
+            UUID assessoriaId,
+            UUID usuarioId,
+            String baseLegal,
+            String dedupStrategy) {
 
         String nome = row.getOrDefault("nome", "");
 
-        Optional<Marca> existing = marcaRepo.findByNomeIgnoreCaseAndAssessoriaId(nome, assessoriaId);
+        Optional<Marca> existing =
+                marcaRepo.findByNomeIgnoreCaseAndAssessoriaId(nome, assessoriaId);
 
         if (existing.isPresent()) {
             return switch (dedupStrategy) {
@@ -514,7 +585,8 @@ public class ImportService {
         return createMarca(row, assessoriaId, usuarioId, baseLegal);
     }
 
-    private UUID createMarca(Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
+    private UUID createMarca(
+            Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
         Marca m = new Marca(assessoriaId, row.getOrDefault("nome", ""), usuarioId);
         applyMarcaFields(m, row, baseLegal);
         return marcaRepo.save(m).getId();
@@ -525,24 +597,32 @@ public class ImportService {
         if (row.containsKey("segmento")) m.setSegmento(row.get("segmento"));
         if (row.containsKey("site")) m.setSite(row.get("site"));
         if (row.containsKey("observacoes")) m.setObservacoes(row.get("observacoes"));
-        try { m.setBaseLegal(BaseLegal.valueOf(baseLegal)); } catch (Exception ignored) {}
+        try {
+            m.setBaseLegal(BaseLegal.valueOf(baseLegal));
+        } catch (Exception ignored) {
+        }
     }
 
     public UUID persistContato(
-            Map<String, String> row, UUID assessoriaId, UUID usuarioId,
-            String baseLegal, String dedupStrategy) {
+            Map<String, String> row,
+            UUID assessoriaId,
+            UUID usuarioId,
+            String baseLegal,
+            String dedupStrategy) {
 
         String email = row.get("email");
         String marcaIdStr = row.get("marca_id");
         UUID marcaId = null;
         try {
             if (marcaIdStr != null) marcaId = UUID.fromString(marcaIdStr);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         if (marcaId == null) return null;
 
         if (email != null && !email.isBlank()) {
-            Optional<Contato> existing = contatoRepo.findByEmailAndMarcaIdAndDeletedAtIsNull(email, marcaId);
+            Optional<Contato> existing =
+                    contatoRepo.findByEmailAndMarcaIdAndDeletedAtIsNull(email, marcaId);
             if (existing.isPresent()) {
                 return switch (dedupStrategy) {
                     case "SKIP" -> null;
@@ -552,7 +632,8 @@ public class ImportService {
                         contatoRepo.save(c);
                         yield c.getId();
                     }
-                    case "DUPLICATE" -> createContato(row, assessoriaId, marcaId, usuarioId, baseLegal);
+                    case "DUPLICATE" ->
+                            createContato(row, assessoriaId, marcaId, usuarioId, baseLegal);
                     default -> null;
                 };
             }
@@ -561,7 +642,12 @@ public class ImportService {
         return createContato(row, assessoriaId, marcaId, usuarioId, baseLegal);
     }
 
-    private UUID createContato(Map<String, String> row, UUID assessoriaId, UUID marcaId, UUID usuarioId, String baseLegal) {
+    private UUID createContato(
+            Map<String, String> row,
+            UUID assessoriaId,
+            UUID marcaId,
+            UUID usuarioId,
+            String baseLegal) {
         Contato c = new Contato(marcaId, assessoriaId, row.getOrDefault("nome", ""));
         applyContatoFields(c, row, baseLegal);
         return contatoRepo.save(c).getId();
@@ -575,7 +661,10 @@ public class ImportService {
             if (phone != null) c.setTelefone(phone);
         }
         if (row.containsKey("cargo")) c.setCargo(row.get("cargo"));
-        try { c.setBaseLegal(BaseLegal.valueOf(baseLegal)); } catch (Exception ignored) {}
+        try {
+            c.setBaseLegal(BaseLegal.valueOf(baseLegal));
+        } catch (Exception ignored) {
+        }
     }
 
     // ---- Helpers ---
@@ -615,8 +704,7 @@ public class ImportService {
     }
 
     private ImportJob requireJob(AuthPrincipal principal, UUID jobId) {
-        return jobRepo
-                .findByIdAndAssessoriaId(jobId, principal.assessoriaId())
+        return jobRepo.findByIdAndAssessoriaId(jobId, principal.assessoriaId())
                 .orElseThrow(BusinessException::notFound);
     }
 
@@ -624,38 +712,44 @@ public class ImportService {
         for (String s : allowed) {
             if (s.equals(job.getStatus())) return;
         }
-        throw BusinessException.unprocessable("IMPORT_STATUS_CONFLICT",
-                "Operação inválida em status " + job.getStatus() + ".");
+        throw BusinessException.unprocessable(
+                "IMPORT_STATUS_CONFLICT", "Operação inválida em status " + job.getStatus() + ".");
     }
 
     private void requireMapeamento(ImportJob job) {
         if (job.getMapeamento() == null || job.getMapeamento().isEmpty()) {
-            throw BusinessException.badRequest("IMPORT_NO_MAPEAMENTO", "Configure o mapeamento antes do dry-run.");
+            throw BusinessException.badRequest(
+                    "IMPORT_NO_MAPEAMENTO", "Configure o mapeamento antes do dry-run.");
         }
     }
 
     private void validateFeatureEnabled() {
         if (!props.getFeatures().isImportEnabled()) {
-            throw BusinessException.forbidden("IMPORT_DISABLED", "Funcionalidade de importação desabilitada.");
+            throw BusinessException.forbidden(
+                    "IMPORT_DISABLED", "Funcionalidade de importação desabilitada.");
         }
     }
 
     private void validateEntidade(String entidade) {
         if (!List.of("INFLUENCIADOR", "MARCA", "CONTATO").contains(entidade)) {
-            throw BusinessException.badRequest("IMPORT_ENTIDADE_INVALIDA", "Entidade inválida: " + entidade);
+            throw BusinessException.badRequest(
+                    "IMPORT_ENTIDADE_INVALIDA", "Entidade inválida: " + entidade);
         }
     }
 
     private void validateBaseLegal(String bl) {
-        try { BaseLegal.valueOf(bl); }
-        catch (Exception e) {
-            throw BusinessException.badRequest("IMPORT_BASE_LEGAL_INVALIDA", "Base legal inválida: " + bl);
+        try {
+            BaseLegal.valueOf(bl);
+        } catch (Exception e) {
+            throw BusinessException.badRequest(
+                    "IMPORT_BASE_LEGAL_INVALIDA", "Base legal inválida: " + bl);
         }
     }
 
     private void validateDedupStrategy(String s) {
         if (!List.of("SKIP", "UPDATE", "DUPLICATE").contains(s)) {
-            throw BusinessException.badRequest("IMPORT_DEDUP_INVALIDO", "Estratégia dedup inválida: " + s);
+            throw BusinessException.badRequest(
+                    "IMPORT_DEDUP_INVALIDO", "Estratégia dedup inválida: " + s);
         }
     }
 
@@ -681,15 +775,25 @@ public class ImportService {
     }
 
     private void silentDelete(Path p) {
-        try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+        try {
+            Files.deleteIfExists(p);
+        } catch (IOException ignored) {
+        }
     }
 
     private String detectEncoding(String path) {
         try {
             byte[] bytes = Files.readAllBytes(Paths.get(path));
-            if (bytes.length >= 3 && bytes[0] == (byte)0xEF && bytes[1] == (byte)0xBB && bytes[2] == (byte)0xBF)
-                return "UTF-8";
-            String utf8 = new String(bytes, 0, Math.min(bytes.length, 4096), java.nio.charset.StandardCharsets.UTF_8);
+            if (bytes.length >= 3
+                    && bytes[0] == (byte) 0xEF
+                    && bytes[1] == (byte) 0xBB
+                    && bytes[2] == (byte) 0xBF) return "UTF-8";
+            String utf8 =
+                    new String(
+                            bytes,
+                            0,
+                            Math.min(bytes.length, 4096),
+                            java.nio.charset.StandardCharsets.UTF_8);
             return utf8.contains("�") ? "Windows-1252" : "UTF-8";
         } catch (IOException e) {
             return "UTF-8";

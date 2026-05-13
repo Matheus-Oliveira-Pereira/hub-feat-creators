@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +63,8 @@ public class RelatorioController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID assessorId,
-            HttpServletResponse response) throws Exception {
+            HttpServletResponse response)
+            throws Exception {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"funil.csv\"");
         try (PrintWriter out = response.getWriter()) {
@@ -78,9 +78,12 @@ public class RelatorioController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @RequestParam Instant from,
             @RequestParam Instant to,
-            HttpServletResponse response) throws Exception {
+            HttpServletResponse response)
+            throws Exception {
         response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"performance-assessor.csv\"");
+        response.setHeader(
+                HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"performance-assessor.csv\"");
         try (PrintWriter out = response.getWriter()) {
             service.exportPerformanceCsv(principal.assessoriaId(), from, to, out);
         }
@@ -93,9 +96,11 @@ public class RelatorioController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID responsavelId,
-            HttpServletResponse response) throws Exception {
+            HttpServletResponse response)
+            throws Exception {
         response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tarefas-sla.csv\"");
+        response.setHeader(
+                HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tarefas-sla.csv\"");
         try (PrintWriter out = response.getWriter()) {
             service.exportSlavCsv(principal.assessoriaId(), from, to, responsavelId, out);
         }
@@ -112,16 +117,13 @@ public class RelatorioController {
     @PostMapping("/relatorios-salvos")
     @RequirePermission(PermissionCodes.B_REL)
     public RelatorioSalvo salvar(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @RequestBody SalvarRequest body) {
+            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody SalvarRequest body) {
         return service.salvar(principal, body.nome(), body.tipo(), body.filtros());
     }
 
     @DeleteMapping("/relatorios-salvos/{id}")
     @RequirePermission(PermissionCodes.B_REL)
-    public void deletar(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID id) {
+    public void deletar(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
         service.deletarSalvo(principal, id);
     }
 

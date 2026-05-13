@@ -9,8 +9,7 @@ public final class ImportValidator {
 
     private ImportValidator() {}
 
-    private static final Pattern EMAIL_PATTERN =
-            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private static final Pattern PHONE_DIGITS = Pattern.compile("[^0-9+]");
 
@@ -130,9 +129,10 @@ public final class ImportValidator {
     }
 
     private static boolean checkCnpjDigit(String digits, int pos) {
-        int[] weights = pos == 12
-                ? new int[]{5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2}
-                : new int[]{6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int[] weights =
+                pos == 12
+                        ? new int[] {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2}
+                        : new int[] {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
         int sum = 0;
         for (int i = 0; i < pos; i++) {
             sum += (digits.charAt(i) - '0') * weights[i];

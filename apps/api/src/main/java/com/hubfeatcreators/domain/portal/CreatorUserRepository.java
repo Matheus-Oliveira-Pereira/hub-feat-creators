@@ -8,7 +8,8 @@ public interface CreatorUserRepository extends JpaRepository<CreatorUser, UUID> 
 
     Optional<CreatorUser> findByEmail(String email);
 
-    Optional<CreatorUser> findByInfluenciadorIdAndAssessoriaId(UUID influenciadorId, UUID assessoriaId);
+    Optional<CreatorUser> findByInfluenciadorIdAndAssessoriaId(
+            UUID influenciadorId, UUID assessoriaId);
 
     boolean existsByInfluenciadorIdAndAssessoriaId(UUID influenciadorId, UUID assessoriaId);
 }

@@ -53,11 +53,16 @@ public class ExpoPushSender {
         try {
             Map<String, Object> message =
                     Map.of(
-                            "to", sub.getToken(),
-                            "title", titulo,
-                            "body", mensagem,
-                            "data", Map.of("url", targetUrl != null ? targetUrl : "/"),
-                            "sound", "default");
+                            "to",
+                            sub.getToken(),
+                            "title",
+                            titulo,
+                            "body",
+                            mensagem,
+                            "data",
+                            Map.of("url", targetUrl != null ? targetUrl : "/"),
+                            "sound",
+                            "default");
 
             String body = objectMapper.writeValueAsString(message);
             HttpRequest request =

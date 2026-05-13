@@ -30,8 +30,10 @@ public class MatchScorer {
 
     private double categoricalMatch(Briefing briefing, CreatorProfileFeature features) {
         if (briefing.getVertical() == null || features.getVerticalInferido() == null) return 0.5;
-        boolean verticalMatch = briefing.getVertical().equalsIgnoreCase(features.getVerticalInferido());
-        boolean formatMatch = briefing.getFormato() == null || "QUALQUER".equals(briefing.getFormato());
+        boolean verticalMatch =
+                briefing.getVertical().equalsIgnoreCase(features.getVerticalInferido());
+        boolean formatMatch =
+                briefing.getFormato() == null || "QUALQUER".equals(briefing.getFormato());
         return (verticalMatch ? 0.7 : 0.2) + (formatMatch ? 0.3 : 0.0);
     }
 

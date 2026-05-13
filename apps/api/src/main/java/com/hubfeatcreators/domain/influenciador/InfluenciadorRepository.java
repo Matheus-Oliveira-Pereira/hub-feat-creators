@@ -12,8 +12,10 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
 
     Optional<Influenciador> findByIdAndDeletedAtIsNull(UUID id);
 
-    @Query("SELECT i FROM Influenciador i WHERE i.id = :id AND i.assessoriaId = :assessoriaId AND i.deletedAt IS NULL")
-    Optional<Influenciador> findByIdAndAssessoriaId(@Param("id") UUID id, @Param("assessoriaId") UUID assessoriaId);
+    @Query(
+            "SELECT i FROM Influenciador i WHERE i.id = :id AND i.assessoriaId = :assessoriaId AND i.deletedAt IS NULL")
+    Optional<Influenciador> findByIdAndAssessoriaId(
+            @Param("id") UUID id, @Param("assessoriaId") UUID assessoriaId);
 
     @Query(
             """
@@ -30,7 +32,8 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
     java.util.List<Influenciador> findAllActiveForExport();
 
     @Query(
-            value = """
+            value =
+                    """
       SELECT * FROM influenciadores
       WHERE assessoria_id = :assessoriaId
         AND deleted_at IS NULL
@@ -42,5 +45,4 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
             @Param("assessoriaId") UUID assessoriaId,
             @Param("handleKey") String handleKey,
             @Param("handleValue") String handleValue);
-
 }

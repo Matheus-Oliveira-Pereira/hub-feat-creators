@@ -28,13 +28,16 @@ public class DeviceSubscriptionService {
                             existing.setAtiva(true);
                             existing.setUltimoUso(Instant.now());
                             log.info(
-                                    "device.register.reactivated userId={} canal={}", userId, canal);
+                                    "device.register.reactivated userId={} canal={}",
+                                    userId,
+                                    canal);
                             return repo.save(existing);
                         })
                 .orElseGet(
                         () -> {
                             DeviceSubscription sub =
-                                    new DeviceSubscription(userId, userTipo, canal, token, plataforma);
+                                    new DeviceSubscription(
+                                            userId, userTipo, canal, token, plataforma);
                             log.info("device.register.new userId={} canal={}", userId, canal);
                             return repo.save(sub);
                         });
@@ -47,7 +50,10 @@ public class DeviceSubscriptionService {
                         sub -> {
                             sub.setAtiva(false);
                             repo.save(sub);
-                            log.info("device.unregister userId={} canal={}", sub.getUserId(), sub.getCanal());
+                            log.info(
+                                    "device.unregister userId={} canal={}",
+                                    sub.getUserId(),
+                                    sub.getCanal());
                         });
     }
 

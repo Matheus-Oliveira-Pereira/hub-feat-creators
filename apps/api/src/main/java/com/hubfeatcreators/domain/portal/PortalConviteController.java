@@ -1,7 +1,7 @@
 package com.hubfeatcreators.domain.portal;
 
-import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
+import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;

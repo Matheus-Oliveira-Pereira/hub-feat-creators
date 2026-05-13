@@ -17,7 +17,6 @@ import com.hubfeatcreators.infra.security.JwtService;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -51,9 +50,16 @@ class CreatorAuthServiceTest {
     void setUp() {
         props.getFeatures().setPortalEnabled(true);
         props.getWeb().setBaseUrl("http://localhost:3000");
-        service = new CreatorAuthService(
-                creatorUserRepo, inviteRepo, influenciadorRepo, assessoriaRepo,
-                passwordEncoder, jwtService, mailService, props);
+        service =
+                new CreatorAuthService(
+                        creatorUserRepo,
+                        inviteRepo,
+                        influenciadorRepo,
+                        assessoriaRepo,
+                        passwordEncoder,
+                        jwtService,
+                        mailService,
+                        props);
     }
 
     // ─── Login ────────────────────────────────────────────────────────────────
@@ -119,10 +125,11 @@ class CreatorAuthServiceTest {
         verify(inviteRepo).save(captor.capture());
         assertThat(captor.getValue().getEmail()).isEqualTo("creator@test.com");
 
-        verify(mailService).sendInvite(
-                eq("creator@test.com"),
-                eq("Minha Assessoria"),
-                contains("minha-assessoria"));
+        verify(mailService)
+                .sendInvite(
+                        eq("creator@test.com"),
+                        eq("Minha Assessoria"),
+                        contains("minha-assessoria"));
     }
 
     @Test
@@ -149,12 +156,18 @@ class CreatorAuthServiceTest {
 
     @Test
     void aceitarConvite_success() {
-        CreatorInvite invite = new CreatorInvite(
-                influenciadorId, assessoriaId, "c@test.com",
-                "hash", Instant.now().plus(7, ChronoUnit.DAYS), usuarioId);
+        CreatorInvite invite =
+                new CreatorInvite(
+                        influenciadorId,
+                        assessoriaId,
+                        "c@test.com",
+                        "hash",
+                        Instant.now().plus(7, ChronoUnit.DAYS),
+                        usuarioId);
 
         when(inviteRepo.findByTokenHash(anyString())).thenReturn(Optional.of(invite));
-        when(creatorUserRepo.existsByInfluenciadorIdAndAssessoriaId(influenciadorId, assessoriaId)).thenReturn(false);
+        when(creatorUserRepo.existsByInfluenciadorIdAndAssessoriaId(influenciadorId, assessoriaId))
+                .thenReturn(false);
         when(passwordEncoder.encode("senha123")).thenReturn("encodedHash");
         when(creatorUserRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inviteRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -167,9 +180,14 @@ class CreatorAuthServiceTest {
 
     @Test
     void aceitarConvite_expired_throws410() {
-        CreatorInvite invite = new CreatorInvite(
-                influenciadorId, assessoriaId, "c@test.com",
-                "hash", Instant.now().minus(1, ChronoUnit.HOURS), usuarioId);
+        CreatorInvite invite =
+                new CreatorInvite(
+                        influenciadorId,
+                        assessoriaId,
+                        "c@test.com",
+                        "hash",
+                        Instant.now().minus(1, ChronoUnit.HOURS),
+                        usuarioId);
 
         when(inviteRepo.findByTokenHash(anyString())).thenReturn(Optional.of(invite));
 
@@ -179,12 +197,18 @@ class CreatorAuthServiceTest {
 
     @Test
     void aceitarConvite_creatorAlreadyExists_throws409() {
-        CreatorInvite invite = new CreatorInvite(
-                influenciadorId, assessoriaId, "c@test.com",
-                "hash", Instant.now().plus(1, ChronoUnit.HOURS), usuarioId);
+        CreatorInvite invite =
+                new CreatorInvite(
+                        influenciadorId,
+                        assessoriaId,
+                        "c@test.com",
+                        "hash",
+                        Instant.now().plus(1, ChronoUnit.HOURS),
+                        usuarioId);
 
         when(inviteRepo.findByTokenHash(anyString())).thenReturn(Optional.of(invite));
-        when(creatorUserRepo.existsByInfluenciadorIdAndAssessoriaId(influenciadorId, assessoriaId)).thenReturn(true);
+        when(creatorUserRepo.existsByInfluenciadorIdAndAssessoriaId(influenciadorId, assessoriaId))
+                .thenReturn(true);
 
         assertThatThrownBy(() -> service.aceitarConvite("rawtoken", "senha"))
                 .isInstanceOf(BusinessException.class);
@@ -194,9 +218,14 @@ class CreatorAuthServiceTest {
 
     @Test
     void infoConvite_returnsEmailAndNome() {
-        CreatorInvite invite = new CreatorInvite(
-                influenciadorId, assessoriaId, "c@test.com",
-                "hash", Instant.now().plus(1, ChronoUnit.HOURS), usuarioId);
+        CreatorInvite invite =
+                new CreatorInvite(
+                        influenciadorId,
+                        assessoriaId,
+                        "c@test.com",
+                        "hash",
+                        Instant.now().plus(1, ChronoUnit.HOURS),
+                        usuarioId);
 
         when(inviteRepo.findByTokenHash(anyString())).thenReturn(Optional.of(invite));
         Influenciador inf = new Influenciador(assessoriaId, "João Silva", usuarioId);

@@ -16,7 +16,8 @@ public interface MatchSugestaoRepository extends JpaRepository<MatchSugestao, UU
     Optional<MatchSugestao> findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(
             UUID prospeccaoId, UUID influenciadorId, String modeloVersao);
 
-    @Query("SELECT DISTINCT s.prospeccaoId FROM MatchSugestao s WHERE s.influenciadorId = :influenciadorId ORDER BY s.prospeccaoId")
+    @Query(
+            "SELECT DISTINCT s.prospeccaoId FROM MatchSugestao s WHERE s.influenciadorId = :influenciadorId ORDER BY s.prospeccaoId")
     List<UUID> findProspeccoesByInfluenciadorId(UUID influenciadorId);
 
     void deleteByProspeccaoIdAndModeloVersao(UUID prospeccaoId, String modeloVersao);

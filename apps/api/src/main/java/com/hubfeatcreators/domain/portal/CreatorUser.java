@@ -46,19 +46,59 @@ public class CreatorUser {
         this.emailVerificadoEm = Instant.now(); // convite = e-mail verificado
     }
 
-    public UUID getId() { return id; }
-    public UUID getInfluenciadorId() { return influenciadorId; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getEmail() { return email; }
-    public String getSenhaHash() { return senhaHash; }
-    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
-    public Instant getEmailVerificadoEm() { return emailVerificadoEm; }
-    public void setEmailVerificadoEm(Instant emailVerificadoEm) { this.emailVerificadoEm = emailVerificadoEm; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+    public UUID getId() {
+        return id;
+    }
 
-    public boolean isAtivo() { return "ATIVO".equals(status) && deletedAt == null; }
+    public UUID getInfluenciadorId() {
+        return influenciadorId;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getSenhaHash() {
+        return senhaHash;
+    }
+
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
+    }
+
+    public Instant getEmailVerificadoEm() {
+        return emailVerificadoEm;
+    }
+
+    public void setEmailVerificadoEm(Instant emailVerificadoEm) {
+        this.emailVerificadoEm = emailVerificadoEm;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public boolean isAtivo() {
+        return "ATIVO".equals(status) && deletedAt == null;
+    }
 }

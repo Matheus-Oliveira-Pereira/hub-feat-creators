@@ -1,10 +1,11 @@
 package com.hubfeatcreators.importacao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hubfeatcreators.domain.importacao.ImportValidator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ImportValidatorTest {
 
@@ -129,7 +130,8 @@ class ImportValidatorTest {
     @Test
     void validateInfluenciador_badPhone() {
         Map<String, String> row = Map.of("nome", "João", "telefone", "123");
-        assertThat(ImportValidator.validateInfluenciador(row)).anyMatch(e -> e.contains("telefone"));
+        assertThat(ImportValidator.validateInfluenciador(row))
+                .anyMatch(e -> e.contains("telefone"));
     }
 
     @Test

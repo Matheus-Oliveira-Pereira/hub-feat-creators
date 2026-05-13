@@ -36,19 +36,43 @@ public class ImportTemplate {
 
     protected ImportTemplate() {}
 
-    public ImportTemplate(UUID assessoriaId, String nome, String entidade, Map<String, String> mapeamento) {
+    public ImportTemplate(
+            UUID assessoriaId, String nome, String entidade, Map<String, String> mapeamento) {
         this.assessoriaId = assessoriaId;
         this.nome = nome;
         this.entidade = entidade;
         this.mapeamento = mapeamento;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getNome() { return nome; }
-    public String getEntidade() { return entidade; }
-    public Map<String, String> getMapeamento() { return mapeamento; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getEntidade() {
+        return entidade;
+    }
+
+    public Map<String, String> getMapeamento() {
+        return mapeamento;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

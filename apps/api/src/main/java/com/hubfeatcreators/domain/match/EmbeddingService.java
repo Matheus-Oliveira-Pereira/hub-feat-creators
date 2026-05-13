@@ -6,7 +6,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,8 +23,7 @@ public class EmbeddingService {
     private final String aiWorkerUrl;
 
     public EmbeddingService(
-            ObjectMapper mapper,
-            @Value("${app.ai-worker.url:}") String aiWorkerUrl) {
+            ObjectMapper mapper, @Value("${app.ai-worker.url:}") String aiWorkerUrl) {
         this.mapper = mapper;
         this.aiWorkerUrl = aiWorkerUrl;
     }
@@ -36,11 +34,12 @@ public class EmbeddingService {
         }
         try {
             String body = mapper.writeValueAsString(new EmbedRequest(text));
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(aiWorkerUrl + "/embed"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+            HttpRequest req =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(aiWorkerUrl + "/embed"))
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(body))
+                            .build();
             HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (res.statusCode() != 200) {
                 log.warn("ai-worker /embed returned {}", res.statusCode());

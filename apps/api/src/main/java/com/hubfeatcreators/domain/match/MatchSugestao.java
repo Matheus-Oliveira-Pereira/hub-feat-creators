@@ -41,8 +41,13 @@ public class MatchSugestao {
 
     protected MatchSugestao() {}
 
-    public MatchSugestao(UUID assessoriaId, UUID prospeccaoId, UUID influenciadorId,
-            BigDecimal score, List<Map<String, Object>> razoes, String modeloVersao) {
+    public MatchSugestao(
+            UUID assessoriaId,
+            UUID prospeccaoId,
+            UUID influenciadorId,
+            BigDecimal score,
+            List<Map<String, Object>> razoes,
+            String modeloVersao) {
         this.assessoriaId = assessoriaId;
         this.prospeccaoId = prospeccaoId;
         this.influenciadorId = influenciadorId;
@@ -51,12 +56,35 @@ public class MatchSugestao {
         this.modeloVersao = modeloVersao;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public UUID getProspeccaoId() { return prospeccaoId; }
-    public UUID getInfluenciadorId() { return influenciadorId; }
-    public BigDecimal getScore() { return score; }
-    public List<Map<String, Object>> getRazoes() { return razoes; }
-    public String getModeloVersao() { return modeloVersao; }
-    public Instant getGeradoEm() { return geradoEm; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public UUID getProspeccaoId() {
+        return prospeccaoId;
+    }
+
+    public UUID getInfluenciadorId() {
+        return influenciadorId;
+    }
+
+    public BigDecimal getScore() {
+        return score;
+    }
+
+    public List<Map<String, Object>> getRazoes() {
+        return razoes;
+    }
+
+    public String getModeloVersao() {
+        return modeloVersao;
+    }
+
+    public Instant getGeradoEm() {
+        return geradoEm;
+    }
 }

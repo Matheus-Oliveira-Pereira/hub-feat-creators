@@ -34,8 +34,7 @@ public class CreatorEntregavel {
     @Column(nullable = false)
     private String status = "ENVIADO";
 
-    @Column
-    private String feedback;
+    @Column private String feedback;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm = Instant.now();
@@ -45,8 +44,14 @@ public class CreatorEntregavel {
 
     protected CreatorEntregavel() {}
 
-    public CreatorEntregavel(UUID tarefaId, UUID creatorUserId, UUID assessoriaId,
-                              String arquivoPath, String filename, String contentType, long sizeBytes) {
+    public CreatorEntregavel(
+            UUID tarefaId,
+            UUID creatorUserId,
+            UUID assessoriaId,
+            String arquivoPath,
+            String filename,
+            String contentType,
+            long sizeBytes) {
         this.tarefaId = tarefaId;
         this.creatorUserId = creatorUserId;
         this.assessoriaId = assessoriaId;
@@ -56,19 +61,64 @@ public class CreatorEntregavel {
         this.sizeBytes = sizeBytes;
     }
 
-    public UUID getId() { return id; }
-    public UUID getTarefaId() { return tarefaId; }
-    public UUID getCreatorUserId() { return creatorUserId; }
-    public UUID getAssessoriaId() { return assessoriaId; }
-    public String getArquivoPath() { return arquivoPath; }
-    public String getFilename() { return filename; }
-    public String getContentType() { return contentType; }
-    public long getSizeBytes() { return sizeBytes; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; this.atualizadoEm = Instant.now(); }
-    public String getFeedback() { return feedback; }
-    public void setFeedback(String feedback) { this.feedback = feedback; }
-    public Instant getCriadoEm() { return criadoEm; }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
-    public void setAtualizadoEm(Instant atualizadoEm) { this.atualizadoEm = atualizadoEm; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getTarefaId() {
+        return tarefaId;
+    }
+
+    public UUID getCreatorUserId() {
+        return creatorUserId;
+    }
+
+    public UUID getAssessoriaId() {
+        return assessoriaId;
+    }
+
+    public String getArquivoPath() {
+        return arquivoPath;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public long getSizeBytes() {
+        return sizeBytes;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+        this.atualizadoEm = Instant.now();
+    }
+
+    public String getFeedback() {
+        return feedback;
+    }
+
+    public void setFeedback(String feedback) {
+        this.feedback = feedback;
+    }
+
+    public Instant getCriadoEm() {
+        return criadoEm;
+    }
+
+    public Instant getAtualizadoEm() {
+        return atualizadoEm;
+    }
+
+    public void setAtualizadoEm(Instant atualizadoEm) {
+        this.atualizadoEm = atualizadoEm;
+    }
 }
