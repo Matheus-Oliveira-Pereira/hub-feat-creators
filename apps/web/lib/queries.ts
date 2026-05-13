@@ -50,6 +50,8 @@ import {
   NotificacaoPreferencia,
   historico,
   Evento,
+  social,
+  SocialAccount,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
@@ -118,6 +120,10 @@ export const qk = {
   historico: {
     list: (entidadeTipo: string, entidadeId: string, tipos?: string) =>
       ['historico', entidadeTipo, entidadeId, tipos] as const,
+  },
+  social: {
+    accounts: (influenciadorId: string) => ['social', 'accounts', influenciadorId] as const,
+    snapshots: (accountId: string) => ['social', 'snapshots', accountId] as const,
   },
 };
 
@@ -900,5 +906,27 @@ export function useHistorico(
     getNextPageParam: (last) =>
       last.pagination.hasMore ? last.pagination.cursor ?? undefined : undefined,
     enabled: !!entidadeId,
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Social
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useSocialAccounts(influenciadorId: string | undefined) {
+  return useQuery({
+    queryKey: qk.social.accounts(influenciadorId ?? ''),
+    queryFn: () => social.listAccounts(influenciadorId!),
+    enabled: !!influenciadorId,
+  });
+}
+
+export function useDisconnectSocial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => social.disconnect(accountId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['social'] });
+    },
   });
 }

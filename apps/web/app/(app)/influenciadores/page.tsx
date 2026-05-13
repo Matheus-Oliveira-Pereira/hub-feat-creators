@@ -40,6 +40,7 @@ import { InfluenciadorFormModal } from '@/components/forms/influenciador-form-mo
 import { Can } from '@/components/auth/can';
 import { Timeline } from '@/components/app/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SocialAccountsTab } from '@/components/app/social-accounts-tab';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -375,6 +376,7 @@ function InfluenciadoresInner() {
               <Tabs defaultValue="dados" className="mt-4">
                 <TabsList className="self-start">
                   <TabsTrigger value="dados">Dados</TabsTrigger>
+                  <TabsTrigger value="redes">Redes Sociais</TabsTrigger>
                   <TabsTrigger value="historico">Histórico</TabsTrigger>
                 </TabsList>
 
@@ -455,6 +457,10 @@ function InfluenciadoresInner() {
                       </div>
                     </div>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="redes" className="overflow-y-auto max-h-[70vh]">
+                  <SocialAccountsTab influenciadorId={detail.id} />
                 </TabsContent>
 
                 <TabsContent value="historico" className="overflow-y-auto max-h-[70vh]">

@@ -1098,3 +1098,33 @@ export const portalAdmin = {
   revisarEntregavel: (entregavelId: string, status: string, feedback?: string) =>
     api.patch<CreatorEntregavel>(`/api/v1/portal/entregaveis/${entregavelId}/revisao`, { status, feedback }),
 };
+
+// ─── Social accounts ──────────────────────────────────────────────────────────
+
+export interface SocialAccount {
+  id: string;
+  plataforma: 'INSTAGRAM' | 'YOUTUBE' | 'TIKTOK';
+  handle: string | null;
+  status: 'ATIVA' | 'TOKEN_EXPIRADO' | 'REVOGADA' | 'ERRO';
+  conectadoEm: string;
+  ultimoSyncEm: string | null;
+}
+
+export interface SocialSnapshot {
+  dia: string;
+  followers: number | null;
+  following: number | null;
+  postsTotal: number | null;
+  engagementRate: number | null;
+}
+
+export const social = {
+  listAccounts: (influenciadorId: string) =>
+    api.get<SocialAccount[]>(`/api/v1/social/accounts?influenciadorId=${influenciadorId}`),
+  listSnapshots: (accountId: string, limit = 30) =>
+    api.get<SocialSnapshot[]>(`/api/v1/social/snapshots?accountId=${accountId}&limit=${limit}`),
+  disconnect: (accountId: string) =>
+    api.delete(`/api/v1/social/accounts/${accountId}`),
+  startOAuth: (influenciadorId: string, plataforma: string) =>
+    `${API_URL}/api/v1/social/auth/${plataforma}/start?influenciadorId=${influenciadorId}`,
+};

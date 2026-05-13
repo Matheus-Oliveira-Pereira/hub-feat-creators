@@ -27,6 +27,7 @@ export default function AppLayout() {
       >
         <Tabs.Screen name="index" options={{ title: 'Tarefas' }} />
         <Tabs.Screen name="mensagens" options={{ title: 'Mensagens' }} />
+        <Tabs.Screen name="social" options={{ title: 'Redes' }} />
         <Tabs.Screen name="perfil" options={{ title: 'Perfil' }} />
         <Tabs.Screen name="campanha/[id]" options={{ href: null }} />
         <Tabs.Screen name="tarefa/[id]" options={{ href: null }} />

@@ -176,6 +176,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `relatorios/` → funil prospecção, performance assessor, SLA tarefas + comparativo anterior, CSV export (EXPT), save relatórios, MVs refresh diário — PRD-012
 - ✅ `portal/` → portal creator: JWT tipo=CREATOR, CreatorUser/Invite/Entregavel, `FEATURE_PORTAL_ENABLED`, AttachmentStorage, visivel_para_creator, comentarios externos, branding por assessoria — PRD-013
 - ✅ `mobile/` → Expo SDK 51, expo-router, auth SecureStore, push FCM/APNs via ExpoPushSender, upload entregável + retry, biometria, offline cache — PRD-014, ADR-007
+- ✅ `social/` → OAuth Instagram/YouTube/TikTok, AES-GCM tokens (`SOCIAL_KEY`), snapshots diários, job SOCIAL_SYNC/SOCIAL_REFRESH_TOKEN, PortalSocialController, tab Redes Sociais (web), tela social.tsx (mobile) — PRD-015
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
@@ -197,6 +198,12 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 
 ## Gotchas
 - **OAuth tokens sociais** (Instagram/YouTube/TikTok) expiram — refresh com fila de retry; tokens podem revogar silenciosamente quando creator muda senha
+- **OAuthStateStore TTL**: state válido por 10min; `consume()` remove o state atomicamente — replay retorna Optional.empty(). Não usar Redis MVP; se app reiniciar, states pendentes se perdem (creator deve reiniciar fluxo)
+- **social OAuth callback `permitAll()`**: `/api/v1/social/auth/*/callback` é público — sem JWT pois redirect vem do provider externo. `start` endpoint requer autenticação (CREATOR ou INTERNO)
+- **SocialCipherService chave `SOCIAL_KEY`**: separada de `EMAIL_KEY` e `WHATSAPP_KEY`. Rotação de chave = re-cifrar todos os tokens em migration offline
+- **Snapshot idempotência**: UNIQUE (social_account_id, dia) — segundo sync no mesmo dia retorna silenciosamente via `findBySocialAccountIdAndDia`
+- **IG tokens não têm refresh token** (Basic Display API): `refreshTokenEnc = null`. Status vai para `TOKEN_EXPIRADO` na expiração (~60 dias); creator precisa re-autorizar
+- **YouTube `search.list` consome 100 units/query**: quota de 10k units/dia. `SocialSyncScheduler` roda 02:00 UTC — limitar contas sincronizadas por dia se > 100 contas YT
 - **Rate limits APIs sociais**: IG Graph (200/h/user), YouTube Data (10k units/dia) — backoff exponencial + cache agressivo
 - **E-mail deliverability**: SPF/DKIM/DMARC alinhados antes de enviar em massa; warmup de IP/domínio; honrar `List-Unsubscribe`
 - **LGPD desde dia 1**: pseudonimizar logs, soft-delete com retenção definida, base legal documentada por finalidade
