@@ -4,6 +4,7 @@ import com.hubfeatcreators.infra.job.JobService;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,8 +23,8 @@ public class SocialSyncScheduler {
         this.jobService = jobService;
     }
 
-    // 02:00 UTC daily
     @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
+    @SchedulerLock(name = "social_sync_daily", lockAtMostFor = "PT1H", lockAtLeastFor = "PT1M")
     public void scheduleDaily() {
         var accounts = accountRepo.findAllAtiva();
         log.info("SocialSyncScheduler: enqueuing {} accounts", accounts.size());

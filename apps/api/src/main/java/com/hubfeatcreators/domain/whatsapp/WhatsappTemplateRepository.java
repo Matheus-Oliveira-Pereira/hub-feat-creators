@@ -3,6 +3,7 @@ package com.hubfeatcreators.domain.whatsapp;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WhatsappTemplateRepository extends JpaRepository<WhatsappTemplate, UUID> {
@@ -12,5 +13,5 @@ public interface WhatsappTemplateRepository extends JpaRepository<WhatsappTempla
 
     Optional<WhatsappTemplate> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
 
-    List<WhatsappTemplate> findByStatus(String status);
+    List<WhatsappTemplate> findByStatusAndMetaTemplateIdIsNotNull(String status, Pageable pageable);
 }

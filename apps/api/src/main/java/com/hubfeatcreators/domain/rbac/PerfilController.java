@@ -8,8 +8,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -44,14 +46,21 @@ public class PerfilController {
     @GetMapping
     @RequirePermission(PermissionCodes.B_PRF)
     public List<PerfilResponse> listar(@AuthenticationPrincipal AuthPrincipal principal) {
-        return service.listar(principal).stream().map(this::toResponse).toList();
+        List<Perfil> perfis = service.listar(principal);
+        if (perfis.isEmpty()) return List.of();
+        List<UUID> ids = perfis.stream().map(Perfil::getId).toList();
+        Map<UUID, Long> counts =
+                repo.countsByPerfilIds(ids).stream()
+                        .collect(Collectors.toMap(r -> (UUID) r[0], r -> (Long) r[1]));
+        return perfis.stream().map(p -> toResponse(p, counts.getOrDefault(p.getId(), 0L))).toList();
     }
 
     @GetMapping("/{id}")
     @RequirePermission(PermissionCodes.B_PRF)
     public PerfilResponse buscar(
             @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
-        return toResponse(service.buscar(principal, id));
+        Perfil p = service.buscar(principal, id);
+        return toResponse(p, repo.countUsuariosUsando(p.getId()));
     }
 
     @PostMapping
@@ -60,7 +69,7 @@ public class PerfilController {
     public PerfilResponse criar(
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody PerfilRequest req) {
-        return toResponse(service.criar(principal, req.nome(), req.descricao(), req.roles()));
+        return toResponse(service.criar(principal, req.nome(), req.descricao(), req.roles()), 0L);
     }
 
     @PutMapping("/{id}")
@@ -69,8 +78,8 @@ public class PerfilController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
             @Valid @RequestBody PerfilRequest req) {
-        return toResponse(
-                service.atualizar(principal, id, req.nome(), req.descricao(), req.roles()));
+        Perfil p = service.atualizar(principal, id, req.nome(), req.descricao(), req.roles());
+        return toResponse(p, repo.countUsuariosUsando(p.getId()));
     }
 
     @DeleteMapping("/{id}")
@@ -80,14 +89,14 @@ public class PerfilController {
         service.deletar(principal, id);
     }
 
-    private PerfilResponse toResponse(Perfil p) {
+    private PerfilResponse toResponse(Perfil p, long usuariosCount) {
         return new PerfilResponse(
                 p.getId(),
                 p.getNome(),
                 p.getDescricao(),
                 List.of(p.getRoles()),
                 p.isSystem(),
-                repo.countUsuariosUsando(p.getId()),
+                usuariosCount,
                 p.getCreatedAt(),
                 p.getUpdatedAt());
     }

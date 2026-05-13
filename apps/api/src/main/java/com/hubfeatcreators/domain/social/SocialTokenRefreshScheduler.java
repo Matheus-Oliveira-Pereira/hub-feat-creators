@@ -4,6 +4,7 @@ import com.hubfeatcreators.infra.job.JobService;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,8 +23,8 @@ public class SocialTokenRefreshScheduler {
         this.jobService = jobService;
     }
 
-    // every 6h
     @Scheduled(cron = "0 0 */6 * * *", zone = "UTC")
+    @SchedulerLock(name = "social_token_refresh", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
     public void scheduleRefresh() {
         Instant threshold = Instant.now().plusSeconds(86400); // expiring within 24h
         var accounts = accountRepo.findDueForRefresh(threshold);

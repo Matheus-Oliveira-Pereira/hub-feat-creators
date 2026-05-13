@@ -17,6 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.sql.PreparedStatement;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -353,38 +355,27 @@ public class ImportService {
                         .toList();
         if (ids.isEmpty()) return;
 
+        String table =
+                switch (entidade) {
+                    case "INFLUENCIADOR" -> "influenciadores";
+                    case "MARCA" -> "marcas";
+                    case "CONTATO" -> "contatos";
+                    default -> null;
+                };
+        if (table == null) return;
+
         Instant now = Instant.now();
-        switch (entidade) {
-            case "INFLUENCIADOR" ->
-                    ids.forEach(
-                            id ->
-                                    infRepo.findById(id)
-                                            .ifPresent(
-                                                    inf -> {
-                                                        inf.setDeletedAt(now);
-                                                        infRepo.save(inf);
-                                                    }));
-            case "MARCA" ->
-                    ids.forEach(
-                            id ->
-                                    marcaRepo
-                                            .findById(id)
-                                            .ifPresent(
-                                                    m -> {
-                                                        m.setDeletedAt(now);
-                                                        marcaRepo.save(m);
-                                                    }));
-            case "CONTATO" ->
-                    ids.forEach(
-                            id ->
-                                    contatoRepo
-                                            .findById(id)
-                                            .ifPresent(
-                                                    c -> {
-                                                        c.setDeletedAt(now);
-                                                        contatoRepo.save(c);
-                                                    }));
-        }
+        jdbc.update(
+                con -> {
+                    PreparedStatement ps =
+                            con.prepareStatement(
+                                    "UPDATE "
+                                            + table
+                                            + " SET deleted_at = ? WHERE id = ANY(?) AND deleted_at IS NULL");
+                    ps.setTimestamp(1, Timestamp.from(now));
+                    ps.setArray(2, con.createArrayOf("uuid", ids.toArray()));
+                    return ps;
+                });
     }
 
     // ---- Relatório CSV ---
@@ -393,19 +384,21 @@ public class ImportService {
         ImportJob job = requireJob(principal, jobId);
 
         writer.println("linha,status,entidade_id,erros");
-        linhaRepo
-                .findByIdJobId(jobId, PageRequest.of(0, Integer.MAX_VALUE))
-                .forEach(
-                        l -> {
-                            String erros =
-                                    l.getErros() == null ? "" : String.join("|", l.getErros());
-                            writer.printf(
-                                    "%d,%s,%s,\"%s\"%n",
-                                    l.getLinha(),
-                                    l.getStatus(),
-                                    l.getEntidadeId() != null ? l.getEntidadeId() : "",
-                                    erros.replace("\"", "\"\""));
-                        });
+        int page = 0;
+        Page<ImportJobLinha> chunk;
+        do {
+            chunk = linhaRepo.findByIdJobId(jobId, PageRequest.of(page++, 1000));
+            chunk.forEach(
+                    l -> {
+                        String erros = l.getErros() == null ? "" : String.join("|", l.getErros());
+                        writer.printf(
+                                "%d,%s,%s,\"%s\"%n",
+                                l.getLinha(),
+                                l.getStatus(),
+                                l.getEntidadeId() != null ? l.getEntidadeId() : "",
+                                erros.replace("\"", "\"\""));
+                    });
+        } while (chunk.hasNext());
     }
 
     // ---- Status ---
