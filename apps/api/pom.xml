@@ -168,6 +168,13 @@
             <version>0.1.6</version>
         </dependency>
 
+        <!-- Rate limiting — public endpoints (auth, DSR, webhook, unsubscribe) -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
         <!-- CSV/XLSX import -->
         <dependency>
             <groupId>com.univocity</groupId>

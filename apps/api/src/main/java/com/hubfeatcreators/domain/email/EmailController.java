@@ -180,7 +180,7 @@ public class EmailController {
     public AccountResponse atualizarAccount(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody AccountUpdateRequest req) {
+            @Valid @RequestBody AccountUpdateRequest req) {
         return toAccountResponse(
                 accountService.atualizar(
                         principal,
@@ -248,7 +248,7 @@ public class EmailController {
     public TemplateResponse atualizarTemplate(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody TemplateUpdateRequest req) {
+            @Valid @RequestBody TemplateUpdateRequest req) {
         return toTemplateResponse(
                 templateService.atualizar(
                         principal,
@@ -273,7 +273,7 @@ public class EmailController {
     public Map<String, String> previewTemplate(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody PreviewRequest req) {
+            @Valid @RequestBody PreviewRequest req) {
         EmailTemplate template = templateService.buscar(principal, id);
         Map<String, Object> vars = req.vars() != null ? req.vars() : Map.of();
         String html = templateService.preview(principal.assessoriaId(), template, vars);
@@ -295,7 +295,8 @@ public class EmailController {
     @PutMapping("/layout")
     @RequirePermission(PermissionCodes.E_EML)
     public LayoutResponse salvarLayout(
-            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody LayoutRequest req) {
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @Valid @RequestBody LayoutRequest req) {
         EmailLayout layout =
                 layoutRepo
                         .findByAssessoriaId(principal.assessoriaId())

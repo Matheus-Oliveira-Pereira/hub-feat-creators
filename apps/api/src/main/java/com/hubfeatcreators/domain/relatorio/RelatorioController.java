@@ -4,6 +4,8 @@ import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.util.List;
@@ -117,7 +119,8 @@ public class RelatorioController {
     @PostMapping("/relatorios-salvos")
     @RequirePermission(PermissionCodes.B_REL)
     public RelatorioSalvo salvar(
-            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody SalvarRequest body) {
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @Valid @RequestBody SalvarRequest body) {
         return service.salvar(principal, body.nome(), body.tipo(), body.filtros());
     }
 
@@ -127,5 +130,6 @@ public class RelatorioController {
         service.deletarSalvo(principal, id);
     }
 
-    public record SalvarRequest(String nome, String tipo, Map<String, Object> filtros) {}
+    public record SalvarRequest(
+            @NotBlank String nome, @NotBlank String tipo, Map<String, Object> filtros) {}
 }

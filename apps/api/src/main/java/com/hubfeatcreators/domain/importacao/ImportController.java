@@ -4,6 +4,9 @@ import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +35,10 @@ public class ImportController {
     record MapeamentoRequest(
             Map<String, String> mapeamento, String baseLegal, String dedupStrategy) {}
 
-    record TemplateCreateRequest(String nome, String entidade, Map<String, String> mapeamento) {}
+    record TemplateCreateRequest(
+            @NotBlank String nome,
+            @NotBlank String entidade,
+            @NotNull Map<String, String> mapeamento) {}
 
     record JobResponse(
             UUID id,
@@ -89,7 +95,7 @@ public class ImportController {
     @RequirePermission(PermissionCodes.C_IMP)
     public JobResponse setMapeamento(
             @PathVariable UUID id,
-            @RequestBody MapeamentoRequest req,
+            @Valid @RequestBody MapeamentoRequest req,
             @AuthenticationPrincipal AuthPrincipal principal) {
         return toJobResponse(
                 service.setMapeamento(
@@ -226,7 +232,7 @@ public class ImportController {
     @ResponseStatus(HttpStatus.CREATED)
     @RequirePermission(PermissionCodes.C_IMP)
     public TemplateResponse createTemplate(
-            @RequestBody TemplateCreateRequest req,
+            @Valid @RequestBody TemplateCreateRequest req,
             @AuthenticationPrincipal AuthPrincipal principal) {
         return toTemplateResponse(
                 service.saveTemplate(principal, req.nome(), req.entidade(), req.mapeamento()));

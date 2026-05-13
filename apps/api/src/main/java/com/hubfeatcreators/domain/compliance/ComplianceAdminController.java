@@ -3,6 +3,9 @@ package com.hubfeatcreators.domain.compliance;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +29,7 @@ public class ComplianceAdminController {
     @PostMapping("/dsr")
     @RequirePermission(PermissionCodes.OWNR)
     public ResponseEntity<DsrTokenResponse> criarDsr(
-            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody DsrRequest req) {
+            @AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody DsrRequest req) {
         var result =
                 dsrService.criarSolicitacao(
                         principal.assessoriaId(), req.titularTipo(), req.titularId(), req.tipo());
@@ -58,7 +61,10 @@ public class ComplianceAdminController {
         return ResponseEntity.ok(ropaRepo.findByVigenteTrue());
     }
 
-    public record DsrRequest(String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {}
+    public record DsrRequest(
+            @NotBlank String titularTipo,
+            @NotNull UUID titularId,
+            @NotNull DsrSolicitacao.TipoDsr tipo) {}
 
     public record DsrTokenResponse(UUID solicitacaoId, String token) {}
 

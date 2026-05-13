@@ -4,6 +4,7 @@ import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import com.hubfeatcreators.infra.web.BusinessException;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,8 @@ public class BrandingController {
     @PutMapping
     @RequirePermission(PermissionCodes.OWNR)
     public AssessoriaBranding upsert(
-            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody BrandingRequest req) {
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @Valid @RequestBody BrandingRequest req) {
         AssessoriaBranding branding =
                 brandingRepo
                         .findById(principal.assessoriaId())

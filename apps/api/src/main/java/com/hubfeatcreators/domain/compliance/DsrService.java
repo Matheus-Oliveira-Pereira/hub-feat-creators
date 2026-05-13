@@ -29,16 +29,19 @@ public class DsrService {
 
     private final DsrSolicitacaoRepository solicitacaoRepo;
     private final DsrTokenRepository tokenRepo;
+    private final DsrTokenService dsrTokenService;
     private final InfluenciadorRepository influenciadorRepo;
     private final ContatoRepository contatoRepo;
 
     public DsrService(
             DsrSolicitacaoRepository solicitacaoRepo,
             DsrTokenRepository tokenRepo,
+            DsrTokenService dsrTokenService,
             InfluenciadorRepository influenciadorRepo,
             ContatoRepository contatoRepo) {
         this.solicitacaoRepo = solicitacaoRepo;
         this.tokenRepo = tokenRepo;
+        this.dsrTokenService = dsrTokenService;
         this.influenciadorRepo = influenciadorRepo;
         this.contatoRepo = contatoRepo;
     }
@@ -86,8 +89,7 @@ public class DsrService {
             throw BusinessException.unprocessable("DSR_TOKEN_USADO", "Token de DSR já utilizado.");
         }
 
-        dsrToken.setUsedAt(Instant.now());
-        tokenRepo.save(dsrToken);
+        dsrTokenService.markUsed(dsrToken);
 
         DsrSolicitacao solicitacao =
                 solicitacaoRepo

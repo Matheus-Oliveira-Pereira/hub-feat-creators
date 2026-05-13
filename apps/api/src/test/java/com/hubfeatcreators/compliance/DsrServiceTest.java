@@ -25,6 +25,7 @@ class DsrServiceTest {
 
     @Mock DsrSolicitacaoRepository solicitacaoRepo;
     @Mock DsrTokenRepository tokenRepo;
+    @Mock DsrTokenService dsrTokenService;
     @Mock InfluenciadorRepository influenciadorRepo;
     @Mock ContatoRepository contatoRepo;
 
@@ -35,6 +36,13 @@ class DsrServiceTest {
         MockitoAnnotations.openMocks(this);
         when(solicitacaoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(tokenRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(dsrTokenService.markUsed(any()))
+                .thenAnswer(
+                        inv -> {
+                            DsrToken t = inv.getArgument(0);
+                            t.setUsedAt(Instant.now());
+                            return t;
+                        });
     }
 
     @Test

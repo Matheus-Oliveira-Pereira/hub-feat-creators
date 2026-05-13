@@ -2,6 +2,9 @@ package com.hubfeatcreators.domain.match;
 
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -51,7 +54,8 @@ public class MatchController {
     @PostMapping("/feedback")
     @RequirePermission("MTCW")
     public ResponseEntity<FeedbackDto> addFeedback(
-            @AuthenticationPrincipal AuthPrincipal principal, @RequestBody FeedbackRequest req) {
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @Valid @RequestBody FeedbackRequest req) {
         MatchFeedback fb =
                 matchService.addFeedback(
                         principal.assessoriaId(),
@@ -100,7 +104,7 @@ public class MatchController {
         }
     }
 
-    record FeedbackRequest(UUID sugestaoId, String sinal, String comentario) {}
+    record FeedbackRequest(@NotNull UUID sugestaoId, @NotBlank String sinal, String comentario) {}
 
     record FeedbackDto(
             UUID id, UUID sugestaoId, String sinal, String comentario, Instant createdAt) {
