@@ -2,22 +2,21 @@ package com.hubfeatcreators.domain.match;
 
 import com.hubfeatcreators.domain.social.SocialAccount;
 import com.hubfeatcreators.domain.social.SocialAccountRepository;
-import com.hubfeatcreators.domain.social.SocialPost;
 import com.hubfeatcreators.domain.social.SocialPostRepository;
 import com.hubfeatcreators.domain.social.SocialSnapshot;
 import com.hubfeatcreators.domain.social.SocialSnapshotRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CreatorFeatureBuilder {
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(CreatorFeatureBuilder.class);
 
     private final SocialAccountRepository accountRepo;
     private final SocialSnapshotRepository snapshotRepo;
@@ -50,9 +49,10 @@ public class CreatorFeatureBuilder {
         String vertical = inferVertical(accounts);
         String[] topTemas = inferTopTemas(accounts);
 
-        CreatorProfileFeature feature = featureRepo
-                .findByInfluenciadorId(influenciadorId)
-                .orElseGet(() -> new CreatorProfileFeature(influenciadorId, assessoriaId));
+        CreatorProfileFeature feature =
+                featureRepo
+                        .findByInfluenciadorId(influenciadorId)
+                        .orElseGet(() -> new CreatorProfileFeature(influenciadorId, assessoriaId));
 
         feature.update(vertical, topTemas, null, null, avgEngagement, freqPost);
         featureRepo.save(feature);
@@ -66,9 +66,12 @@ public class CreatorFeatureBuilder {
 
     private BigDecimal computeEngagement(List<SocialAccount> accounts) {
         return accounts.stream()
-                .flatMap(a -> snapshotRepo
-                        .findBySocialAccountIdOrderByDiaDesc(a.getId(), PageRequest.of(0, 30))
-                        .stream())
+                .flatMap(
+                        a ->
+                                snapshotRepo
+                                        .findBySocialAccountIdOrderByDiaDesc(
+                                                a.getId(), PageRequest.of(0, 30))
+                                        .stream())
                 .filter(s -> s.getEngagementRate() != null)
                 .map(SocialSnapshot::getEngagementRate)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
@@ -76,18 +79,31 @@ public class CreatorFeatureBuilder {
     }
 
     private BigDecimal computeFreqPost(List<SocialAccount> accounts) {
-        long totalPosts = accounts.stream()
-                .flatMap(a -> postRepo.findTop30BySocialAccountIdOrderByPostedAtDesc(a.getId()).stream())
-                .count();
+        long totalPosts =
+                accounts.stream()
+                        .flatMap(
+                                a ->
+                                        postRepo
+                                                .findTop30BySocialAccountIdOrderByPostedAtDesc(
+                                                        a.getId())
+                                                .stream())
+                        .count();
         return BigDecimal.valueOf(totalPosts)
                 .divide(BigDecimal.valueOf(Math.max(1, accounts.size())), 2, RoundingMode.HALF_UP);
     }
 
+    // TODO(PRD-016 Fase 2): inferir vertical a partir de hashtags/categoria dos SocialPost.
+    // Hoje retorna null → componente categórico do MatchScorer fica em 0.5 (neutro).
+    // Match continua funcionando via similaridade vetorial + histórico + saúde do canal.
     private String inferVertical(List<SocialAccount> accounts) {
+        log.warn("creator.features.inferVertical.stub accounts={} → null", accounts.size());
         return null;
     }
 
+    // TODO(PRD-016 Fase 2): extrair top temas dos captions dos SocialPost via TF-IDF ou LLM.
+    // Hoje retorna [] → buildProfileText não inclui temas no embedding.
     private String[] inferTopTemas(List<SocialAccount> accounts) {
+        log.warn("creator.features.inferTopTemas.stub accounts={} → []", accounts.size());
         return new String[0];
     }
 

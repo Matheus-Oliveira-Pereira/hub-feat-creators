@@ -110,7 +110,7 @@ public class RetentionJob {
         Instant cutoff = hoje.minus(7, ChronoUnit.DAYS).atStartOfDay(ZoneOffset.UTC).toInstant();
         return jdbc.update(
                 """
-                DELETE FROM job
+                DELETE FROM jobs
                 WHERE status IN ('OK','MORTO')
                   AND updated_at < ?
                 """,
