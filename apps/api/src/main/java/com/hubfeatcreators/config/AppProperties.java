@@ -100,6 +100,7 @@ public class AppProperties {
     private Webpush webpush = new Webpush();
     private Web web = new Web();
     private Features features = new Features();
+    private Whatsapp whatsapp = new Whatsapp();
     private Import importConfig = new Import();
 
     public static class Import {
@@ -272,5 +273,25 @@ public class AppProperties {
 
     public void setFeatures(Features features) {
         this.features = features;
+    }
+
+    public static class Whatsapp {
+        private String verifyToken = "dev-only-not-for-prod-whatsapp-verify-token";
+
+        public String getVerifyToken() {
+            return verifyToken;
+        }
+
+        public void setVerifyToken(String verifyToken) {
+            this.verifyToken = verifyToken;
+        }
+    }
+
+    public Whatsapp getWhatsapp() {
+        return whatsapp;
+    }
+
+    public void setWhatsapp(Whatsapp whatsapp) {
+        this.whatsapp = whatsapp;
     }
 }

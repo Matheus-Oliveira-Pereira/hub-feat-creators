@@ -59,6 +59,6 @@ public class LgpdNotifyJobHandler implements JobHandler {
         """);
 
         mailSender.send(msg);
-        log.info("lgpd.notify.sent email={} influenciadorId={}", email, influenciadorId);
+        log.info("lgpd.notify.sent influenciadorId={}", influenciadorId);
     }
 }

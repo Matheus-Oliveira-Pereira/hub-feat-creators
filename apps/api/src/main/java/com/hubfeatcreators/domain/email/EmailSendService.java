@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.email;
 
+import com.hubfeatcreators.config.AppProperties;
 import com.hubfeatcreators.infra.job.JobService;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.web.BusinessException;
@@ -21,18 +22,21 @@ public class EmailSendService {
     private final EmailTemplateService templateService;
     private final EmailOptoutRepository optoutRepo;
     private final JobService jobService;
+    private final AppProperties appProperties;
 
     public EmailSendService(
             EmailEnvioRepository envioRepo,
             EmailAccountRepository accountRepo,
             EmailTemplateService templateService,
             EmailOptoutRepository optoutRepo,
-            JobService jobService) {
+            JobService jobService,
+            AppProperties appProperties) {
         this.envioRepo = envioRepo;
         this.accountRepo = accountRepo;
         this.templateService = templateService;
         this.optoutRepo = optoutRepo;
         this.jobService = jobService;
+        this.appProperties = appProperties;
     }
 
     /**
@@ -128,11 +132,8 @@ public class EmailSendService {
 
     private String buildUnsubscribeUrl(UUID assessoriaId, String email) {
         String token =
-                java.util.Base64.getUrlEncoder()
-                        .withoutPadding()
-                        .encodeToString(
-                                (assessoriaId + ":" + email)
-                                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                EmailUnsubscribeTokens.generate(
+                        appProperties.getSecrets().getEmailKey(), assessoriaId.toString(), email);
         return "/api/v1/email/unsubscribe?token=" + token;
     }
 }

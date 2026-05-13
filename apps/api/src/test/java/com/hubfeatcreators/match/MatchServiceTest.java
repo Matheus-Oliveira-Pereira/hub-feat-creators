@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.hubfeatcreators.domain.influenciador.Influenciador;
+import com.hubfeatcreators.domain.influenciador.InfluenciadorRepository;
 import com.hubfeatcreators.domain.match.*;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.math.BigDecimal;
@@ -34,6 +36,7 @@ class MatchServiceTest {
     @Mock EmbeddingService embeddingService;
     @Mock MatchScorer scorer;
     @Mock MatchExplainer explainer;
+    @Mock InfluenciadorRepository influenciadorRepo;
 
     @InjectMocks MatchService matchService;
 
@@ -97,7 +100,8 @@ class MatchServiceTest {
                                         influenciadorId.toString(),
                                         "cosine_sim",
                                         0.9)));
-        when(optoutRepo.existsById(influenciadorId)).thenReturn(true);
+        CreatorMatchOptout optout = new CreatorMatchOptout(influenciadorId, "nao quero");
+        when(optoutRepo.findAllById(any())).thenReturn(List.of(optout));
 
         List<MatchSugestao> result = matchService.runMatch(assessoriaId, prospeccaoId);
 
@@ -142,10 +146,9 @@ class MatchServiceTest {
                                         influenciadorId.toString(),
                                         "cosine_sim",
                                         0.85)));
-        when(optoutRepo.existsById(influenciadorId)).thenReturn(false);
-        when(featureRepo.findByInfluenciadorId(influenciadorId)).thenReturn(Optional.of(features));
-        when(sugestaoRepo.findByInfluenciadorIdOrderByScoreDesc(influenciadorId))
-                .thenReturn(List.of());
+        when(optoutRepo.findAllById(any())).thenReturn(List.of());
+        when(featureRepo.findByInfluenciadorIdIn(any())).thenReturn(List.of(features));
+        when(sugestaoRepo.countByInfluenciadorIdAndAssessoriaId(any(), any())).thenReturn(0);
         when(sugestaoRepo.findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(scorer.score(any(), any())).thenReturn(0.85);
@@ -182,18 +185,22 @@ class MatchServiceTest {
 
     @Test
     void optout_saves_record() {
+        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
+        when(influenciadorRepo.findById(influenciadorId)).thenReturn(Optional.of(inf));
         when(optoutRepo.existsById(influenciadorId)).thenReturn(false);
 
-        matchService.optout(influenciadorId, "nao quero");
+        matchService.optout(assessoriaId, influenciadorId, "nao quero");
 
         verify(optoutRepo).save(any(CreatorMatchOptout.class));
     }
 
     @Test
     void optout_idempotent_when_already_opted_out() {
+        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
+        when(influenciadorRepo.findById(influenciadorId)).thenReturn(Optional.of(inf));
         when(optoutRepo.existsById(influenciadorId)).thenReturn(true);
 
-        matchService.optout(influenciadorId, "nao quero");
+        matchService.optout(assessoriaId, influenciadorId, "nao quero");
 
         verify(optoutRepo, never()).save(any());
     }

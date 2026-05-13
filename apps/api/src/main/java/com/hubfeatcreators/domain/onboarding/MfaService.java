@@ -161,7 +161,7 @@ public class MfaService {
             byte[] imageData = generator.generate(data);
             return Utils.getDataUriForImage(imageData, generator.getImageMimeType());
         } catch (Exception e) {
-            log.error("mfa.qr.error email={} error={}", email, e.getMessage());
+            log.error("mfa.qr.error error={}", e.getMessage());
             throw new IllegalStateException("QR code generation failed", e);
         }
     }

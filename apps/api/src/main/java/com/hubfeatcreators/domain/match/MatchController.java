@@ -65,15 +65,18 @@ public class MatchController {
     @PostMapping("/optout/{influenciadorId}")
     @RequirePermission("MTCW")
     public ResponseEntity<Void> optout(
-            @PathVariable UUID influenciadorId, @RequestParam(required = false) String motivo) {
-        matchService.optout(influenciadorId, motivo);
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID influenciadorId,
+            @RequestParam(required = false) String motivo) {
+        matchService.optout(principal.assessoriaId(), influenciadorId, motivo);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/optout/{influenciadorId}")
     @RequirePermission("MTCW")
-    public ResponseEntity<Void> optin(@PathVariable UUID influenciadorId) {
-        matchService.optin(influenciadorId);
+    public ResponseEntity<Void> optin(
+            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID influenciadorId) {
+        matchService.optin(principal.assessoriaId(), influenciadorId);
         return ResponseEntity.noContent().build();
     }
 

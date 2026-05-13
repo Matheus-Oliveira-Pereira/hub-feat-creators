@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.email;
 
+import com.hubfeatcreators.config.AppProperties;
 import com.hubfeatcreators.domain.historico.Evento.EntidadeRef;
 import com.hubfeatcreators.domain.historico.EventoService;
 import com.hubfeatcreators.domain.historico.EventoTipo;
@@ -40,6 +41,7 @@ public class EmailSendJobHandler implements JobHandler {
     private final MeterRegistry meterRegistry;
     private final ApplicationEventPublisher eventPublisher;
     private final EventoService eventoService;
+    private final AppProperties appProperties;
 
     public EmailSendJobHandler(
             EmailEnvioRepository envioRepo,
@@ -48,7 +50,8 @@ public class EmailSendJobHandler implements JobHandler {
             EmailCipherService cipher,
             MeterRegistry meterRegistry,
             ApplicationEventPublisher eventPublisher,
-            EventoService eventoService) {
+            EventoService eventoService,
+            AppProperties appProperties) {
         this.envioRepo = envioRepo;
         this.accountRepo = accountRepo;
         this.accountService = accountService;
@@ -56,6 +59,7 @@ public class EmailSendJobHandler implements JobHandler {
         this.meterRegistry = meterRegistry;
         this.eventPublisher = eventPublisher;
         this.eventoService = eventoService;
+        this.appProperties = appProperties;
     }
 
     @Override
@@ -193,11 +197,10 @@ public class EmailSendJobHandler implements JobHandler {
 
     private String buildUnsubscribeHeader(EmailEnvio envio) {
         String token =
-                java.util.Base64.getUrlEncoder()
-                        .withoutPadding()
-                        .encodeToString(
-                                (envio.getAssessoriaId() + ":" + envio.getDestinatarioEmail())
-                                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                EmailUnsubscribeTokens.generate(
+                        appProperties.getSecrets().getEmailKey(),
+                        envio.getAssessoriaId().toString(),
+                        envio.getDestinatarioEmail());
         return "/api/v1/email/unsubscribe?token=" + token;
     }
 }

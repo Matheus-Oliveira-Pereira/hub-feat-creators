@@ -1,5 +1,7 @@
 package com.hubfeatcreators.domain.match;
 
+import com.hubfeatcreators.domain.influenciador.Influenciador;
+import com.hubfeatcreators.domain.influenciador.InfluenciadorRepository;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -7,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +30,7 @@ public class MatchService {
     private final EmbeddingService embeddingService;
     private final MatchScorer scorer;
     private final MatchExplainer explainer;
+    private final InfluenciadorRepository influenciadorRepo;
 
     public MatchService(
             BriefingRepository briefingRepo,
@@ -37,7 +42,8 @@ public class MatchService {
             VectorRepository vectorRepo,
             EmbeddingService embeddingService,
             MatchScorer scorer,
-            MatchExplainer explainer) {
+            MatchExplainer explainer,
+            InfluenciadorRepository influenciadorRepo) {
         this.briefingRepo = briefingRepo;
         this.featureRepo = featureRepo;
         this.sugestaoRepo = sugestaoRepo;
@@ -48,6 +54,7 @@ public class MatchService {
         this.embeddingService = embeddingService;
         this.scorer = scorer;
         this.explainer = explainer;
+        this.influenciadorRepo = influenciadorRepo;
     }
 
     @Transactional
@@ -68,34 +75,51 @@ public class MatchService {
         List<Map<String, Object>> candidates =
                 vectorRepo.findSimilarCreators(assessoriaId, briefingEmbedding, TOP_K * 2);
 
+        // Batch-load features and optouts to avoid N+1
+        List<UUID> candidateIds =
+                candidates.stream()
+                        .map(c -> UUID.fromString(c.get("influenciador_id").toString()))
+                        .toList();
+
+        Set<UUID> optouts =
+                optoutRepo.findAllById(candidateIds).stream()
+                        .map(CreatorMatchOptout::getInfluenciadorId)
+                        .collect(Collectors.toSet());
+
+        List<UUID> eligibleIds = candidateIds.stream().filter(id -> !optouts.contains(id)).toList();
+        if (eligibleIds.isEmpty()) return List.of();
+
+        Map<UUID, CreatorProfileFeature> featureMap =
+                featureRepo.findByInfluenciadorIdIn(eligibleIds).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        CreatorProfileFeature::getInfluenciadorId, f -> f));
+
         List<MatchSugestao> sugestoes = new ArrayList<>();
         for (Map<String, Object> candidate : candidates) {
             UUID influenciadorId = UUID.fromString(candidate.get("influenciador_id").toString());
-            if (optoutRepo.existsById(influenciadorId)) continue;
+            if (optouts.contains(influenciadorId)) continue;
 
-            Optional<CreatorProfileFeature> featOpt =
-                    featureRepo.findByInfluenciadorId(influenciadorId);
-            if (featOpt.isEmpty()) continue;
+            CreatorProfileFeature features = featureMap.get(influenciadorId);
+            if (features == null) continue;
 
-            CreatorProfileFeature features = featOpt.get();
             double cosineSim = ((Number) candidate.get("cosine_sim")).doubleValue();
-            int historicalDeals = countHistoricalDeals(assessoriaId, influenciadorId);
+            int historicalDeals =
+                    sugestaoRepo.countByInfluenciadorIdAndAssessoriaId(
+                            influenciadorId, assessoriaId);
             double health = scorer.channelHealthScore(features);
 
             MatchScorer.ScoreInput input =
                     new MatchScorer.ScoreInput(
                             cosineSim, briefing, features, historicalDeals, health);
             double finalScore = scorer.score(input, model.getPesos());
-
             List<Map<String, Object>> razoes = explainer.explain(input, finalScore);
 
-            MatchSugestao existing =
-                    sugestaoRepo
-                            .findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(
-                                    prospeccaoId, influenciadorId, model.getVersao())
-                            .orElse(null);
-            if (existing != null) {
-                sugestoes.add(existing);
+            Optional<MatchSugestao> existing =
+                    sugestaoRepo.findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(
+                            prospeccaoId, influenciadorId, model.getVersao());
+            if (existing.isPresent()) {
+                sugestoes.add(existing.get());
                 continue;
             }
 
@@ -130,10 +154,8 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public List<MatchSugestao> getReverse(UUID assessoriaId, UUID influenciadorId) {
-        List<MatchSugestao> list =
-                sugestaoRepo.findByInfluenciadorIdOrderByScoreDesc(influenciadorId);
-        list.forEach(s -> assertAssessoria(assessoriaId, s.getAssessoriaId()));
-        return list;
+        return sugestaoRepo.findByInfluenciadorIdAndAssessoriaIdOrderByScoreDesc(
+                influenciadorId, assessoriaId);
     }
 
     @Transactional
@@ -148,22 +170,27 @@ public class MatchService {
     }
 
     @Transactional
-    public void optout(UUID influenciadorId, String motivo) {
+    public void optout(UUID assessoriaId, UUID influenciadorId, String motivo) {
+        Influenciador inf =
+                influenciadorRepo
+                        .findById(influenciadorId)
+                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
+        if (!inf.getAssessoriaId().equals(assessoriaId))
+            throw BusinessException.notFound("INFLUENCIADOR");
         if (!optoutRepo.existsById(influenciadorId)) {
             optoutRepo.save(new CreatorMatchOptout(influenciadorId, motivo));
         }
     }
 
     @Transactional
-    public void optin(UUID influenciadorId) {
+    public void optin(UUID assessoriaId, UUID influenciadorId) {
+        Influenciador inf =
+                influenciadorRepo
+                        .findById(influenciadorId)
+                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
+        if (!inf.getAssessoriaId().equals(assessoriaId))
+            throw BusinessException.notFound("INFLUENCIADOR");
         optoutRepo.deleteById(influenciadorId);
-    }
-
-    private int countHistoricalDeals(UUID assessoriaId, UUID influenciadorId) {
-        return sugestaoRepo.findByInfluenciadorIdOrderByScoreDesc(influenciadorId).stream()
-                .filter(s -> s.getAssessoriaId().equals(assessoriaId))
-                .mapToInt(s -> 1)
-                .sum();
     }
 
     private String buildBriefingText(Briefing briefing) {

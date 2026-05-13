@@ -47,6 +47,7 @@ public class StartupSecretValidator {
                 MIN_KEY_BYTES,
                 isProd);
         check("app.secrets.social-key", props.getSecrets().getSocialKey(), MIN_KEY_BYTES, isProd);
+        check("app.whatsapp.verify-token", props.getWhatsapp().getVerifyToken(), 16, isProd);
 
         log.info("startup.secret.validator profile={} ok", activeProfile);
     }

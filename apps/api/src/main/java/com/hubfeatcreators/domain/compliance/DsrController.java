@@ -15,19 +15,14 @@ public class DsrController {
         this.dsrService = dsrService;
     }
 
-    /** Titular submits DSR request via token received by e-mail. */
+    /**
+     * Titular submits DSR request via token received by e-mail. For ACESSO/PORTABILIDADE the
+     * response includes the exported data inline — no separate unauthenticated endpoint needed.
+     */
     @PostMapping("/execute/{token}")
     public ResponseEntity<DsrResponse> executar(@PathVariable String token) {
-        DsrSolicitacao sol = dsrService.executarComToken(token);
-        return ResponseEntity.ok(DsrResponse.from(sol));
-    }
-
-    /** Export titular data for ACESSO/PORTABILIDADE (token already consumed by /execute). */
-    @GetMapping("/dados/{titularTipo}/{titularId}")
-    public ResponseEntity<Map<String, Object>> dados(
-            @PathVariable String titularTipo, @PathVariable UUID titularId) {
-        Map<String, Object> dados = dsrService.exportarDadosTitular(titularTipo, titularId);
-        return ResponseEntity.ok(dados);
+        DsrService.DsrResultFull result = dsrService.executarComToken(token);
+        return ResponseEntity.ok(DsrResponse.from(result));
     }
 
     public record DsrResponse(
@@ -37,9 +32,11 @@ public class DsrController {
             String tipo,
             String status,
             String prazoLegalEm,
-            String atendidoEm) {
+            String atendidoEm,
+            Map<String, Object> dados) {
 
-        static DsrResponse from(DsrSolicitacao s) {
+        static DsrResponse from(DsrService.DsrResultFull r) {
+            DsrSolicitacao s = r.solicitacao();
             return new DsrResponse(
                     s.getId(),
                     s.getTitularTipo(),
@@ -47,7 +44,8 @@ public class DsrController {
                     s.getTipo().name(),
                     s.getStatus().name(),
                     s.getPrazoLegalEm().toString(),
-                    s.getAtendidoEm() != null ? s.getAtendidoEm().toString() : null);
+                    s.getAtendidoEm() != null ? s.getAtendidoEm().toString() : null,
+                    r.dados());
         }
     }
 }

@@ -1,8 +1,7 @@
 package com.hubfeatcreators.domain.email;
 
+import com.hubfeatcreators.config.AppProperties;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -14,7 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Public (no auth) endpoints for email tracking. Open pixel: 1x1 GIF. Click: redirect + record.
- * Unsubscribe: one-click (RFC 8058) + page.
+ * Unsubscribe: one-click (RFC 8058) + page. Tokens are HMAC-SHA256 signed — see
+ * EmailUnsubscribeTokens.
  */
 @RestController
 @RequestMapping("/api/v1/email")
@@ -24,19 +24,23 @@ public class EmailTrackingController {
 
     // 1x1 transparent GIF
     private static final byte[] PIXEL_GIF =
-            Base64.getDecoder().decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+            java.util.Base64.getDecoder()
+                    .decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
 
     private final EmailEnvioRepository envioRepo;
     private final EmailEventoRepository eventoRepo;
     private final EmailOptoutRepository optoutRepo;
+    private final AppProperties appProperties;
 
     public EmailTrackingController(
             EmailEnvioRepository envioRepo,
             EmailEventoRepository eventoRepo,
-            EmailOptoutRepository optoutRepo) {
+            EmailOptoutRepository optoutRepo,
+            AppProperties appProperties) {
         this.envioRepo = envioRepo;
         this.eventoRepo = eventoRepo;
         this.optoutRepo = optoutRepo;
+        this.appProperties = appProperties;
     }
 
     /** Open-tracking pixel. Idempotent: only records first open per envio. */
@@ -68,9 +72,13 @@ public class EmailTrackingController {
                 .body(PIXEL_GIF);
     }
 
-    /** Click tracking: record CLICADO event then redirect to target URL. */
+    /** Click tracking: validate destination, record CLICADO event, then redirect. */
     @GetMapping("/track/click/{envioId}")
     public ResponseEntity<Void> trackClick(@PathVariable UUID envioId, @RequestParam String url) {
+        if (!isValidRedirectUrl(url)) {
+            log.warn("email.click.invalid_url envioId={}", envioId);
+            return ResponseEntity.badRequest().build();
+        }
         envioRepo
                 .findById(envioId)
                 .ifPresent(
@@ -82,14 +90,14 @@ public class EmailTrackingController {
                                             envio.getAssessoriaId(),
                                             EmailEventoTipo.CLICADO,
                                             Map.of("url", url)));
-                            log.info("email.click envioId={} url={}", envioId, url);
+                            log.info("email.click envioId={}", envioId);
                         });
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
     /**
-     * One-click unsubscribe (RFC 8058 POST) and GET landing page. Token =
-     * base64url(assessoriaId:email).
+     * One-click unsubscribe (RFC 8058 POST) and GET landing page. Token must be HMAC-signed via
+     * EmailUnsubscribeTokens.generate().
      */
     @PostMapping("/unsubscribe")
     public ResponseEntity<Void> unsubscribePost(@RequestParam String token) {
@@ -118,19 +126,26 @@ public class EmailTrackingController {
 
     private void processUnsubscribe(String token) {
         try {
-            String decoded =
-                    new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
-            int sep = decoded.indexOf(':');
-            if (sep < 1) return;
-            UUID assessoriaId = UUID.fromString(decoded.substring(0, sep));
-            String email = decoded.substring(sep + 1);
-
+            String emailKey = appProperties.getSecrets().getEmailKey();
+            String[] parts = EmailUnsubscribeTokens.verify(emailKey, token);
+            if (parts == null) {
+                log.warn("email.unsubscribe.invalid_signature");
+                return;
+            }
+            UUID assessoriaId = UUID.fromString(parts[0]);
+            String email = parts[1];
             if (!optoutRepo.existsByAssessoriaIdAndEmailIgnoreCase(assessoriaId, email)) {
                 optoutRepo.save(new EmailOptout(assessoriaId, email, "unsubscribe_link"));
-                log.info("email.unsubscribe assessoriaId={} email={}", assessoriaId, email);
+                log.info("email.unsubscribe assessoriaId={}", assessoriaId);
             }
         } catch (Exception e) {
-            log.warn("email.unsubscribe.invalid_token token={}", token);
+            log.warn("email.unsubscribe.error");
         }
+    }
+
+    private static boolean isValidRedirectUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        if (url.contains("\r") || url.contains("\n")) return false;
+        return url.startsWith("https://") || url.startsWith("http://");
     }
 }

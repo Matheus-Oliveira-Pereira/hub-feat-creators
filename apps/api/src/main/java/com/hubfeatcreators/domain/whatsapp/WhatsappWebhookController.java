@@ -2,7 +2,11 @@ package com.hubfeatcreators.domain.whatsapp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hubfeatcreators.config.AppProperties;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.Optional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
@@ -12,8 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Public webhook endpoint for Meta WhatsApp Cloud API. Signature validated with X-Hub-Signature-256
- * (HMAC SHA256). Both GET (challenge verification) and POST (events) are handled here.
+ * Public webhook endpoint for Meta WhatsApp Cloud API. X-Hub-Signature-256 (HMAC-SHA256) is
+ * mandatory — requests without a signature are rejected (401). GET challenge validated against
+ * app.whatsapp.verify-token.
  */
 @RestController
 @RequestMapping("/api/v1/whatsapp/webhook")
@@ -25,16 +30,19 @@ public class WhatsappWebhookController {
     private final WhatsappAccountService accountService;
     private final WhatsappService whatsappService;
     private final ObjectMapper objectMapper;
+    private final AppProperties appProperties;
 
     public WhatsappWebhookController(
             WhatsappAccountRepository accountRepo,
             WhatsappAccountService accountService,
             WhatsappService whatsappService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AppProperties appProperties) {
         this.accountRepo = accountRepo;
         this.accountService = accountService;
         this.whatsappService = whatsappService;
         this.objectMapper = objectMapper;
+        this.appProperties = appProperties;
     }
 
     /** Meta webhook verification (GET) */
@@ -43,10 +51,14 @@ public class WhatsappWebhookController {
             @RequestParam("hub.mode") String mode,
             @RequestParam("hub.challenge") String challenge,
             @RequestParam("hub.verify_token") String verifyToken) {
-        if ("subscribe".equals(mode)) {
-            return ResponseEntity.ok(challenge);
+        String expected = appProperties.getWhatsapp().getVerifyToken();
+        if (!"subscribe".equals(mode)
+                || !MessageDigest.isEqual(
+                        expected.getBytes(StandardCharsets.UTF_8),
+                        verifyToken.getBytes(StandardCharsets.UTF_8))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return ResponseEntity.ok(challenge);
     }
 
     /** Meta webhook events (POST) */
@@ -54,6 +66,11 @@ public class WhatsappWebhookController {
     public ResponseEntity<Void> receive(
             @RequestBody String rawBody,
             @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature) {
+
+        if (signature == null) {
+            log.warn("webhook.signature.missing");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         JsonNode root;
         try {
@@ -73,24 +90,17 @@ public class WhatsappWebhookController {
                 String phoneNumberId = value.path("metadata").path("phone_number_id").asText(null);
                 if (phoneNumberId == null) continue;
 
-                // Find account by phoneNumberId to validate signature
-                var accountOpt =
-                        accountRepo.findAll().stream()
-                                .filter(
-                                        a ->
-                                                a.getPhoneNumberId().equals(phoneNumberId)
-                                                        && a.isAtivo())
-                                .findFirst();
+                Optional<WhatsappAccount> accountOpt =
+                        accountRepo.findByPhoneNumberIdAndAtivoTrue(phoneNumberId);
                 if (accountOpt.isEmpty()) continue;
 
-                var account = accountOpt.get();
+                WhatsappAccount account = accountOpt.get();
 
-                if (signature != null && !validateSignature(rawBody, signature, account)) {
+                if (!validateSignature(rawBody, signature, account)) {
                     log.warn("webhook.signature.invalid phoneNumberId={}", phoneNumberId);
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
                 }
 
-                // Process status updates
                 JsonNode statuses = value.path("statuses");
                 if (statuses.isArray()) {
                     for (JsonNode s : statuses) {
@@ -102,7 +112,6 @@ public class WhatsappWebhookController {
                     }
                 }
 
-                // Process inbound messages
                 JsonNode messages = value.path("messages");
                 if (messages.isArray()) {
                     for (JsonNode msg : messages) {
@@ -110,7 +119,6 @@ public class WhatsappWebhookController {
                         String from = msg.path("from").asText(null);
                         String tipo = msg.path("type").asText("TEXT").toUpperCase();
                         if (wamid == null || from == null) continue;
-                        String msgPayload = msg.toString();
                         try {
                             whatsappService.handleInbound(
                                     account.getAssessoriaId(),
@@ -118,7 +126,7 @@ public class WhatsappWebhookController {
                                     from,
                                     wamid,
                                     tipo,
-                                    msgPayload);
+                                    msg.toString());
                         } catch (Exception e) {
                             log.warn("webhook.inbound.failed wamid={}: {}", wamid, e.getMessage());
                         }
@@ -134,22 +142,18 @@ public class WhatsappWebhookController {
             String body, String signatureHeader, WhatsappAccount account) {
         try {
             if (!signatureHeader.startsWith("sha256=")) return false;
-            String expected = signatureHeader.substring(7);
+            String received = signatureHeader.substring(7);
             String appSecret = accountService.decryptAppSecret(account);
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(appSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] hash = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
-            String computed = bytesToHex(hash);
-            return computed.equals(expected);
+            String computed =
+                    HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
+            return MessageDigest.isEqual(
+                    computed.getBytes(StandardCharsets.UTF_8),
+                    received.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.warn("webhook.signature.error: {}", e.getMessage());
             return false;
         }
-    }
-
-    private static String bytesToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) sb.append(String.format("%02x", b));
-        return sb.toString();
     }
 }

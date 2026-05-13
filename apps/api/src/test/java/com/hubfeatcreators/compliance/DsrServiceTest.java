@@ -41,6 +41,8 @@ class DsrServiceTest {
     void criarSolicitacao_returns_result_with_raw_token() {
         UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
+        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
+        when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
 
         var result =
                 dsrService.criarSolicitacao(
@@ -78,9 +80,10 @@ class DsrServiceTest {
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
         when(influenciadorRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        DsrSolicitacao resultado = dsrService.executarComToken(rawToken);
+        DsrService.DsrResultFull resultado = dsrService.executarComToken(rawToken);
 
-        assertThat(resultado.getStatus()).isEqualTo(DsrSolicitacao.StatusDsr.CONCLUIDA);
+        assertThat(resultado.solicitacao().getStatus())
+                .isEqualTo(DsrSolicitacao.StatusDsr.CONCLUIDA);
         assertThat(dsrToken.isUsed()).isTrue();
 
         // Influenciador must be anonymized

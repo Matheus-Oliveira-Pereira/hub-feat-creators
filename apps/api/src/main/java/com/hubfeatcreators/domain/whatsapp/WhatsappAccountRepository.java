@@ -9,4 +9,6 @@ public interface WhatsappAccountRepository extends JpaRepository<WhatsappAccount
     List<WhatsappAccount> findByAssessoriaIdAndDeletedAtIsNull(UUID assessoriaId);
 
     Optional<WhatsappAccount> findByIdAndAssessoriaIdAndDeletedAtIsNull(UUID id, UUID assessoriaId);
+
+    Optional<WhatsappAccount> findByPhoneNumberIdAndAtivoTrue(String phoneNumberId);
 }

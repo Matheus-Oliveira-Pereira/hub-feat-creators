@@ -47,6 +47,7 @@ public class DsrService {
     @Transactional
     public DsrResult criarSolicitacao(
             UUID assessoriaId, String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {
+        assertTitularOwnership(assessoriaId, titularTipo, titularId);
         var solicitacao = new DsrSolicitacao(assessoriaId, titularTipo, titularId, tipo);
         solicitacao = solicitacaoRepo.save(solicitacao);
 
@@ -67,9 +68,11 @@ public class DsrService {
         return new DsrResult(solicitacao, rawToken);
     }
 
-    /** Validates token and executes DSR action. Single-use. */
+    /**
+     * Validates token, executes DSR action, and returns data for ACESSO/PORTABILIDADE. Single-use.
+     */
     @Transactional
-    public DsrSolicitacao executarComToken(String rawToken) {
+    public DsrResultFull executarComToken(String rawToken) {
         String tokenHash = hash(rawToken);
         DsrToken dsrToken =
                 tokenRepo
@@ -94,8 +97,8 @@ public class DsrService {
         solicitacao.setStatus(DsrSolicitacao.StatusDsr.EM_ANDAMENTO);
         solicitacao = solicitacaoRepo.save(solicitacao);
 
-        executarAcao(solicitacao);
-        return solicitacao;
+        Map<String, Object> dados = executarAcao(solicitacao);
+        return new DsrResultFull(solicitacao, dados);
     }
 
     /** Returns all data about titular for ACESSO request. */
@@ -186,24 +189,51 @@ public class DsrService {
         return solicitacaoRepo.findVencendoAntes(limite);
     }
 
-    private void executarAcao(DsrSolicitacao solicitacao) {
+    /** Returns exported data for ACESSO/PORTABILIDADE; null for other types. */
+    private Map<String, Object> executarAcao(DsrSolicitacao solicitacao) {
         try {
+            Map<String, Object> dados = null;
             switch (solicitacao.getTipo()) {
                 case EXCLUSAO ->
                         anonimizarTitular(solicitacao.getTitularTipo(), solicitacao.getTitularId());
-                case ACESSO, PORTABILIDADE -> {
-                    // Dados exportados via endpoint separado; marcar concluída
-                }
+                case ACESSO, PORTABILIDADE ->
+                        dados =
+                                exportarDadosTitular(
+                                        solicitacao.getTitularTipo(), solicitacao.getTitularId());
                 case CORRECAO, OPOSICAO -> {
                     // Requer intervenção humana; manter EM_ANDAMENTO
-                    return;
+                    return null;
                 }
             }
             solicitacao.setStatus(DsrSolicitacao.StatusDsr.CONCLUIDA);
             solicitacao.setAtendidoEm(Instant.now());
             solicitacaoRepo.save(solicitacao);
+            return dados;
         } catch (Exception e) {
             log.error("dsr.execucao.erro solicitacaoId={}", solicitacao.getId(), e);
+            solicitacao.setStatus(DsrSolicitacao.StatusDsr.REJEITADA);
+            solicitacaoRepo.save(solicitacao);
+            throw new IllegalStateException("DSR action failed", e);
+        }
+    }
+
+    private void assertTitularOwnership(UUID assessoriaId, String titularTipo, UUID titularId) {
+        switch (titularTipo) {
+            case "INFLUENCIADOR" -> {
+                Influenciador inf =
+                        influenciadorRepo
+                                .findById(titularId)
+                                .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
+                if (!inf.getAssessoriaId().equals(assessoriaId))
+                    throw BusinessException.notFound("INFLUENCIADOR");
+            }
+            case "CONTATO" -> {
+                if (!contatoRepo.existsById(titularId)) throw BusinessException.notFound("CONTATO");
+                // TODO(PRD-007): chain check via Marca.assessoriaId when contatos carry direct FK
+            }
+            default ->
+                    throw BusinessException.badRequest(
+                            "TIPO_INVALIDO", "Tipo de titular inválido: " + titularTipo);
         }
     }
 
@@ -224,4 +254,6 @@ public class DsrService {
     }
 
     public record DsrResult(DsrSolicitacao solicitacao, String rawToken) {}
+
+    public record DsrResultFull(DsrSolicitacao solicitacao, Map<String, Object> dados) {}
 }
