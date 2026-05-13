@@ -18,7 +18,7 @@ public class SocialSnapshotController {
     }
 
     @GetMapping("/accounts")
-    @RequirePermission("INFL_R")
+    @RequirePermission("BINF")
     public List<SocialAccountDto> listAccounts(
             @RequestParam UUID influenciadorId, @AuthenticationPrincipal AuthPrincipal principal) {
         return socialService.listByInfluenciador(principal.assessoriaId(), influenciadorId).stream()
@@ -27,7 +27,7 @@ public class SocialSnapshotController {
     }
 
     @GetMapping("/snapshots")
-    @RequirePermission("INFL_R")
+    @RequirePermission("BINF")
     public List<SocialSnapshotDto> listSnapshots(
             @RequestParam UUID accountId,
             @RequestParam(defaultValue = "30") int limit,

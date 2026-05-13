@@ -20,6 +20,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private final AppProperties props;
+
+    public SecurityConfig(AppProperties props) {
+        this.props = props;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         // Argon2id: t=3, m=65536 (64MB), p=4 — per PRD-006 AC-2
@@ -61,7 +67,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.List.of("http://localhost:3000"));
+        java.util.List<String> origins =
+                java.util.Arrays.stream(props.getCors().getAllowedOrigins().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+        if (origins.isEmpty()) {
+            throw new IllegalStateException(
+                    "app.cors.allowed-origins é obrigatório (definir CORS_ALLOWED_ORIGINS)");
+        }
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(
                 java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
