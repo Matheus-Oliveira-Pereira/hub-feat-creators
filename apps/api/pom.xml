@@ -161,6 +161,13 @@
             <version>20220608.1</version>
         </dependency>
 
+        <!-- pgvector — IA match (PRD-016) -->
+        <dependency>
+            <groupId>com.pgvector</groupId>
+            <artifactId>pgvector</artifactId>
+            <version>0.1.6</version>
+        </dependency>
+
         <!-- CSV/XLSX import -->
         <dependency>
             <groupId>com.univocity</groupId>
