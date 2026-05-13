@@ -172,24 +172,25 @@ class DsrServiceTest {
     void exportarDados_influenciador_retorna_campos_corretos() {
         UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
-        UUID solicitacaoId = UUID.randomUUID();
+        UUID solId = UUID.randomUUID();
+        String rawToken = "export-test-token";
+        String hash = DsrService.hash(rawToken);
+
+        DsrToken dsrToken = new DsrToken(solId, hash, Instant.now().plusSeconds(3600));
         Influenciador inf = new Influenciador(assessoriaId, "João Creator", UUID.randomUUID());
-        com.hubfeatcreators.domain.compliance.DsrSolicitacao sol =
-                new com.hubfeatcreators.domain.compliance.DsrSolicitacao(
-                        assessoriaId,
-                        "INFLUENCIADOR",
-                        titularId,
-                        com.hubfeatcreators.domain.compliance.DsrSolicitacao.TipoDsr.ACESSO);
-        sol.setStatus(
-                com.hubfeatcreators.domain.compliance.DsrSolicitacao.StatusDsr.EM_ANDAMENTO);
-        when(solicitacaoRepo.findById(solicitacaoId)).thenReturn(Optional.of(sol));
+        DsrSolicitacao sol =
+                new DsrSolicitacao(
+                        assessoriaId, "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
+
+        when(tokenRepo.findByTokenHash(hash)).thenReturn(Optional.of(dsrToken));
+        when(solicitacaoRepo.findById(solId)).thenReturn(Optional.of(sol));
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
 
-        var dados = dsrService.exportarDadosTitular("INFLUENCIADOR", titularId, solicitacaoId);
+        DsrService.DsrResultFull result = dsrService.executarComToken(rawToken);
 
-        assertThat(dados).containsKey("nome");
-        assertThat(dados.get("nome")).isEqualTo("João Creator");
-        assertThat(dados.get("tipo")).isEqualTo("INFLUENCIADOR");
+        assertThat(result.dados()).containsKey("nome");
+        assertThat(result.dados().get("nome")).isEqualTo("João Creator");
+        assertThat(result.dados().get("tipo")).isEqualTo("INFLUENCIADOR");
     }
 
     @Test
