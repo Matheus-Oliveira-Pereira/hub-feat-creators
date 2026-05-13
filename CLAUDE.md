@@ -181,6 +181,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
+- 📐 `marketplace/` → PRD-017 Fase 4 — ADRs propostos (016 gateway Pagar.me, 017 assinatura Clicksign, 018 NF NFE.io, 019 regulatório facilitador, 020 take rate variável por plano, 021 KYC Idwall); aguarda aprovação + legal review
 - ❌ `i18n/` → MVP só pt-BR
 
 ## Model Presets (L4)
