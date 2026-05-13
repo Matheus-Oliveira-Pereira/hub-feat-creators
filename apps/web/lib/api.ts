@@ -1128,3 +1128,52 @@ export const social = {
   startOAuth: (influenciadorId: string, plataforma: string) =>
     `${API_URL}/api/v1/social/auth/${plataforma}/start?influenciadorId=${influenciadorId}`,
 };
+
+// ─── IA Match ─────────────────────────────────────────────────────────────────
+
+export interface MatchSugestao {
+  id: string;
+  prospeccaoId: string;
+  influenciadorId: string;
+  score: number;
+  razoes: Array<{ tipo: string; descricao: string; peso: number }>;
+  modeloVersao: string;
+  geradoEm: string;
+}
+
+export interface Briefing {
+  id: string;
+  prospeccaoId: string;
+  vertical: string | null;
+  objetivo: string | null;
+  audiencia: Record<string, unknown> | null;
+  formato: string | null;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  texto: string | null;
+  atualizadoEm: string;
+}
+
+export interface BriefingInput {
+  prospeccaoId: string;
+  vertical?: string;
+  objetivo?: string;
+  audiencia?: Record<string, unknown>;
+  formato?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  texto?: string;
+}
+
+export const match = {
+  getSugestoes: (prospeccaoId: string) =>
+    api.get<MatchSugestao[]>(`/api/v1/match?prospeccaoId=${prospeccaoId}`),
+  runMatch: (prospeccaoId: string) =>
+    api.post<MatchSugestao[]>(`/api/v1/match/run?prospeccaoId=${prospeccaoId}`, {}),
+  addFeedback: (sugestaoId: string, sinal: string, comentario?: string) =>
+    api.post(`/api/v1/match/feedback`, { sugestaoId, sinal, comentario }),
+  getBriefing: (prospeccaoId: string) =>
+    api.get<Briefing>(`/api/v1/briefings/by-prospeccao/${prospeccaoId}`),
+  upsertBriefing: (input: BriefingInput) =>
+    api.post<Briefing>(`/api/v1/briefings`, input),
+};

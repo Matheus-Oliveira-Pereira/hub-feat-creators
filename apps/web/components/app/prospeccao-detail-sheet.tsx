@@ -18,7 +18,9 @@ import {
   XCircle,
   Trophy,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
+import { MatchTab } from '@/components/app/match-tab';
 import {
   type Prospeccao,
   type ProspeccaoEventoResponse,
@@ -148,6 +150,9 @@ function Inner({
           <TabsTrigger value="comentarios">
             <MessageSquare className="h-3.5 w-3.5" /> Comentários
           </TabsTrigger>
+          <TabsTrigger value="match">
+            <Sparkles className="h-3.5 w-3.5" /> Match IA
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="flex-1 overflow-y-auto scrollbar-thin pr-1">
@@ -158,6 +163,9 @@ function Inner({
         </TabsContent>
         <TabsContent value="comentarios" className="flex-1 overflow-y-auto scrollbar-thin pr-1">
           <ComentariosTab prospeccaoId={p.id} />
+        </TabsContent>
+        <TabsContent value="match" className="flex-1 overflow-y-auto scrollbar-thin pr-1">
+          <MatchTab prospeccaoId={p.id} />
         </TabsContent>
       </Tabs>
 

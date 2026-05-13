@@ -52,6 +52,10 @@ import {
   Evento,
   social,
   SocialAccount,
+  match,
+  MatchSugestao,
+  Briefing,
+  BriefingInput,
 } from '@/lib/api';
 import type {
   InfluenciadorInput,
@@ -124,6 +128,10 @@ export const qk = {
   social: {
     accounts: (influenciadorId: string) => ['social', 'accounts', influenciadorId] as const,
     snapshots: (accountId: string) => ['social', 'snapshots', accountId] as const,
+  },
+  match: {
+    sugestoes: (prospeccaoId: string) => ['match', 'sugestoes', prospeccaoId] as const,
+    briefing: (prospeccaoId: string) => ['match', 'briefing', prospeccaoId] as const,
   },
 };
 
@@ -927,6 +935,54 @@ export function useDisconnectSocial() {
     mutationFn: (accountId: string) => social.disconnect(accountId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['social'] });
+    },
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Match IA
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useMatchSugestoes(prospeccaoId: string | undefined) {
+  return useQuery({
+    queryKey: qk.match.sugestoes(prospeccaoId ?? ''),
+    queryFn: () => match.getSugestoes(prospeccaoId!),
+    enabled: !!prospeccaoId,
+  });
+}
+
+export function useRunMatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (prospeccaoId: string) => match.runMatch(prospeccaoId),
+    onSuccess: (_data, prospeccaoId) => {
+      qc.invalidateQueries({ queryKey: qk.match.sugestoes(prospeccaoId) });
+    },
+  });
+}
+
+export function useMatchFeedback() {
+  return useMutation({
+    mutationFn: ({ sugestaoId, sinal, comentario }: { sugestaoId: string; sinal: string; comentario?: string }) =>
+      match.addFeedback(sugestaoId, sinal, comentario),
+  });
+}
+
+export function useBriefing(prospeccaoId: string | undefined) {
+  return useQuery({
+    queryKey: qk.match.briefing(prospeccaoId ?? ''),
+    queryFn: () => match.getBriefing(prospeccaoId!),
+    enabled: !!prospeccaoId,
+    retry: false,
+  });
+}
+
+export function useUpsertBriefing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BriefingInput) => match.upsertBriefing(input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: qk.match.briefing(input.prospeccaoId) });
     },
   });
 }

@@ -177,6 +177,7 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `portal/` → portal creator: JWT tipo=CREATOR, CreatorUser/Invite/Entregavel, `FEATURE_PORTAL_ENABLED`, AttachmentStorage, visivel_para_creator, comentarios externos, branding por assessoria — PRD-013
 - ✅ `mobile/` → Expo SDK 51, expo-router, auth SecureStore, push FCM/APNs via ExpoPushSender, upload entregável + retry, biometria, offline cache — PRD-014, ADR-007
 - ✅ `social/` → OAuth Instagram/YouTube/TikTok, AES-GCM tokens (`SOCIAL_KEY`), snapshots diários, job SOCIAL_SYNC/SOCIAL_REFRESH_TOKEN, PortalSocialController, tab Redes Sociais (web), tela social.tsx (mobile) — PRD-015
+- ✅ `match/` → pgvector HNSW (384-dim), ai-worker Python FastAPI (sentence-transformers), briefings, creator_profile_features, MatchService scoring híbrido (w1*cosine+w2*categórico+w3*histórico+w4*saúde), MatchController, BriefingController, ReembedJobHandler, MatchScheduler, tab Match IA na sheet de prospecção (web), MTCR/MTCW permissions — PRD-016
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)
@@ -276,6 +277,13 @@ Saída de agents validada contra schemas em `docs/specs/deliverables/`. Hook `Su
 - **FEATURE_MOBILE_ENABLED**: controla dispatch do `ExpoPushSender` em `NotificacaoService`. Token de creator funciona mesmo com flag=false — flag afeta só o envio de push, não auth
 - **DeviceSubscriptionController principal**: aceita `CreatorPrincipal` (ROLE_CREATOR) e `AuthPrincipal` (INTERNO) — resolve userId/userTipo polimorficamente. Sem `@RequirePermission` pois CREATOR não tem permissions map
 - **Expo Router typedRoutes**: `app.json` tem `experiments.typedRoutes: true` — `href` em `router.push()` de telas dinâmicas precisa cast `as any` temporariamente até gerar tipos pelo EAS
+- **pgvector embedding storage**: embeddings NÃO são mapeados como campos JPA — usa-se `VectorRepository` com `JdbcTemplate` e cast `?::vector`. HNSW index exige `pgvector/pgvector:pg16` no Testcontainers (não `postgres:16-alpine`)
+- **EmbeddingService zero-vector fallback**: se `AI_WORKER_URL` vazio ou worker offline, retorna `float[384]` de zeros. Match funciona (score cai para componentes categórico+histórico+saúde) mas vetor não contribui. Não crashar — degradar silenciosamente
+- **Match permissions 4-letter**: `MTCR` (ler sugestões) e `MTCW` (executar match/briefing/feedback). Strings `"MTCH_R"/"MTCH_W"` são nomes de constante Java — valor real é `"MTCR"/"MTCW"`. Sincronizar `lib/rbac.ts` ao adicionar
+- **VectorRepository `::vector` cast**: PostgreSQL exige string no formato `[0.1,0.2,...]` — `toVectorString()` constrói isso. `JdbcTemplate` não sabe converter `float[]` diretamente para `vector`
+- **MatchSugestao UNIQUE**: `(prospeccao_id, influenciador_id, modelo_versao)` — segundo run com mesmo modelo retorna sugestão existente sem re-score. Para re-score forçado: `deleteByProspeccaoIdAndModeloVersao()` antes de rodar
+- **ai-worker Docker build**: baixa modelo `paraphrase-multilingual-MiniLM-L12-v2` (~200MB) no `RUN` do Dockerfile. Cold start sem cache: lento. Usar volume ou pre-pull da imagem no Railway
+- **IntegrationTestBase image**: mudado de `postgres:16-alpine` para `pgvector/pgvector:pg16` — necessário para V17 migration com `CREATE EXTENSION IF NOT EXISTS vector`. Todos ITs herdam essa mudança
 
 ## Memory (L4)
 Busca semântica em `docs/` e `apps/`:
