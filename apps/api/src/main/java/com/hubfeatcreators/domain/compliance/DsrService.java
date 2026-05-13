@@ -103,9 +103,7 @@ public class DsrService {
         return new DsrResultFull(solicitacao, dados);
     }
 
-    /** Returns all data about titular for ACESSO request. */
-    @Transactional(readOnly = true)
-    public Map<String, Object> exportarDadosTitular(String titularTipo, UUID titularId) {
+    private Map<String, Object> exportarDadosTitular(String titularTipo, UUID titularId) {
         return switch (titularTipo) {
             case "INFLUENCIADOR" -> {
                 Influenciador inf =

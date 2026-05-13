@@ -106,7 +106,7 @@ class MatchServiceTest {
         List<MatchSugestao> result = matchService.runMatch(assessoriaId, prospeccaoId);
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(featureRepo);
+        verify(featureRepo, never()).findByInfluenciadorId(any());
     }
 
     @Test

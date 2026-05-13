@@ -170,11 +170,22 @@ class DsrServiceTest {
 
     @Test
     void exportarDados_influenciador_retorna_campos_corretos() {
+        UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
-        Influenciador inf = new Influenciador(UUID.randomUUID(), "João Creator", UUID.randomUUID());
+        UUID solicitacaoId = UUID.randomUUID();
+        Influenciador inf = new Influenciador(assessoriaId, "João Creator", UUID.randomUUID());
+        com.hubfeatcreators.domain.compliance.DsrSolicitacao sol =
+                new com.hubfeatcreators.domain.compliance.DsrSolicitacao(
+                        assessoriaId,
+                        "INFLUENCIADOR",
+                        titularId,
+                        com.hubfeatcreators.domain.compliance.DsrSolicitacao.TipoDsr.ACESSO);
+        sol.setStatus(
+                com.hubfeatcreators.domain.compliance.DsrSolicitacao.StatusDsr.EM_ANDAMENTO);
+        when(solicitacaoRepo.findById(solicitacaoId)).thenReturn(Optional.of(sol));
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
 
-        var dados = dsrService.exportarDadosTitular("INFLUENCIADOR", titularId);
+        var dados = dsrService.exportarDadosTitular("INFLUENCIADOR", titularId, solicitacaoId);
 
         assertThat(dados).containsKey("nome");
         assertThat(dados.get("nome")).isEqualTo("João Creator");

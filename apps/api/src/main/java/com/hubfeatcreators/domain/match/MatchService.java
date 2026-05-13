@@ -6,6 +6,7 @@ import com.hubfeatcreators.infra.web.BusinessException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,7 +85,7 @@ public class MatchService {
         Set<UUID> optouts =
                 optoutRepo.findAllById(candidateIds).stream()
                         .map(CreatorMatchOptout::getInfluenciadorId)
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toCollection(HashSet::new));
 
         List<UUID> eligibleIds = candidateIds.stream().filter(id -> !optouts.contains(id)).toList();
         if (eligibleIds.isEmpty()) return List.of();

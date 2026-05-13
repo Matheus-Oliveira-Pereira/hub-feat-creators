@@ -14,4 +14,6 @@ public interface CreatorProfileFeatureRepository
     List<CreatorProfileFeature> findByInfluenciadorIdIn(Collection<UUID> influenciadorIds);
 
     List<CreatorProfileFeature> findByAssessoriaId(UUID assessoriaId);
+
+    List<CreatorProfileFeature> findByInfluenciadorIdIn(List<UUID> influenciadorIds);
 }

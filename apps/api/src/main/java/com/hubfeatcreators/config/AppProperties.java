@@ -47,6 +47,7 @@ public class AppProperties {
         private String emailKey = "dev-only-not-for-prod-32-byte-aes-key";
         private String whatsappKey = "dev-only-not-for-prod-whatsapp-32b!";
         private String socialKey = "dev-only-not-for-prod-social-32b!!!";
+        private String mfaKey = "dev-only-not-for-prod-mfa-key-32bytes";
 
         public String getEmailKey() {
             return emailKey;
@@ -71,6 +72,36 @@ public class AppProperties {
         public void setSocialKey(String socialKey) {
             this.socialKey = socialKey;
         }
+
+        public String getMfaKey() {
+            return mfaKey;
+        }
+
+        public void setMfaKey(String mfaKey) {
+            this.mfaKey = mfaKey;
+        }
+    }
+
+    public static class Whatsapp {
+        private String verifyToken = "";
+
+        public String getVerifyToken() {
+            return verifyToken;
+        }
+
+        public void setVerifyToken(String verifyToken) {
+            this.verifyToken = verifyToken;
+        }
+    }
+
+    private Whatsapp whatsapp = new Whatsapp();
+
+    public Whatsapp getWhatsapp() {
+        return whatsapp;
+    }
+
+    public void setWhatsapp(Whatsapp whatsapp) {
+        this.whatsapp = whatsapp;
     }
 
     public Cors getCors() {

@@ -72,6 +72,7 @@ app:
     email-key: ${EMAIL_KEY:dev-only-not-for-prod-32-byte-aes-key}
     whatsapp-key: ${WHATSAPP_KEY:dev-only-not-for-prod-whatsapp-32b!}
     social-key: ${SOCIAL_KEY:dev-only-not-for-prod-social-32b!!!}
+    mfa-key: ${MFA_KEY:dev-only-not-for-prod-mfa-key-32bytes}
   web:
     base-url: ${WEB_BASE_URL:http://localhost:3000}
   features:
@@ -86,6 +87,8 @@ app:
     mobile-enabled: ${FEATURE_MOBILE_ENABLED:false}
     social-enabled: ${FEATURE_SOCIAL_ENABLED:false}
     ai-match-enabled: ${FEATURE_AI_MATCH_ENABLED:false}
+  whatsapp:
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:}
   ai-worker:
     url: ${AI_WORKER_URL:}
   storage:

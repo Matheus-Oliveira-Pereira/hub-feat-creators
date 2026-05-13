@@ -1,5 +1,6 @@
 package com.hubfeatcreators.domain.onboarding;
 
+import com.hubfeatcreators.domain.email.EmailCipherService;
 import com.hubfeatcreators.domain.usuario.Usuario;
 import com.hubfeatcreators.domain.usuario.UsuarioRepository;
 import com.hubfeatcreators.infra.web.BusinessException;
@@ -21,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
@@ -37,12 +39,17 @@ public class MfaService {
 
     private final UsuarioRepository usuarioRepo;
     private final MfaRecoveryCodeRepository recoveryRepo;
+    private final EmailCipherService cipher;
     private final SecretGenerator secretGenerator = new DefaultSecretGenerator();
     private final CodeVerifier codeVerifier;
 
-    public MfaService(UsuarioRepository usuarioRepo, MfaRecoveryCodeRepository recoveryRepo) {
+    public MfaService(
+            UsuarioRepository usuarioRepo,
+            MfaRecoveryCodeRepository recoveryRepo,
+            EmailCipherService cipher) {
         this.usuarioRepo = usuarioRepo;
         this.recoveryRepo = recoveryRepo;
+        this.cipher = cipher;
         TimeProvider timeProvider = new SystemTimeProvider();
         CodeGenerator codeGenerator = new DefaultCodeGenerator(HashingAlgorithm.SHA1);
         this.codeVerifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
@@ -59,11 +66,12 @@ public class MfaService {
                         .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         String secret = secretGenerator.generate();
-        usuario.setMfaSecretEnc(secret); // TODO: encrypt with AES-GCM in prod
+        usuario.setMfaSecretEnc(encryptSecret(secret));
         usuario.setUpdatedAt(Instant.now());
         usuarioRepo.save(usuario);
 
-        String qrUri = generateQrUri(usuario.getEmail(), secret);
+        String qrUri =
+                generateQrUri(usuario.getEmail(), secret); // plaintext used here before store
         List<String> rawCodes = generateRecoveryCodes(usuarioId);
 
         log.info("mfa.setup.initiated usuarioId={}", usuarioId);
@@ -82,7 +90,7 @@ public class MfaService {
             throw BusinessException.badRequest("MFA_NOT_SETUP", "Execute /mfa/setup primeiro.");
         }
 
-        if (!codeVerifier.isValidCode(usuario.getMfaSecretEnc(), totpCode)) {
+        if (!codeVerifier.isValidCode(decryptSecret(usuario.getMfaSecretEnc()), totpCode)) {
             throw BusinessException.badRequest("MFA_CODE_INVALID", "Código TOTP inválido.");
         }
 
@@ -101,7 +109,7 @@ public class MfaService {
                         .orElseThrow(() -> BusinessException.notFound("USUARIO"));
 
         if (!usuario.isMfaAtivo() || usuario.getMfaSecretEnc() == null) return false;
-        return codeVerifier.isValidCode(usuario.getMfaSecretEnc(), totpCode);
+        return codeVerifier.isValidCode(decryptSecret(usuario.getMfaSecretEnc()), totpCode);
     }
 
     /** Uses a recovery code. Single-use. Returns true if valid + marks used. */
@@ -131,7 +139,7 @@ public class MfaService {
 
         if (!usuario.isMfaAtivo()) return;
 
-        if (!codeVerifier.isValidCode(usuario.getMfaSecretEnc(), totpCode)) {
+        if (!codeVerifier.isValidCode(decryptSecret(usuario.getMfaSecretEnc()), totpCode)) {
             throw BusinessException.badRequest("MFA_CODE_INVALID", "Código TOTP inválido.");
         }
 
@@ -176,6 +184,21 @@ public class MfaService {
             recoveryRepo.save(new MfaRecoveryCode(usuarioId, sha256(code.toUpperCase())));
         }
         return raw;
+    }
+
+    private String encryptSecret(String secret) {
+        EmailCipherService.Encrypted enc = cipher.encrypt(secret);
+        String b64Nonce = Base64.getEncoder().encodeToString(enc.nonce());
+        String b64Ct = Base64.getEncoder().encodeToString(enc.ciphertext());
+        return b64Nonce + ":" + b64Ct;
+    }
+
+    private String decryptSecret(String stored) {
+        int sep = stored.indexOf(':');
+        if (sep < 0) throw new IllegalStateException("MFA secret format invalid");
+        byte[] nonce = Base64.getDecoder().decode(stored.substring(0, sep));
+        byte[] ct = Base64.getDecoder().decode(stored.substring(sep + 1));
+        return cipher.decrypt(ct, nonce);
     }
 
     static String sha256(String input) {
