@@ -89,7 +89,7 @@ public class WhatsappAccountService {
         return cipher.decrypt(account.getAppSecretEnc(), account.getAppSecretNonce());
     }
 
-    WhatsappAccount requireAccount(UUID assessoriaId, UUID id) {
+    public WhatsappAccount requireAccount(UUID assessoriaId, UUID id) {
         return repo.findByIdAndAssessoriaIdAndDeletedAtIsNull(id, assessoriaId)
                 .orElseThrow(BusinessException::notFound);
     }
