@@ -46,6 +46,7 @@ public class AppProperties {
     public static class Secrets {
         private String emailKey = "dev-only-not-for-prod-32-byte-aes-key";
         private String whatsappKey = "dev-only-not-for-prod-whatsapp-32b!";
+        private String socialKey = "dev-only-not-for-prod-social-32b!!!";
 
         public String getEmailKey() {
             return emailKey;
@@ -61,6 +62,14 @@ public class AppProperties {
 
         public void setWhatsappKey(String whatsappKey) {
             this.whatsappKey = whatsappKey;
+        }
+
+        public String getSocialKey() {
+            return socialKey;
+        }
+
+        public void setSocialKey(String socialKey) {
+            this.socialKey = socialKey;
         }
     }
 
@@ -96,12 +105,22 @@ public class AppProperties {
     public static class Import {
         private String uploadDir = System.getProperty("java.io.tmpdir") + "/hub-imports";
 
-        public String getUploadDir() { return uploadDir; }
-        public void setUploadDir(String uploadDir) { this.uploadDir = uploadDir; }
+        public String getUploadDir() {
+            return uploadDir;
+        }
+
+        public void setUploadDir(String uploadDir) {
+            this.uploadDir = uploadDir;
+        }
     }
 
-    public Import getImport() { return importConfig; }
-    public void setImport(Import importConfig) { this.importConfig = importConfig; }
+    public Import getImport() {
+        return importConfig;
+    }
+
+    public void setImport(Import importConfig) {
+        this.importConfig = importConfig;
+    }
 
     public static class Web {
         private String baseUrl = "http://localhost:3000";
@@ -210,6 +229,7 @@ public class AppProperties {
 
         private boolean portalEnabled = false;
         private boolean mobileEnabled = false;
+        private boolean socialEnabled = false;
 
         public boolean isPortalEnabled() {
             return portalEnabled;
@@ -225,6 +245,14 @@ public class AppProperties {
 
         public void setMobileEnabled(boolean mobileEnabled) {
             this.mobileEnabled = mobileEnabled;
+        }
+
+        public boolean isSocialEnabled() {
+            return socialEnabled;
+        }
+
+        public void setSocialEnabled(boolean socialEnabled) {
+            this.socialEnabled = socialEnabled;
         }
     }
 
