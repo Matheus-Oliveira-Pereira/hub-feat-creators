@@ -1,6 +1,7 @@
 package com.hubfeatcreators.infra.security;
 
 import com.hubfeatcreators.config.AppProperties;
+import com.hubfeatcreators.domain.admin.AdminAuditService;
 import com.hubfeatcreators.domain.assessoria.Assessoria;
 import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
 import com.hubfeatcreators.domain.onboarding.LoginLockoutService;
@@ -43,6 +44,7 @@ public class AuthService {
     private final OnboardingService onboardingService;
     private final MfaService mfaService;
     private final AuditLogService auditLogService;
+    private final AdminAuditService adminAuditService;
     private final AppProperties props;
 
     public AuthService(
@@ -57,6 +59,7 @@ public class AuthService {
             OnboardingService onboardingService,
             MfaService mfaService,
             AuditLogService auditLogService,
+            AdminAuditService adminAuditService,
             AppProperties props) {
         this.assessoriaRepo = assessoriaRepo;
         this.usuarioRepo = usuarioRepo;
@@ -69,6 +72,7 @@ public class AuthService {
         this.onboardingService = onboardingService;
         this.mfaService = mfaService;
         this.auditLogService = auditLogService;
+        this.adminAuditService = adminAuditService;
         this.props = props;
     }
 
@@ -83,11 +87,24 @@ public class AuthService {
             throw BusinessException.forbidden(
                     "SIGNUP_DISABLED", "Novos cadastros estão temporariamente desativados.");
         }
-        if (assessoriaRepo.existsBySlug(slug)) {
-            throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
-        }
         if (usuarioRepo.findByEmail(email).isPresent()) {
             throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já está cadastrado.");
+        }
+
+        // Bootstrap: first signup on empty system creates ADM instead of assessoria
+        long admCount = usuarioRepo.countByTipoAndDeletedAtIsNull(Usuario.TipoUsuario.ADM);
+        if (admCount == 0) {
+            Usuario adm = Usuario.createAdm(email, passwordEncoder.encode(senha));
+            adm.setEmailVerificadoEm(Instant.now()); // ADM e-mail auto-verified
+            adm = usuarioRepo.save(adm);
+
+            adminAuditService.log(adm.getId(), "SIGNUP_ADM", ip(req), ua(req));
+
+            return new SignupResult(adm.getId(), email, false, true);
+        }
+
+        if (assessoriaRepo.existsBySlug(slug)) {
+            throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
         }
 
         Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
@@ -112,7 +129,7 @@ public class AuthService {
                 ip(req),
                 ua(req));
 
-        return new SignupResult(owner.getId(), email, false);
+        return new SignupResult(owner.getId(), email, false, false);
     }
 
     @Transactional
@@ -126,13 +143,17 @@ public class AuthService {
         if (usuario == null || !passwordEncoder.matches(senha, usuario.getSenhaHash())) {
             if (usuario != null) {
                 lockoutService.recordFailure(lockKey);
-                auditLogService.logAuth(
-                        usuario.getAssessoriaId(),
-                        usuario.getId(),
-                        AuditLog.Acao.LOGIN_FAILED,
-                        Map.of("reason", "BAD_CREDENTIALS"),
-                        ip(req),
-                        ua(req));
+                if (usuario.isAdm()) {
+                    adminAuditService.log(usuario.getId(), "LOGIN_FAIL", ip(req), ua(req));
+                } else {
+                    auditLogService.logAuth(
+                            usuario.getAssessoriaId(),
+                            usuario.getId(),
+                            AuditLog.Acao.LOGIN_FAILED,
+                            Map.of("reason", "BAD_CREDENTIALS"),
+                            ip(req),
+                            ua(req));
+                }
             }
             throw BusinessException.unauthorized("Credenciais inválidas.");
         }
@@ -147,6 +168,12 @@ public class AuthService {
                     "EMAIL_NOT_VERIFIED", "Verifique seu e-mail antes de fazer login.");
         }
 
+        // ADM: MFA obrigatório — if not set up yet, return temp response
+        if (usuario.isAdm() && !usuario.isMfaAtivo()) {
+            String tempToken = jwtService.generateAdmToken(usuario.getId());
+            return new TokenPair(tempToken, null, true);
+        }
+
         // MFA check
         if (usuario.isMfaAtivo()) {
             if (totpCode == null || totpCode.isBlank()) {
@@ -155,7 +182,7 @@ public class AuthService {
             boolean valid = mfaService.verifyCode(usuario.getId(), totpCode);
             if (!valid) {
                 valid = mfaService.useRecoveryCode(usuario.getId(), totpCode);
-                if (valid) {
+                if (valid && !usuario.isAdm()) {
                     auditLogService.logAuth(
                             usuario.getAssessoriaId(),
                             usuario.getId(),
@@ -167,6 +194,9 @@ public class AuthService {
             }
             if (!valid) {
                 lockoutService.recordFailure(lockKey);
+                if (usuario.isAdm()) {
+                    adminAuditService.log(usuario.getId(), "LOGIN_FAIL", ip(req), ua(req));
+                }
                 throw BusinessException.unauthorized("Código MFA inválido.");
             }
         }
@@ -174,6 +204,24 @@ public class AuthService {
         lockoutService.clearOnSuccess(lockKey);
         usuario.setUltimoLoginEm(Instant.now());
         usuarioRepo.save(usuario);
+
+        if (usuario.isAdm()) {
+            adminAuditService.log(usuario.getId(), "LOGIN", ip(req), ua(req));
+            String token = jwtService.generateAdmToken(usuario.getId());
+            String rawRefresh = UUID.randomUUID().toString();
+            UUID familyId = UUID.randomUUID();
+            RefreshToken rt =
+                    new RefreshToken(
+                            sha256(rawRefresh),
+                            usuario.getId(),
+                            null,
+                            familyId,
+                            Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
+                            ua(req),
+                            ip(req));
+            refreshRepo.save(rt);
+            return new TokenPair(token, rawRefresh, false);
+        }
 
         auditLogService.logAuth(
                 usuario.getAssessoriaId(),
@@ -222,6 +270,11 @@ public class AuthService {
         refreshRepo.save(stored);
         refreshRepo.save(newToken);
 
+        if (usuario.isAdm()) {
+            String accessToken = jwtService.generateAdmToken(usuario.getId());
+            return new TokenPair(accessToken, newRaw, false);
+        }
+
         String accessToken =
                 jwtService.generateAccessToken(
                         usuario.getId(),
@@ -229,7 +282,7 @@ public class AuthService {
                         usuario.getRole().name(),
                         permissionsOf(usuario));
 
-        return new TokenPair(accessToken, newRaw);
+        return new TokenPair(accessToken, newRaw, false);
     }
 
     @Transactional
@@ -239,13 +292,15 @@ public class AuthService {
                 .ifPresent(
                         rt -> {
                             refreshRepo.revokeFamily(rt.getFamilyId());
-                            auditLogService.logAuth(
-                                    rt.getAssessoriaId(),
-                                    rt.getUsuarioId(),
-                                    AuditLog.Acao.LOGOUT,
-                                    Map.of(),
-                                    ip(req),
-                                    ua(req));
+                            if (rt.getAssessoriaId() != null) {
+                                auditLogService.logAuth(
+                                        rt.getAssessoriaId(),
+                                        rt.getUsuarioId(),
+                                        AuditLog.Acao.LOGOUT,
+                                        Map.of(),
+                                        ip(req),
+                                        ua(req));
+                            }
                         });
     }
 
@@ -273,7 +328,7 @@ public class AuthService {
                         usuario.getRole().name(),
                         permissionsOf(usuario));
 
-        return new TokenPair(accessToken, rawRefresh);
+        return new TokenPair(accessToken, rawRefresh, false);
     }
 
     private Set<String> permissionsOf(Usuario usuario) {
@@ -304,7 +359,8 @@ public class AuthService {
         return usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
     }
 
-    public record TokenPair(String accessToken, String refreshToken) {}
+    public record TokenPair(String accessToken, String refreshToken, boolean mfaSetupRequired) {}
 
-    public record SignupResult(UUID usuarioId, String email, boolean emailVerificado) {}
+    public record SignupResult(
+            UUID usuarioId, String email, boolean emailVerificado, boolean isAdm) {}
 }

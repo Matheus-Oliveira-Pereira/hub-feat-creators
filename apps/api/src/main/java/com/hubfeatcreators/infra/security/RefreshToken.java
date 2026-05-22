@@ -16,7 +16,7 @@ public class RefreshToken {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
-    @Column(name = "assessoria_id", nullable = false)
+    @Column(name = "assessoria_id", nullable = true)
     private UUID assessoriaId;
 
     @Column(name = "family_id", nullable = false)

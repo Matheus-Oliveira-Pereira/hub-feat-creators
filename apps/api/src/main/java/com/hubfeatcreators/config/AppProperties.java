@@ -295,6 +295,17 @@ public class AppProperties {
         public void setAiMatchEnabled(boolean aiMatchEnabled) {
             this.aiMatchEnabled = aiMatchEnabled;
         }
+
+        // Boot-time flag — disabling requires restart (not runtime)
+        private boolean adminEnabled = true;
+
+        public boolean isAdminEnabled() {
+            return adminEnabled;
+        }
+
+        public void setAdminEnabled(boolean adminEnabled) {
+            this.adminEnabled = adminEnabled;
+        }
     }
 
     public Features getFeatures() {

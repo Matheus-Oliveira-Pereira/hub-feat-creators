@@ -65,6 +65,13 @@ export const ROLE_GROUPS: RoleGroup[] = [
       { code: 'BLLG', label: 'Audit log', description: 'Visualizar log de auditoria' },
     ],
   },
+  {
+    key: 'ADMIN',
+    label: 'Plataforma',
+    roles: [
+      { code: 'ADMN', label: 'Admin', description: 'Administrador de plataforma (implícito para tipo=ADM)' },
+    ],
+  },
 ];
 
 export const ALL_ROLE_CODES = ROLE_GROUPS.flatMap(g => g.roles.map(r => r.code));

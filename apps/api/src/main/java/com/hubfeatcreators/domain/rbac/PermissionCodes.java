@@ -15,6 +15,10 @@ public final class PermissionCodes {
 
     private PermissionCodes() {}
 
+    // Plataforma (ADM)
+    public static final String ADMN =
+            "ADMN"; // administrador de plataforma — implícito para tipo=ADM
+
     // Especiais
     public static final String OWNR = "OWNR"; // bypass total
     public static final String INVT = "INVT"; // convidar usuário

@@ -13,7 +13,11 @@ import org.hibernate.annotations.Filter;
 public class Usuario {
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
+    @Column(name = "tipo", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private TipoUsuario tipo = TipoUsuario.INTERNO;
+
+    @Column(name = "assessoria_id", nullable = true)
     private UUID assessoriaId;
 
     @Column(nullable = false, columnDefinition = "CITEXT")
@@ -54,6 +58,11 @@ public class Usuario {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    public enum TipoUsuario {
+        INTERNO,
+        ADM
+    }
+
     public enum Role {
         OWNER,
         ASSESSOR
@@ -72,6 +81,29 @@ public class Usuario {
         this.email = email;
         this.senhaHash = senhaHash;
         this.role = role;
+        this.tipo = TipoUsuario.INTERNO;
+    }
+
+    public static Usuario createAdm(String email, String senhaHash) {
+        Usuario u = new Usuario();
+        u.tipo = TipoUsuario.ADM;
+        u.assessoriaId = null;
+        u.email = email;
+        u.senhaHash = senhaHash;
+        u.role = Role.OWNER;
+        return u;
+    }
+
+    public boolean isAdm() {
+        return tipo == TipoUsuario.ADM;
+    }
+
+    public TipoUsuario getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoUsuario tipo) {
+        this.tipo = tipo;
     }
 
     public boolean isEmailVerificado() {

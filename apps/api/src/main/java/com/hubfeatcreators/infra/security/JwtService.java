@@ -32,11 +32,46 @@ public class JwtService {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
+        var builder =
+                Jwts.builder()
+                        .setSubject(usuarioId.toString())
+                        .claim("role", role)
+                        .claim("perms", List.copyOf(permissions))
+                        .setIssuedAt(now)
+                        .setExpiration(expiryDate)
+                        .signWith(key, SignatureAlgorithm.HS256);
+
+        if (assessoriaId != null) {
+            builder.claim("ass", assessoriaId.toString());
+        }
+        return builder.compact();
+    }
+
+    /** ADM token — tipo=ADM, no assessoria. */
+    public String generateAdmToken(UUID usuarioId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
         return Jwts.builder()
                 .setSubject(usuarioId.toString())
+                .claim("tipo", "ADM")
+                .claim("role", "ADM")
+                .claim("perms", List.of())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /** Generates a short-lived access token for portal creator users. */
+    public String generateCreatorToken(
+            UUID creatorUserId, UUID assessoriaId, UUID influenciadorId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + 24L * 60 * 60 * 1000); // 24h for creators
+        return Jwts.builder()
+                .setSubject(creatorUserId.toString())
                 .claim("ass", assessoriaId.toString())
-                .claim("role", role)
-                .claim("perms", List.copyOf(permissions))
+                .claim("inf", influenciadorId.toString())
+                .claim("tipo", "CREATOR")
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -52,7 +87,8 @@ public class JwtService {
     }
 
     public UUID getAssessoriaId(String token) {
-        return UUID.fromString(parseToken(token).get("ass", String.class));
+        String ass = parseToken(token).get("ass", String.class);
+        return ass != null ? UUID.fromString(ass) : null;
     }
 
     public String getRole(String token) {
@@ -79,22 +115,6 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    /** Generates a short-lived access token for portal creator users. */
-    public String generateCreatorToken(
-            UUID creatorUserId, UUID assessoriaId, UUID influenciadorId) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 24L * 60 * 60 * 1000); // 24h for creators
-        return Jwts.builder()
-                .setSubject(creatorUserId.toString())
-                .claim("ass", assessoriaId.toString())
-                .claim("inf", influenciadorId.toString())
-                .claim("tipo", "CREATOR")
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
     }
 
     public boolean isCreatorToken(String token) {

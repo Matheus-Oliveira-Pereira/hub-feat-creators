@@ -30,8 +30,8 @@ public class AuthController {
     // ── DTOs ──────────────────────────────────────────────────────────────
 
     record SignupRequest(
-            @NotBlank String assessoriaNome,
-            @NotBlank @Size(min = 3, max = 50) String slug,
+            String assessoriaNome,
+            String slug,
             @NotBlank @Email String email,
             @NotBlank @Size(min = 8) String senha) {}
 
@@ -41,9 +41,9 @@ public class AuthController {
 
     record LogoutRequest(@NotBlank String refreshToken) {}
 
-    record TokenResponse(String accessToken, String refreshToken) {}
+    record TokenResponse(String accessToken, String refreshToken, boolean mfaSetupRequired) {}
 
-    record SignupResponse(String email, boolean emailVerificado) {}
+    record SignupResponse(String email, boolean emailVerificado, boolean isAdm) {}
 
     record VerifyEmailRequest(@NotBlank String token) {}
 
@@ -66,19 +66,19 @@ public class AuthController {
         var result =
                 authService.signup(
                         req.assessoriaNome(), req.slug(), req.email(), req.senha(), http);
-        return new SignupResponse(result.email(), result.emailVerificado());
+        return new SignupResponse(result.email(), result.emailVerificado(), result.isAdm());
     }
 
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest req, HttpServletRequest http) {
         var pair = authService.login(req.email(), req.senha(), req.mfaCode(), http);
-        return new TokenResponse(pair.accessToken(), pair.refreshToken());
+        return new TokenResponse(pair.accessToken(), pair.refreshToken(), pair.mfaSetupRequired());
     }
 
     @PostMapping("/refresh")
     public TokenResponse refresh(@Valid @RequestBody RefreshRequest req, HttpServletRequest http) {
         var pair = authService.refresh(req.refreshToken(), http);
-        return new TokenResponse(pair.accessToken(), pair.refreshToken());
+        return new TokenResponse(pair.accessToken(), pair.refreshToken(), pair.mfaSetupRequired());
     }
 
     @PostMapping("/logout")

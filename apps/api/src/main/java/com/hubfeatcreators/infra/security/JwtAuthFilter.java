@@ -41,10 +41,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValid(token)) {
                     Claims claims = jwtService.parseToken(token);
                     String tipo = claims.get("tipo", String.class);
-                    UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
-                    TenantContext.setAssessoriaId(assessoriaId);
 
                     if ("CREATOR".equals(tipo)) {
+                        UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
+                        TenantContext.setAssessoriaId(assessoriaId);
                         UUID creatorUserId = UUID.fromString(claims.getSubject());
                         UUID influenciadorId = UUID.fromString(claims.get("inf", String.class));
                         CreatorPrincipal principal =
@@ -55,12 +55,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                         null,
                                         List.of(new SimpleGrantedAuthority("ROLE_CREATOR")));
                         SecurityContextHolder.getContext().setAuthentication(auth);
+
+                    } else if ("ADM".equals(tipo)) {
+                        // ADM has no assessoria — TenantContext stays null
+                        UUID usuarioId = UUID.fromString(claims.getSubject());
+                        Set<String> permissions = readPerms(claims);
+                        AuthPrincipal principal =
+                                new AuthPrincipal(usuarioId, null, "ADM", permissions, "ADM");
+                        var auth =
+                                new UsernamePasswordAuthenticationToken(
+                                        principal,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_ADM")));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+
                     } else {
+                        String assStr = claims.get("ass", String.class);
+                        UUID assessoriaId = assStr != null ? UUID.fromString(assStr) : null;
+                        if (assessoriaId != null) {
+                            TenantContext.setAssessoriaId(assessoriaId);
+                        }
                         UUID usuarioId = UUID.fromString(claims.getSubject());
                         String role = claims.get("role", String.class);
                         Set<String> permissions = readPerms(claims);
                         AuthPrincipal principal =
-                                new AuthPrincipal(usuarioId, assessoriaId, role, permissions);
+                                new AuthPrincipal(
+                                        usuarioId, assessoriaId, role, permissions, "INTERNO");
                         var auth =
                                 new UsernamePasswordAuthenticationToken(
                                         principal,

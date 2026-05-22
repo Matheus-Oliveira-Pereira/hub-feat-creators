@@ -6,8 +6,13 @@ export interface AuthClaims {
   usuarioId: string;
   assessoriaId: string;
   role: string;
+  tipo: string;
   permissions: string[];
   exp: number;
+}
+
+export function isAdmClaims(claims: AuthClaims | null): boolean {
+  return claims?.tipo === 'ADM' || claims?.role === 'ADM';
 }
 
 function base64UrlDecode(input: string): string {
@@ -37,6 +42,7 @@ export function decodeJwt(token: string | null): AuthClaims | null {
       usuarioId: String(payload.sub ?? ''),
       assessoriaId: String(payload.ass ?? ''),
       role: String(payload.role ?? ''),
+      tipo: String(payload.tipo ?? 'INTERNO'),
       permissions: Array.isArray(perms) ? perms.map(String) : [],
       exp: typeof payload.exp === 'number' ? payload.exp : 0,
     };
@@ -82,12 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = React.useCallback(
     (codeOrCodes: string | string[]) => {
+      // ADM tem acesso total
+      if (role === 'ADM' || claims?.tipo === 'ADM') return true;
       // OWNER coarse e role OWNR bypassam
       if (role === 'OWNER' || permissions.includes('OWNR')) return true;
       const list = Array.isArray(codeOrCodes) ? codeOrCodes : [codeOrCodes];
       return list.some(c => permissions.includes(c));
     },
-    [role, permissions]
+    [role, claims?.tipo, permissions]
   );
 
   const value = React.useMemo(
