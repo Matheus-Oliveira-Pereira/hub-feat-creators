@@ -179,6 +179,8 @@ Detalhes em `docs/specs/<modulo>/README.md`.
 - ✅ `mobile/` → Expo SDK 51, expo-router, auth SecureStore, push FCM/APNs via ExpoPushSender, upload entregável + retry, biometria, offline cache — PRD-014, ADR-007
 - ✅ `social/` → OAuth Instagram/YouTube/TikTok, AES-GCM tokens (`SOCIAL_KEY`), snapshots diários, job SOCIAL_SYNC/SOCIAL_REFRESH_TOKEN, PortalSocialController, tab Redes Sociais (web), tela social.tsx (mobile) — PRD-015
 - ✅ `match/` → pgvector HNSW (384-dim), ai-worker Python FastAPI (sentence-transformers), briefings, creator_profile_features, MatchService scoring híbrido (w1*cosine+w2*categórico+w3*histórico+w4*saúde), MatchController, BriefingController, ReembedJobHandler, MatchScheduler, tab Match IA na sheet de prospecção (web), MTCR/MTCW permissions — PRD-016
+- ⚠️ `admin/` → **SUPERSEDED por PRD-018 (single-tenant)**. Tipo `ADM`, `TenantAspect`, `admin_audit_log`, painel `/admin/**` serão removidos em refactor/single-tenant (migration V20). Feature flags + MFA permanecem (movidos para `/configuracoes/**`, permissão `FLAG` e `OWNR`). Histórico: PRD-017, ADR-017.
+- 🆕 `single-tenant/` → arquitetura simplificada. Sem `assessoria_id`. RBAC (ADR-015) vira única camada de autorização. URL portal: `/portal/...` (sem slug). Migration V20 destrutiva (drop `assessoria_id` + `assessorias` + `admin_audit_log`). PRD-018, ADR-018.
 
 ### Pendentes / Desativados
 - ✅ `compliance/` → LGPD MVP — base legal, DSR, retenção, PII masking, ROPA (PRD-007)

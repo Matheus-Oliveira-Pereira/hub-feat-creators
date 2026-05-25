@@ -1,5 +1,7 @@
 # PRD-006: Onboarding & Multi-tenant — MVP
 
+> **PARTIALLY SUPERSEDED by [[18-arquitetura-single-tenant]] em 2026-05-25.** Multi-tenancy removida. **Permanecem válidos:** signup self-service (sem criar assessoria), verificação de e-mail, recuperação de senha, MFA TOTP, login lockout, Argon2id, convites (sem `assessoria_id`). **Removidos:** criação de assessoria no signup, isolamento por tenant.
+
 ## Context
 
 PRDs 01-05 presumem assessoria já existe + usuário já autenticado. Hoje criação de tenant exige seed manual (insert SQL). Sem onboarding self-service, produto não escala além de clientes piloto.

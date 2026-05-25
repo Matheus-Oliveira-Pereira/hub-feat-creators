@@ -1,7 +1,9 @@
 # ADR-009: Estratégia multi-tenant — shared schema com discriminator + Hibernate `@Filter`
 
+> **SUPERSEDED by [[adr-018-single-tenant]] em 2026-05-25.** Sistema migrou para arquitetura single-tenant. Este ADR é mantido como registro histórico — pode servir de referência se v2 reintroduzir multi-tenancy.
+
 ## Status
-Accepted — 2026-04-29
+Superseded by [[adr-018-single-tenant]] — 2026-05-25 (originalmente Accepted — 2026-04-29)
 
 ## Context
 HUB Feat Creators é SaaS B2B onde cada **assessoria = um tenant**. Vision exige isolamento estrito: "assessorias não podem ver dados umas das outras em hipótese alguma". PRD-001 exige multi-tenant strict desde o MVP.
