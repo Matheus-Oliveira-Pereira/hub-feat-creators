@@ -31,7 +31,6 @@ public class SocialTokenRefreshScheduler {
         log.info("SocialTokenRefreshScheduler: enqueuing {} refresh jobs", accounts.size());
         for (SocialAccount account : accounts) {
             jobService.enqueue(
-                    account.getAssessoriaId(),
                     "SOCIAL_REFRESH_TOKEN",
                     Map.of("accountId", account.getId().toString()),
                     UUID.nameUUIDFromBytes(

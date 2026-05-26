@@ -31,7 +31,6 @@ class PortalServiceTest {
 
     PortalService service;
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID influenciadorId = UUID.randomUUID();
     UUID tarefaId = UUID.randomUUID();
     UUID creatorUserId = UUID.randomUUID();
@@ -44,7 +43,6 @@ class PortalServiceTest {
     private Tarefa makeTarefa(boolean visivel) {
         Tarefa t =
                 new Tarefa(
-                        assessoriaId,
                         "Test task",
                         Instant.now().plusSeconds(3600),
                         creatorUserId,
@@ -61,10 +59,10 @@ class PortalServiceTest {
     void listarTarefas_filtraVisivelParaCreator() {
         Tarefa visible = makeTarefa(true);
         Tarefa hidden = makeTarefa(false);
-        when(tarefaRepo.findByEntidade(assessoriaId, EntidadeTipo.INFLUENCIADOR, influenciadorId))
+        when(tarefaRepo.findByEntidade(EntidadeTipo.INFLUENCIADOR, influenciadorId))
                 .thenReturn(List.of(visible, hidden));
 
-        var result = service.listarTarefas(assessoriaId, influenciadorId);
+        var result = service.listarTarefas(influenciadorId);
         assertThat(result).containsExactly(visible);
     }
 
@@ -75,7 +73,7 @@ class PortalServiceTest {
         Tarefa t = makeTarefa(true);
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
 
-        Tarefa result = service.detalharTarefa(assessoriaId, influenciadorId, tarefaId);
+        Tarefa result = service.detalharTarefa(influenciadorId, tarefaId);
         assertThat(result).isEqualTo(t);
     }
 
@@ -84,17 +82,16 @@ class PortalServiceTest {
         Tarefa t = makeTarefa(false);
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
 
-        assertThatThrownBy(() -> service.detalharTarefa(assessoriaId, influenciadorId, tarefaId))
+        assertThatThrownBy(() -> service.detalharTarefa(influenciadorId, tarefaId))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void detalharTarefa_wrongAssessoria_throws404() {
+    void detalharTarefa_wrongInfluenciador_throws404() {
         Tarefa t = makeTarefa(true);
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
 
-        assertThatThrownBy(
-                        () -> service.detalharTarefa(UUID.randomUUID(), influenciadorId, tarefaId))
+        assertThatThrownBy(() -> service.detalharTarefa(UUID.randomUUID(), tarefaId))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -106,7 +103,7 @@ class PortalServiceTest {
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
         when(comentarioRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        var c = service.comentar(assessoriaId, influenciadorId, tarefaId, creatorUserId, "Olá!");
+        var c = service.comentar(influenciadorId, tarefaId, creatorUserId, "Olá!");
         assertThat(c.getAutorTipo()).isEqualTo("CREATOR");
         assertThat(c.isInterno()).isFalse();
         assertThat(c.getTexto()).isEqualTo("Olá!");
@@ -117,13 +114,13 @@ class PortalServiceTest {
         Tarefa t = makeTarefa(true);
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
         TarefaComentario externo =
-                TarefaComentario.fromCreator(tarefaId, assessoriaId, creatorUserId, "oi");
+                TarefaComentario.fromCreator(tarefaId, creatorUserId, "oi");
         TarefaComentario interno =
-                new TarefaComentario(tarefaId, assessoriaId, creatorUserId, "interno");
-        when(comentarioRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId))
+                new TarefaComentario(tarefaId, creatorUserId, "interno");
+        when(comentarioRepo.findByTarefaIdOrderByCreatedAtAsc(tarefaId))
                 .thenReturn(List.of(externo, interno));
 
-        var result = service.listarComentarios(assessoriaId, influenciadorId, tarefaId);
+        var result = service.listarComentarios(influenciadorId, tarefaId);
         assertThat(result).containsExactly(externo);
     }
 
@@ -140,9 +137,7 @@ class PortalServiceTest {
         MockMultipartFile file =
                 new MockMultipartFile("file", "doc.pdf", "application/pdf", new byte[1024]);
 
-        var e =
-                service.enviarEntregavel(
-                        assessoriaId, influenciadorId, tarefaId, creatorUserId, file);
+        var e = service.enviarEntregavel(influenciadorId, tarefaId, creatorUserId, file);
         assertThat(e.getArquivoPath()).isEqualTo("path/to/file.pdf");
         assertThat(e.getStatus()).isEqualTo("ENVIADO");
     }
@@ -153,17 +148,14 @@ class PortalServiceTest {
                 new CreatorEntregavel(
                         tarefaId,
                         creatorUserId,
-                        assessoriaId,
                         "path",
                         "doc.pdf",
                         "application/pdf",
                         1024L);
-        when(entregavelRepo.findByIdAndAssessoriaId(any(), eq(assessoriaId)))
-                .thenReturn(Optional.of(entregavel));
+        when(entregavelRepo.findById(entregavel.getId())).thenReturn(Optional.of(entregavel));
         when(entregavelRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        var result =
-                service.revisarEntregavel(assessoriaId, entregavel.getId(), "APROVADO", "Ótimo!");
+        var result = service.revisarEntregavel(entregavel.getId(), "APROVADO", "Ótimo!");
         assertThat(result.getStatus()).isEqualTo("APROVADO");
         assertThat(result.getFeedback()).isEqualTo("Ótimo!");
     }
@@ -174,17 +166,15 @@ class PortalServiceTest {
                 new CreatorEntregavel(
                         tarefaId,
                         creatorUserId,
-                        assessoriaId,
                         "path/doc.pdf",
                         "doc.pdf",
                         "application/pdf",
                         512L);
-        when(entregavelRepo.findByIdAndAssessoriaId(any(), eq(assessoriaId)))
-                .thenReturn(Optional.of(entregavel));
+        when(entregavelRepo.findById(entregavel.getId())).thenReturn(Optional.of(entregavel));
         var fakeStream = new ByteArrayInputStream(new byte[0]);
         when(storage.load("path/doc.pdf")).thenReturn(fakeStream);
 
-        var dl = service.downloadEntregavel(assessoriaId, entregavel.getId());
+        var dl = service.downloadEntregavel(entregavel.getId());
         assertThat(dl.filename()).isEqualTo("doc.pdf");
         assertThat(dl.sizeBytes()).isEqualTo(512L);
     }

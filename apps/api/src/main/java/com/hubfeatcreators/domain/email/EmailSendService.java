@@ -55,14 +55,12 @@ public class EmailSendService {
             UUID idempotencyKey,
             boolean trackingEnabled) {
 
-        Optional<EmailEnvio> existing =
-                envioRepo.findByAssessoriaIdAndIdempotencyKey(
-                        principal.assessoriaId(), idempotencyKey);
+        Optional<EmailEnvio> existing = envioRepo.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) return existing.get();
 
         EmailAccount account =
                 accountRepo
-                        .findByIdAndAssessoriaId(accountId, principal.assessoriaId())
+                        .findById(accountId)
                         .orElseThrow(() -> BusinessException.notFound("EMAIL_ACCOUNT"));
 
         if (account.getStatus() != EmailAccountStatus.ATIVA) {
@@ -82,20 +80,16 @@ public class EmailSendService {
                     "EMAIL_QUOTA_EXCEEDED", "Cota diária de envios atingida");
         }
 
-        if (optoutRepo.existsByAssessoriaIdAndEmailIgnoreCase(
-                principal.assessoriaId(), destinatarioEmail)) {
+        if (optoutRepo.existsByEmailIgnoreCase(destinatarioEmail)) {
             throw BusinessException.unprocessable("EMAIL_OPTOUT", "Destinatário descadastrado");
         }
 
         EmailTemplate template = templateService.buscar(principal, templateId);
-        String unsubscribeUrl = buildUnsubscribeUrl(principal.assessoriaId(), destinatarioEmail);
-        String corpoRendered =
-                templateService.renderizar(
-                        principal.assessoriaId(), template, vars, unsubscribeUrl);
+        String unsubscribeUrl = buildUnsubscribeUrl(destinatarioEmail);
+        String corpoRendered = templateService.renderizar(template, vars, unsubscribeUrl);
 
         EmailEnvio envio =
                 new EmailEnvio(
-                        principal.assessoriaId(),
                         accountId,
                         templateId,
                         destinatarioEmail,
@@ -110,7 +104,6 @@ public class EmailSendService {
 
         UUID envioId = envio.getId();
         jobService.enqueue(
-                principal.assessoriaId(),
                 "EMAIL_SEND",
                 Map.of("envioId", envioId.toString()),
                 idempotencyKey);
@@ -120,20 +113,19 @@ public class EmailSendService {
 
     @Transactional(readOnly = true)
     public Page<EmailEnvio> listar(AuthPrincipal principal, String contextoKey, Pageable pageable) {
-        return envioRepo.findByAssessoriaId(principal.assessoriaId(), contextoKey, pageable);
+        return envioRepo.findAllFiltered(contextoKey, pageable);
     }
 
     @Transactional(readOnly = true)
     public EmailEnvio buscar(AuthPrincipal principal, UUID id) {
         return envioRepo
-                .findByIdAndAssessoriaId(id, principal.assessoriaId())
+                .findById(id)
                 .orElseThrow(() -> BusinessException.notFound("EMAIL_ENVIO"));
     }
 
-    private String buildUnsubscribeUrl(UUID assessoriaId, String email) {
-        String token =
-                EmailUnsubscribeTokens.generate(
-                        appProperties.getSecrets().getEmailKey(), assessoriaId.toString(), email);
+    private String buildUnsubscribeUrl(String email) {
+        String token = EmailUnsubscribeTokens.generate(
+                appProperties.getSecrets().getEmailKey(), email);
         return "/api/v1/email/unsubscribe?token=" + token;
     }
 }

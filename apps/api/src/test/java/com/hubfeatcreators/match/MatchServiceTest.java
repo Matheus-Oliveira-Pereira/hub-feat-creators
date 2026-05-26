@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.hubfeatcreators.domain.influenciador.Influenciador;
 import com.hubfeatcreators.domain.influenciador.InfluenciadorRepository;
 import com.hubfeatcreators.domain.match.*;
 import com.hubfeatcreators.infra.web.BusinessException;
@@ -40,7 +39,6 @@ class MatchServiceTest {
 
     @InjectMocks MatchService matchService;
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID prospeccaoId = UUID.randomUUID();
     UUID influenciadorId = UUID.randomUUID();
 
@@ -48,7 +46,7 @@ class MatchServiceTest {
     void runMatch_throws_when_briefing_not_found() {
         when(briefingRepo.findByProspeccaoId(prospeccaoId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> matchService.runMatch(assessoriaId, prospeccaoId))
+        assertThatThrownBy(() -> matchService.runMatch(prospeccaoId))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -56,7 +54,6 @@ class MatchServiceTest {
     void runMatch_throws_when_model_not_found() {
         Briefing briefing =
                 new Briefing(
-                        assessoriaId,
                         prospeccaoId,
                         "MODA",
                         "AWARENESS",
@@ -68,7 +65,7 @@ class MatchServiceTest {
         when(briefingRepo.findByProspeccaoId(prospeccaoId)).thenReturn(Optional.of(briefing));
         when(modelRepo.findActiveVersion()).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> matchService.runMatch(assessoriaId, prospeccaoId))
+        assertThatThrownBy(() -> matchService.runMatch(prospeccaoId))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -76,7 +73,6 @@ class MatchServiceTest {
     void runMatch_skips_opted_out_creators() {
         Briefing briefing =
                 new Briefing(
-                        assessoriaId,
                         prospeccaoId,
                         "MODA",
                         "AWARENESS",
@@ -92,7 +88,7 @@ class MatchServiceTest {
         when(briefingRepo.findByProspeccaoId(prospeccaoId)).thenReturn(Optional.of(briefing));
         when(modelRepo.findActiveVersion()).thenReturn(Optional.of(model));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
-        when(vectorRepo.findSimilarCreators(eq(assessoriaId), any(), anyInt()))
+        when(vectorRepo.findSimilarCreators(any(), anyInt()))
                 .thenReturn(
                         List.of(
                                 Map.of(
@@ -103,9 +99,10 @@ class MatchServiceTest {
         CreatorMatchOptout optout = new CreatorMatchOptout(influenciadorId, "nao quero");
         when(optoutRepo.findAllById(any())).thenReturn(List.of(optout));
 
-        List<MatchSugestao> result = matchService.runMatch(assessoriaId, prospeccaoId);
+        List<MatchSugestao> result = matchService.runMatch(prospeccaoId);
 
         assertThat(result).isEmpty();
+
         verify(featureRepo, never()).findByInfluenciadorId(any());
     }
 
@@ -113,7 +110,6 @@ class MatchServiceTest {
     void runMatch_creates_sugestoes_for_eligible_creators() {
         Briefing briefing =
                 new Briefing(
-                        assessoriaId,
                         prospeccaoId,
                         "MODA",
                         "AWARENESS",
@@ -125,10 +121,9 @@ class MatchServiceTest {
         MatchModelVersion model =
                 new MatchModelVersion(
                         "v1.0", Map.of("w1", 0.40, "w2", 0.25, "w3", 0.20, "w4", 0.15), "test");
-        CreatorProfileFeature features = new CreatorProfileFeature(influenciadorId, assessoriaId);
+        CreatorProfileFeature features = new CreatorProfileFeature(influenciadorId);
         MatchSugestao sugestao =
                 new MatchSugestao(
-                        assessoriaId,
                         prospeccaoId,
                         influenciadorId,
                         BigDecimal.valueOf(0.85),
@@ -138,7 +133,7 @@ class MatchServiceTest {
         when(briefingRepo.findByProspeccaoId(prospeccaoId)).thenReturn(Optional.of(briefing));
         when(modelRepo.findActiveVersion()).thenReturn(Optional.of(model));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
-        when(vectorRepo.findSimilarCreators(eq(assessoriaId), any(), anyInt()))
+        when(vectorRepo.findSimilarCreators(any(), anyInt()))
                 .thenReturn(
                         List.of(
                                 Map.of(
@@ -148,7 +143,7 @@ class MatchServiceTest {
                                         0.85)));
         when(optoutRepo.findAllById(any())).thenReturn(List.of());
         when(featureRepo.findByInfluenciadorIdIn(any())).thenReturn(List.of(features));
-        when(sugestaoRepo.countByInfluenciadorIdAndAssessoriaId(any(), any())).thenReturn(0);
+        when(sugestaoRepo.countByInfluenciadorId(any())).thenReturn(0);
         when(sugestaoRepo.findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(any(), any(), any()))
                 .thenReturn(Optional.empty());
         when(scorer.score(any(), any())).thenReturn(0.85);
@@ -156,51 +151,40 @@ class MatchServiceTest {
         when(explainer.explain(any(), anyDouble())).thenReturn(List.of());
         when(sugestaoRepo.save(any())).thenReturn(sugestao);
 
-        List<MatchSugestao> result = matchService.runMatch(assessoriaId, prospeccaoId);
+        List<MatchSugestao> result = matchService.runMatch(prospeccaoId);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getInfluenciadorId()).isEqualTo(influenciadorId);
     }
 
     @Test
-    void addFeedback_throws_for_wrong_assessoria() {
-        UUID otherAssessoria = UUID.randomUUID();
+    void addFeedback_throws_when_sugestao_not_found() {
         UUID sugestaoId = UUID.randomUUID();
-        MatchSugestao sugestao =
-                new MatchSugestao(
-                        otherAssessoria,
-                        prospeccaoId,
-                        influenciadorId,
-                        BigDecimal.valueOf(0.7),
-                        List.of(),
-                        "v1.0");
-        when(sugestaoRepo.findById(sugestaoId)).thenReturn(Optional.of(sugestao));
+        when(sugestaoRepo.findById(sugestaoId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(
                         () ->
                                 matchService.addFeedback(
-                                        assessoriaId, sugestaoId, UUID.randomUUID(), "BOA", null))
+                                        sugestaoId, UUID.randomUUID(), "BOA", null))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void optout_saves_record() {
-        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
-        when(influenciadorRepo.findById(influenciadorId)).thenReturn(Optional.of(inf));
+        when(influenciadorRepo.existsById(influenciadorId)).thenReturn(true);
         when(optoutRepo.existsById(influenciadorId)).thenReturn(false);
 
-        matchService.optout(assessoriaId, influenciadorId, "nao quero");
+        matchService.optout(influenciadorId, "nao quero");
 
         verify(optoutRepo).save(any(CreatorMatchOptout.class));
     }
 
     @Test
     void optout_idempotent_when_already_opted_out() {
-        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
-        when(influenciadorRepo.findById(influenciadorId)).thenReturn(Optional.of(inf));
+        when(influenciadorRepo.existsById(influenciadorId)).thenReturn(true);
         when(optoutRepo.existsById(influenciadorId)).thenReturn(true);
 
-        matchService.optout(assessoriaId, influenciadorId, "nao quero");
+        matchService.optout(influenciadorId, "nao quero");
 
         verify(optoutRepo, never()).save(any());
     }

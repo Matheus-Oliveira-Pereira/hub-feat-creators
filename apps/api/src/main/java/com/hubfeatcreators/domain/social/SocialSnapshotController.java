@@ -1,10 +1,8 @@
 package com.hubfeatcreators.domain.social;
 
-import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,9 +17,8 @@ public class SocialSnapshotController {
 
     @GetMapping("/accounts")
     @RequirePermission("BINF")
-    public List<SocialAccountDto> listAccounts(
-            @RequestParam UUID influenciadorId, @AuthenticationPrincipal AuthPrincipal principal) {
-        return socialService.listByInfluenciador(principal.assessoriaId(), influenciadorId).stream()
+    public List<SocialAccountDto> listAccounts(@RequestParam UUID influenciadorId) {
+        return socialService.listByInfluenciador(influenciadorId).stream()
                 .map(SocialAccountDto::from)
                 .toList();
     }
@@ -30,9 +27,8 @@ public class SocialSnapshotController {
     @RequirePermission("BINF")
     public List<SocialSnapshotDto> listSnapshots(
             @RequestParam UUID accountId,
-            @RequestParam(defaultValue = "30") int limit,
-            @AuthenticationPrincipal AuthPrincipal principal) {
-        return socialService.listSnapshots(principal.assessoriaId(), accountId, limit).stream()
+            @RequestParam(defaultValue = "30") int limit) {
+        return socialService.listSnapshots(accountId, limit).stream()
                 .map(SocialSnapshotDto::from)
                 .toList();
     }

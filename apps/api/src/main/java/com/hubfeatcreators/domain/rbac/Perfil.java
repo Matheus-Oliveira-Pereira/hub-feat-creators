@@ -5,25 +5,18 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(
-        name = "perfis",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"assessoria_id", "nome"}))
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
+@Table(name = "perfis")
 @SQLRestriction("deleted_at IS NULL")
 public class Perfil {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String nome;
 
     @Column private String descricao;
@@ -46,9 +39,7 @@ public class Perfil {
 
     protected Perfil() {}
 
-    public Perfil(
-            UUID assessoriaId, String nome, String descricao, Set<String> roles, boolean isSystem) {
-        this.assessoriaId = assessoriaId;
+    public Perfil(String nome, String descricao, Set<String> roles, boolean isSystem) {
         this.nome = nome;
         this.descricao = descricao;
         this.roles = roles.toArray(new String[0]);
@@ -61,10 +52,6 @@ public class Perfil {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

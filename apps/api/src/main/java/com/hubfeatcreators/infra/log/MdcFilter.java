@@ -33,7 +33,6 @@ public class MdcFilter extends OncePerRequestFilter {
                     && auth.isAuthenticated()
                     && auth.getPrincipal() instanceof AuthPrincipal p) {
                 MDC.put("usuario_id", p.usuarioId().toString());
-                MDC.put("assessoria_id", p.assessoriaId().toString());
             }
 
             filterChain.doFilter(request, response);

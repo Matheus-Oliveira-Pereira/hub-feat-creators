@@ -34,7 +34,7 @@ public class RelatorioController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID assessorId) {
-        return service.funil(principal.assessoriaId(), from, to, assessorId);
+        return service.funil(from, to, assessorId);
     }
 
     @GetMapping("/relatorios/performance-assessor")
@@ -43,7 +43,7 @@ public class RelatorioController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @RequestParam Instant from,
             @RequestParam Instant to) {
-        return service.performanceAssessor(principal.assessoriaId(), from, to);
+        return service.performanceAssessor(from, to);
     }
 
     @GetMapping("/relatorios/tarefas-sla")
@@ -53,7 +53,7 @@ public class RelatorioController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID responsavelId) {
-        return service.tarefaSla(principal.assessoriaId(), from, to, responsavelId);
+        return service.tarefaSla(from, to, responsavelId);
     }
 
     // ─── CSV Export ───────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ public class RelatorioController {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"funil.csv\"");
         try (PrintWriter out = response.getWriter()) {
-            service.exportFunilCsv(principal.assessoriaId(), from, to, assessorId, out);
+            service.exportFunilCsv(from, to, assessorId, out);
         }
     }
 
@@ -87,7 +87,7 @@ public class RelatorioController {
                 HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"performance-assessor.csv\"");
         try (PrintWriter out = response.getWriter()) {
-            service.exportPerformanceCsv(principal.assessoriaId(), from, to, out);
+            service.exportPerformanceCsv(from, to, out);
         }
     }
 
@@ -104,7 +104,7 @@ public class RelatorioController {
         response.setHeader(
                 HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tarefas-sla.csv\"");
         try (PrintWriter out = response.getWriter()) {
-            service.exportSlavCsv(principal.assessoriaId(), from, to, responsavelId, out);
+            service.exportSlavCsv(from, to, responsavelId, out);
         }
     }
 

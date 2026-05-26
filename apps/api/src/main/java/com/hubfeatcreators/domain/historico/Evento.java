@@ -19,9 +19,6 @@ public class Evento {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String tipo;
 
@@ -45,12 +42,10 @@ public class Evento {
     protected Evento() {}
 
     private Evento(
-            UUID assessoriaId,
             String tipo,
             UUID autorId,
             Map<String, Object> payload,
             List<Map<String, String>> entidades) {
-        this.assessoriaId = assessoriaId;
         this.tipo = tipo;
         this.autorId = autorId;
         this.payload = payload != null ? payload : new HashMap<>();
@@ -58,7 +53,6 @@ public class Evento {
     }
 
     public static Evento of(
-            UUID assessoriaId,
             EventoTipo tipo,
             UUID autorId,
             Map<String, Object> payload,
@@ -70,17 +64,13 @@ public class Evento {
             m.put("id", ref.id().toString());
             refs.add(m);
         }
-        return new Evento(assessoriaId, tipo.name(), autorId, payload, refs);
+        return new Evento(tipo.name(), autorId, payload, refs);
     }
 
     public record EntidadeRef(String tipo, UUID id) {}
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getTipo() {

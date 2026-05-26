@@ -862,8 +862,9 @@ export function useNotificacaoSSE(enabled = true) {
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (!token) return;
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/v1/notificacoes/stream`;
-      es = new EventSource(url, { withCredentials: true });
+      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+      const url = `${base}/api/v1/notificacoes/stream?token=${encodeURIComponent(token)}`;
+      es = new EventSource(url);
 
       es.onmessage = () => {
         qc.invalidateQueries({ queryKey: qk.notificacoes.contagem });

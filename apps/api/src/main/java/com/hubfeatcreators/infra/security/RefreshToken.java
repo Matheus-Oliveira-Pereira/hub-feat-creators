@@ -16,9 +16,6 @@ public class RefreshToken {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
-    @Column(name = "assessoria_id", nullable = true)
-    private UUID assessoriaId;
-
     @Column(name = "family_id", nullable = false)
     private UUID familyId;
 
@@ -44,14 +41,12 @@ public class RefreshToken {
     public RefreshToken(
             String tokenHash,
             UUID usuarioId,
-            UUID assessoriaId,
             UUID familyId,
             Instant expiresAt,
             String userAgent,
             String ip) {
         this.tokenHash = tokenHash;
         this.usuarioId = usuarioId;
-        this.assessoriaId = assessoriaId;
         this.familyId = familyId;
         this.expiresAt = expiresAt;
         this.userAgent = userAgent;
@@ -68,10 +63,6 @@ public class RefreshToken {
 
     public UUID getUsuarioId() {
         return usuarioId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getFamilyId() {

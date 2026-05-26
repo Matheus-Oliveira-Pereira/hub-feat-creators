@@ -29,7 +29,6 @@ public class BriefingController {
             @Valid @RequestBody BriefingRequest req) {
         Briefing briefing =
                 briefingService.upsertByProspeccao(
-                        principal.assessoriaId(),
                         req.prospeccaoId(),
                         req.vertical(),
                         req.objetivo(),
@@ -45,7 +44,7 @@ public class BriefingController {
     @RequirePermission("MTCR")
     public ResponseEntity<BriefingDto> getByProspeccao(
             @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID prospeccaoId) {
-        Briefing briefing = briefingService.getByProspeccao(principal.assessoriaId(), prospeccaoId);
+        Briefing briefing = briefingService.getByProspeccao(prospeccaoId);
         return ResponseEntity.ok(BriefingDto.from(briefing));
     }
 
@@ -53,7 +52,7 @@ public class BriefingController {
     @RequirePermission("MTCR")
     public ResponseEntity<List<BriefingDto>> list(
             @AuthenticationPrincipal AuthPrincipal principal) {
-        List<Briefing> briefings = briefingService.listByAssessoria(principal.assessoriaId());
+        List<Briefing> briefings = briefingService.listAll();
         return ResponseEntity.ok(briefings.stream().map(BriefingDto::from).toList());
     }
 

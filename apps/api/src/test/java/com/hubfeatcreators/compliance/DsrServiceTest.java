@@ -47,14 +47,12 @@ class DsrServiceTest {
 
     @Test
     void criarSolicitacao_returns_result_with_raw_token() {
-        UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
-        Influenciador inf = new Influenciador(assessoriaId, "Creator", UUID.randomUUID());
-        when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
+        when(influenciadorRepo.existsById(titularId)).thenReturn(true);
 
         var result =
                 dsrService.criarSolicitacao(
-                        assessoriaId, "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
+                        "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
 
         assertThat(result.solicitacao()).isNotNull();
         assertThat(result.rawToken()).isNotBlank();
@@ -74,17 +72,13 @@ class DsrServiceTest {
 
         DsrToken dsrToken = new DsrToken(solId, hash, Instant.now().plusSeconds(3600));
         DsrSolicitacao sol =
-                new DsrSolicitacao(
-                        UUID.randomUUID(),
-                        "INFLUENCIADOR",
-                        titularId,
-                        DsrSolicitacao.TipoDsr.EXCLUSAO);
+                new DsrSolicitacao("INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.EXCLUSAO);
 
         when(tokenRepo.findByTokenHash(hash)).thenReturn(Optional.of(dsrToken));
         when(solicitacaoRepo.findById(solId)).thenReturn(Optional.of(sol));
         when(solicitacaoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Influenciador inf = new Influenciador(UUID.randomUUID(), "João Creator", UUID.randomUUID());
+        Influenciador inf = new Influenciador("João Creator", UUID.randomUUID());
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
         when(influenciadorRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -133,8 +127,7 @@ class DsrServiceTest {
     @Test
     void anonimizarTitular_influenciador_limpa_pii() {
         UUID titularId = UUID.randomUUID();
-        Influenciador inf =
-                new Influenciador(UUID.randomUUID(), "Maria Creator", UUID.randomUUID());
+        Influenciador inf = new Influenciador("Maria Creator", UUID.randomUUID());
         when(influenciadorRepo.findById(titularId)).thenReturn(Optional.of(inf));
         when(influenciadorRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -152,7 +145,7 @@ class DsrServiceTest {
     @Test
     void anonimizarTitular_contato_limpa_pii() {
         UUID titularId = UUID.randomUUID();
-        Contato c = new Contato(UUID.randomUUID(), UUID.randomUUID(), "Pedro Contato");
+        Contato c = new Contato(UUID.randomUUID(), "Pedro Contato");
         c.setEmail("pedro@empresa.com");
         c.setTelefone("11987654321");
         when(contatoRepo.findById(titularId)).thenReturn(Optional.of(c));
@@ -170,17 +163,15 @@ class DsrServiceTest {
 
     @Test
     void exportarDados_influenciador_retorna_campos_corretos() {
-        UUID assessoriaId = UUID.randomUUID();
         UUID titularId = UUID.randomUUID();
         UUID solId = UUID.randomUUID();
         String rawToken = "export-test-token";
         String hash = DsrService.hash(rawToken);
 
         DsrToken dsrToken = new DsrToken(solId, hash, Instant.now().plusSeconds(3600));
-        Influenciador inf = new Influenciador(assessoriaId, "João Creator", UUID.randomUUID());
+        Influenciador inf = new Influenciador("João Creator", UUID.randomUUID());
         DsrSolicitacao sol =
-                new DsrSolicitacao(
-                        assessoriaId, "INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
+                new DsrSolicitacao("INFLUENCIADOR", titularId, DsrSolicitacao.TipoDsr.ACESSO);
 
         when(tokenRepo.findByTokenHash(hash)).thenReturn(Optional.of(dsrToken));
         when(solicitacaoRepo.findById(solId)).thenReturn(Optional.of(sol));

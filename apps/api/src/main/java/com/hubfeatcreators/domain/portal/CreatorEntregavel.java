@@ -16,9 +16,6 @@ public class CreatorEntregavel {
     @Column(name = "creator_user_id", nullable = false)
     private UUID creatorUserId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "arquivo_path", nullable = false)
     private String arquivoPath;
 
@@ -47,14 +44,12 @@ public class CreatorEntregavel {
     public CreatorEntregavel(
             UUID tarefaId,
             UUID creatorUserId,
-            UUID assessoriaId,
             String arquivoPath,
             String filename,
             String contentType,
             long sizeBytes) {
         this.tarefaId = tarefaId;
         this.creatorUserId = creatorUserId;
-        this.assessoriaId = assessoriaId;
         this.arquivoPath = arquivoPath;
         this.filename = filename;
         this.contentType = contentType;
@@ -71,10 +66,6 @@ public class CreatorEntregavel {
 
     public UUID getCreatorUserId() {
         return creatorUserId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getArquivoPath() {

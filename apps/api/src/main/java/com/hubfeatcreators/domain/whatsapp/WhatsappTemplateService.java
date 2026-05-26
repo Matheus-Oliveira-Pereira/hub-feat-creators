@@ -38,31 +38,27 @@ public class WhatsappTemplateService {
     }
 
     @Transactional(readOnly = true)
-    public List<WhatsappTemplate> list(UUID assessoriaId) {
-        return templateRepo.findByAssessoriaId(assessoriaId);
+    public List<WhatsappTemplate> list() {
+        return templateRepo.findAllTemplates();
     }
 
     @Transactional
     public WhatsappTemplate create(
-            UUID assessoriaId,
             UUID accountId,
             String nome,
             String idioma,
             String categoria,
             String corpo,
             String[] variaveis) {
-        accountService.requireAccount(assessoriaId, accountId);
-        var template =
-                new WhatsappTemplate(
-                        assessoriaId, accountId, nome, idioma, categoria, corpo, variaveis);
+        accountService.requireAccount(accountId);
+        var template = new WhatsappTemplate(accountId, nome, idioma, categoria, corpo, variaveis);
         return templateRepo.save(template);
     }
 
     @Transactional
-    public WhatsappTemplate submit(UUID assessoriaId, UUID templateId) {
-        WhatsappTemplate template = require(assessoriaId, templateId);
-        WhatsappAccount account =
-                accountService.requireAccount(assessoriaId, template.getAccountId());
+    public WhatsappTemplate submit(UUID templateId) {
+        WhatsappTemplate template = require(templateId);
+        WhatsappAccount account = accountService.requireAccount(template.getAccountId());
         String token = accountService.decryptToken(account);
 
         String metaId =
@@ -118,9 +114,7 @@ public class WhatsappTemplateService {
         }
     }
 
-    private WhatsappTemplate require(UUID assessoriaId, UUID id) {
-        return templateRepo
-                .findByIdAndAssessoriaId(id, assessoriaId)
-                .orElseThrow(BusinessException::notFound);
+    private WhatsappTemplate require(UUID id) {
+        return templateRepo.findById(id).orElseThrow(BusinessException::notFound);
     }
 }

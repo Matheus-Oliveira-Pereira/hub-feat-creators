@@ -27,13 +27,12 @@ public class EmailAccountService {
 
     @Transactional(readOnly = true)
     public List<EmailAccount> listar(AuthPrincipal principal) {
-        return repo.findByAssessoriaId(principal.assessoriaId());
+        return repo.findByDeletedAtIsNull();
     }
 
     @Transactional(readOnly = true)
     public EmailAccount buscar(AuthPrincipal principal, UUID id) {
-        return repo.findByIdAndAssessoriaId(id, principal.assessoriaId())
-                .orElseThrow(() -> BusinessException.notFound("EMAIL_ACCOUNT"));
+        return repo.findById(id).orElseThrow(() -> BusinessException.notFound("EMAIL_ACCOUNT"));
     }
 
     @Transactional
@@ -51,7 +50,6 @@ public class EmailAccountService {
         EmailCipherService.Encrypted enc = cipher.encrypt(password);
         EmailAccount account =
                 new EmailAccount(
-                        principal.assessoriaId(),
                         nome,
                         host,
                         port,

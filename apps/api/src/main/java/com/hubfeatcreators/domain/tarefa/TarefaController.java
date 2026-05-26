@@ -29,7 +29,6 @@ public class TarefaController {
 
     public record TarefaResponse(
             UUID id,
-            UUID assessoriaId,
             String titulo,
             String descricao,
             Instant prazo,
@@ -238,7 +237,6 @@ public class TarefaController {
     private TarefaResponse toResponse(Tarefa t) {
         return new TarefaResponse(
                 t.getId(),
-                t.getAssessoriaId(),
                 t.getTitulo(),
                 t.getDescricao(),
                 t.getPrazo(),

@@ -30,18 +30,16 @@ public class ContatoService {
 
     @Transactional
     public Contato criar(AuthPrincipal principal, ContatoRequest req) {
-        Contato contato = new Contato(req.marcaId(), principal.assessoriaId(), req.nome());
+        Contato contato = new Contato(req.marcaId(), req.nome());
         applyRequest(contato, req);
         contato = repo.save(contato);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "contato",
                 contato.getId(),
                 AuditLog.Acao.CREATE,
                 toMap(contato));
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 EventoTipo.CONTATO_CRIADO,
                 Map.of("nome", contato.getNome()),
@@ -68,7 +66,6 @@ public class ContatoService {
         contato.setUpdatedAt(Instant.now());
         contato = repo.save(contato);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "contato",
                 id,
@@ -84,7 +81,6 @@ public class ContatoService {
         contato.setUpdatedAt(Instant.now());
         repo.save(contato);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "contato",
                 id,

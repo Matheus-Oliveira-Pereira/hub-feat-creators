@@ -27,10 +27,7 @@ public class ReembedJobHandler implements JobHandler {
         if ("CREATOR".equals(type)) {
             featureRepo
                     .findByInfluenciadorId(id)
-                    .ifPresent(
-                            f ->
-                                    featureBuilder.buildAndSave(
-                                            f.getInfluenciadorId(), f.getAssessoriaId()));
+                    .ifPresent(f -> featureBuilder.buildAndSave(f.getInfluenciadorId()));
         }
     }
 }

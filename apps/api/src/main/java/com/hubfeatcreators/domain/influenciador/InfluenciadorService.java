@@ -41,13 +41,11 @@ public class InfluenciadorService {
 
     @Transactional
     public Influenciador criar(AuthPrincipal principal, InfluenciadorRequest req) {
-        Influenciador inf =
-                new Influenciador(principal.assessoriaId(), req.nome(), principal.usuarioId());
+        Influenciador inf = new Influenciador(req.nome(), principal.usuarioId());
         applyRequest(inf, req);
         inf = repo.save(inf);
 
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "influenciador",
                 inf.getId(),
@@ -55,7 +53,6 @@ public class InfluenciadorService {
                 toMap(inf));
 
         jobService.enqueue(
-                principal.assessoriaId(),
                 JOB_LGPD,
                 Map.of(
                         "influenciadorId",
@@ -65,7 +62,6 @@ public class InfluenciadorService {
                 inf.getId());
 
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 EventoTipo.INFLUENCIADOR_CRIADO,
                 Map.of("nome", inf.getNome()),
@@ -96,7 +92,6 @@ public class InfluenciadorService {
         inf = repo.save(inf);
 
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "influenciador",
                 id,
@@ -114,7 +109,6 @@ public class InfluenciadorService {
         repo.save(inf);
 
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "influenciador",
                 id,

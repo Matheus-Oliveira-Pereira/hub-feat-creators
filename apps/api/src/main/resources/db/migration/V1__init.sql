@@ -1,8 +1,17 @@
 -- PRD-001: Initial schema — assessorias, users, cadastros, audit log, jobs, soft-delete
 
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Create users/roles
-CREATE USER hub_app WITH PASSWORD 'changeme';
-CREATE USER hub_migrator WITH PASSWORD 'changeme';
+DO $$ BEGIN
+  CREATE USER hub_app WITH PASSWORD 'changeme';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE USER hub_migrator WITH PASSWORD 'changeme';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 GRANT USAGE ON SCHEMA public TO hub_app;
 GRANT CREATE ON SCHEMA public TO hub_migrator;
@@ -174,7 +183,7 @@ CREATE TABLE jobs (
     concluido_em TIMESTAMPTZ NULL,
     worker_id TEXT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE(assessoria_id, tipo, idempotency_key) NULLS NOT DISTINCT
+    UNIQUE NULLS NOT DISTINCT (assessoria_id, tipo, idempotency_key)
 );
 CREATE INDEX idx_jobs_pickup ON jobs(status, proxima_tentativa_em) WHERE status = 'PENDENTE';
 CREATE INDEX idx_jobs_assessoria_id ON jobs(assessoria_id);

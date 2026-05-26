@@ -6,9 +6,10 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WhatsappAccountRepository extends JpaRepository<WhatsappAccount, UUID> {
-    List<WhatsappAccount> findByAssessoriaIdAndDeletedAtIsNull(UUID assessoriaId);
+    List<WhatsappAccount> findByDeletedAtIsNull();
 
-    Optional<WhatsappAccount> findByIdAndAssessoriaIdAndDeletedAtIsNull(UUID id, UUID assessoriaId);
+    Optional<WhatsappAccount> findByIdAndDeletedAtIsNull(UUID id);
 
-    Optional<WhatsappAccount> findByPhoneNumberIdAndAtivoTrue(String phoneNumberId);
+    Optional<WhatsappAccount> findByPhoneNumberIdAndStatusAndDeletedAtIsNull(
+            String phoneNumberId, String status);
 }

@@ -1,6 +1,5 @@
 package com.hubfeatcreators.infra.security;
 
-import com.hubfeatcreators.infra.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -43,44 +42,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     String tipo = claims.get("tipo", String.class);
 
                     if ("CREATOR".equals(tipo)) {
-                        UUID assessoriaId = UUID.fromString(claims.get("ass", String.class));
-                        TenantContext.setAssessoriaId(assessoriaId);
                         UUID creatorUserId = UUID.fromString(claims.getSubject());
                         UUID influenciadorId = UUID.fromString(claims.get("inf", String.class));
                         CreatorPrincipal principal =
-                                new CreatorPrincipal(creatorUserId, assessoriaId, influenciadorId);
+                                new CreatorPrincipal(creatorUserId, influenciadorId);
                         var auth =
                                 new UsernamePasswordAuthenticationToken(
                                         principal,
                                         null,
                                         List.of(new SimpleGrantedAuthority("ROLE_CREATOR")));
                         SecurityContextHolder.getContext().setAuthentication(auth);
-
-                    } else if ("ADM".equals(tipo)) {
-                        // ADM has no assessoria — TenantContext stays null
-                        UUID usuarioId = UUID.fromString(claims.getSubject());
-                        Set<String> permissions = readPerms(claims);
-                        AuthPrincipal principal =
-                                new AuthPrincipal(usuarioId, null, "ADM", permissions, "ADM");
-                        var auth =
-                                new UsernamePasswordAuthenticationToken(
-                                        principal,
-                                        null,
-                                        List.of(new SimpleGrantedAuthority("ROLE_ADM")));
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-
                     } else {
-                        String assStr = claims.get("ass", String.class);
-                        UUID assessoriaId = assStr != null ? UUID.fromString(assStr) : null;
-                        if (assessoriaId != null) {
-                            TenantContext.setAssessoriaId(assessoriaId);
-                        }
                         UUID usuarioId = UUID.fromString(claims.getSubject());
                         String role = claims.get("role", String.class);
                         Set<String> permissions = readPerms(claims);
                         AuthPrincipal principal =
-                                new AuthPrincipal(
-                                        usuarioId, assessoriaId, role, permissions, "INTERNO");
+                                new AuthPrincipal(usuarioId, role, permissions);
                         var auth =
                                 new UsernamePasswordAuthenticationToken(
                                         principal,
@@ -94,11 +71,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             logger.debug("JWT validation failed", e);
         }
 
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            TenantContext.clear();
-        }
+        filterChain.doFilter(request, response);
     }
 
     @SuppressWarnings("unchecked")

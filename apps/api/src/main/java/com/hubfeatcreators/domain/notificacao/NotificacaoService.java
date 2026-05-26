@@ -68,7 +68,6 @@ public class NotificacaoService {
 
     @Transactional
     public Notificacao criar(
-            UUID assessoriaId,
             UUID usuarioId,
             NotificacaoTipo tipo,
             NotificacaoPrioridade prioridade,
@@ -99,10 +98,9 @@ public class NotificacaoService {
         if (dedupeOpt.isPresent()) {
             Instant threshold = Instant.now().minusSeconds(THROTTLE_MINUTOS * 60L);
             if (dedupeOpt.get().getLastEmitted().isAfter(threshold)) {
-                // Agrupar: incrementa agrupadas na última notificação não-lida do mesmo tipo+alvo
                 Page<Notificacao> pending =
                         repo.findPendingForDedupe(
-                                assessoriaId, usuarioId, tipo, alvoId, PageRequest.of(0, 1));
+                                usuarioId, tipo, alvoId, PageRequest.of(0, 1));
                 if (!pending.isEmpty()) {
                     Notificacao existente = pending.getContent().get(0);
                     existente.setAgrupadas(existente.getAgrupadas() + 1);
@@ -120,7 +118,6 @@ public class NotificacaoService {
 
         Notificacao n =
                 new Notificacao(
-                        assessoriaId,
                         usuarioId,
                         tipo,
                         prioridade,
@@ -158,25 +155,24 @@ public class NotificacaoService {
 
     @Transactional(readOnly = true)
     public Page<Notificacao> listar(
-            UUID assessoriaId,
             UUID usuarioId,
             NotificacaoTipo tipo,
             boolean apenasNaoLidas,
             int page,
             int size) {
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE));
-        return repo.findFiltered(assessoriaId, usuarioId, tipo, apenasNaoLidas, pageable);
+        return repo.findFiltered(usuarioId, tipo, apenasNaoLidas, pageable);
     }
 
     @Transactional(readOnly = true)
-    public long contarNaoLidas(UUID assessoriaId, UUID usuarioId) {
-        return repo.countByAssessoriaIdAndUsuarioIdAndLidaEmIsNull(assessoriaId, usuarioId);
+    public long contarNaoLidas(UUID usuarioId) {
+        return repo.countByUsuarioIdAndLidaEmIsNull(usuarioId);
     }
 
     @Transactional
-    public void marcarLida(UUID assessoriaId, UUID notificacaoId, UUID usuarioId) {
+    public void marcarLida(UUID notificacaoId, UUID usuarioId) {
         Notificacao n =
-                repo.findByIdAndAssessoriaIdAndUsuarioId(notificacaoId, assessoriaId, usuarioId)
+                repo.findByIdAndUsuarioId(notificacaoId, usuarioId)
                         .orElseThrow(() -> BusinessException.notFound("NOTIFICACAO"));
         if (n.getLidaEm() == null) {
             n.setLidaEm(Instant.now());
@@ -186,8 +182,8 @@ public class NotificacaoService {
     }
 
     @Transactional
-    public void marcarTodasLidas(UUID assessoriaId, UUID usuarioId) {
-        int count = repo.marcarTodasLidas(assessoriaId, usuarioId, Instant.now());
+    public void marcarTodasLidas(UUID usuarioId) {
+        int count = repo.marcarTodasLidas(usuarioId, Instant.now());
         if (count > 0) {
             notificarEmitters(usuarioId);
         }

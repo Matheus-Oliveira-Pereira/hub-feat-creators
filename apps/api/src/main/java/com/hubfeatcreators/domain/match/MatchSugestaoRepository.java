@@ -12,15 +12,13 @@ public interface MatchSugestaoRepository extends JpaRepository<MatchSugestao, UU
     List<MatchSugestao> findByProspeccaoIdAndModeloVersaoOrderByScoreDesc(
             UUID prospeccaoId, String modeloVersao);
 
-    List<MatchSugestao> findByInfluenciadorIdAndAssessoriaIdOrderByScoreDesc(
-            UUID influenciadorId, UUID assessoriaId);
+    List<MatchSugestao> findByInfluenciadorIdOrderByScoreDesc(UUID influenciadorId);
 
     Optional<MatchSugestao> findByProspeccaoIdAndInfluenciadorIdAndModeloVersao(
             UUID prospeccaoId, UUID influenciadorId, String modeloVersao);
 
-    @Query(
-            "SELECT COUNT(s) FROM MatchSugestao s WHERE s.influenciadorId = :infId AND s.assessoriaId = :aid")
-    int countByInfluenciadorIdAndAssessoriaId(@Param("infId") UUID infId, @Param("aid") UUID aid);
+    @Query("SELECT COUNT(s) FROM MatchSugestao s WHERE s.influenciadorId = :infId")
+    int countByInfluenciadorId(@Param("infId") UUID infId);
 
     @Query(
             "SELECT DISTINCT s.prospeccaoId FROM MatchSugestao s WHERE s.influenciadorId = :influenciadorId ORDER BY s.prospeccaoId")

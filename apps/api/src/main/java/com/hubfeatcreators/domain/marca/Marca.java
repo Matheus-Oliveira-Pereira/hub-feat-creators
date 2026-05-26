@@ -4,19 +4,14 @@ import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "marcas")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class Marca {
 
     @Id private UUID id = UUID.randomUUID();
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Column(nullable = false)
     private String nome;
@@ -50,18 +45,13 @@ public class Marca {
 
     public Marca() {}
 
-    public Marca(UUID assessoriaId, String nome, UUID createdBy) {
-        this.assessoriaId = assessoriaId;
+    public Marca(String nome, UUID createdBy) {
         this.nome = nome;
         this.createdBy = createdBy;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

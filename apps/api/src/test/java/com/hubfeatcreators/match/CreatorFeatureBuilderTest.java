@@ -41,17 +41,15 @@ class CreatorFeatureBuilderTest {
     @InjectMocks CreatorFeatureBuilder builder;
 
     UUID influenciadorId = UUID.randomUUID();
-    UUID assessoriaId = UUID.randomUUID();
 
     @Test
     void buildAndSave_no_accounts_creates_feature_with_zero_metrics() {
-        when(accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId))
-                .thenReturn(List.of());
+        when(accountRepo.findByInfluenciadorId(influenciadorId)).thenReturn(List.of());
         when(featureRepo.findByInfluenciadorId(influenciadorId)).thenReturn(Optional.empty());
         when(featureRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
 
-        CreatorProfileFeature result = builder.buildAndSave(influenciadorId, assessoriaId);
+        CreatorProfileFeature result = builder.buildAndSave(influenciadorId);
 
         assertThat(result.getEngagement30d()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(result.getFreqPost30d()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -76,8 +74,7 @@ class CreatorFeatureBuilderTest {
                         BigDecimal.valueOf(6.0),
                         null);
 
-        when(accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId))
-                .thenReturn(List.of(account));
+        when(accountRepo.findByInfluenciadorId(influenciadorId)).thenReturn(List.of(account));
         when(snapshotRepo.findBySocialAccountIdOrderByDiaDesc(eq(accountId), any(Pageable.class)))
                 .thenReturn(List.of(s1, s2));
         when(postRepo.findTop30BySocialAccountIdOrderByPostedAtDesc(accountId))
@@ -86,7 +83,7 @@ class CreatorFeatureBuilderTest {
         when(featureRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
 
-        CreatorProfileFeature result = builder.buildAndSave(influenciadorId, assessoriaId);
+        CreatorProfileFeature result = builder.buildAndSave(influenciadorId);
 
         // avg of (4.0 + 6.0) / 1 account = 10.0
         assertThat(result.getEngagement30d()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
@@ -100,15 +97,14 @@ class CreatorFeatureBuilderTest {
         List<SocialPost> posts =
                 List.of(mock(SocialPost.class), mock(SocialPost.class), mock(SocialPost.class));
 
-        when(accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId))
-                .thenReturn(List.of(account));
+        when(accountRepo.findByInfluenciadorId(influenciadorId)).thenReturn(List.of(account));
         when(snapshotRepo.findBySocialAccountIdOrderByDiaDesc(any(), any())).thenReturn(List.of());
         when(postRepo.findTop30BySocialAccountIdOrderByPostedAtDesc(accountId)).thenReturn(posts);
         when(featureRepo.findByInfluenciadorId(influenciadorId)).thenReturn(Optional.empty());
         when(featureRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
 
-        CreatorProfileFeature result = builder.buildAndSave(influenciadorId, assessoriaId);
+        CreatorProfileFeature result = builder.buildAndSave(influenciadorId);
 
         // 3 posts / 1 account = 3.00
         assertThat(result.getFreqPost30d()).isEqualByComparingTo(BigDecimal.valueOf(3.0));
@@ -116,15 +112,14 @@ class CreatorFeatureBuilderTest {
 
     @Test
     void buildAndSave_updates_existing_feature_rather_than_creating_new() {
-        CreatorProfileFeature existing = new CreatorProfileFeature(influenciadorId, assessoriaId);
+        CreatorProfileFeature existing = new CreatorProfileFeature(influenciadorId);
 
-        when(accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId))
-                .thenReturn(List.of());
+        when(accountRepo.findByInfluenciadorId(influenciadorId)).thenReturn(List.of());
         when(featureRepo.findByInfluenciadorId(influenciadorId)).thenReturn(Optional.of(existing));
         when(featureRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(embeddingService.embed(any())).thenReturn(new float[384]);
 
-        CreatorProfileFeature result = builder.buildAndSave(influenciadorId, assessoriaId);
+        CreatorProfileFeature result = builder.buildAndSave(influenciadorId);
 
         assertThat(result).isSameAs(existing);
         // Only one save — no new entity created
@@ -136,15 +131,14 @@ class CreatorFeatureBuilderTest {
     private SocialAccount buildAccount() {
         SocialAccount a =
                 new SocialAccount(
-                        assessoriaId,
                         influenciadorId,
                         "INSTAGRAM",
                         "ext-001",
                         "@creator",
                         new byte[16],
                         new byte[12],
-                        null,
-                        null,
+                        new byte[16],
+                        new byte[12],
                         null);
         // Set id via reflection (no JPA in unit tests)
         try {

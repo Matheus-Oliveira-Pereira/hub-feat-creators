@@ -80,13 +80,12 @@ app:
     signup-enabled: ${FEATURE_SIGNUP_ENABLED:true}
     whatsapp-enabled: ${FEATURE_WHATSAPP_ENABLED:false}
     import-enabled: ${FEATURE_IMPORT_ENABLED:true}
-  import:
-    upload-dir: ${IMPORT_UPLOAD_DIR:${java.io.tmpdir}/hub-imports}
-  features:
     portal-enabled: ${FEATURE_PORTAL_ENABLED:false}
     mobile-enabled: ${FEATURE_MOBILE_ENABLED:false}
     social-enabled: ${FEATURE_SOCIAL_ENABLED:false}
     ai-match-enabled: ${FEATURE_AI_MATCH_ENABLED:false}
+  import:
+    upload-dir: ${IMPORT_UPLOAD_DIR:${java.io.tmpdir}/hub-imports}
   whatsapp:
     verify-token: ${WHATSAPP_VERIFY_TOKEN:}
   ai-worker:

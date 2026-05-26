@@ -14,50 +14,40 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
     @Query(
             """
         SELECT n FROM Notificacao n
-        WHERE n.assessoriaId = :assessoriaId
-          AND n.usuarioId = :usuarioId
+        WHERE n.usuarioId = :usuarioId
           AND (:tipo IS NULL OR n.tipo = :tipo)
           AND (:apenasNaoLidas = FALSE OR n.lidaEm IS NULL)
         ORDER BY n.createdAt DESC
         """)
     Page<Notificacao> findFiltered(
-            UUID assessoriaId,
             UUID usuarioId,
             NotificacaoTipo tipo,
             boolean apenasNaoLidas,
             Pageable pageable);
 
-    long countByAssessoriaIdAndUsuarioIdAndLidaEmIsNull(UUID assessoriaId, UUID usuarioId);
+    long countByUsuarioIdAndLidaEmIsNull(UUID usuarioId);
 
-    @Query(
-            "SELECT COUNT(n) FROM Notificacao n WHERE n.assessoriaId = :assessoriaId AND n.lidaEm IS NULL")
-    long countNaoLidasByAssessoriaId(UUID assessoriaId);
-
-    Optional<Notificacao> findByIdAndAssessoriaIdAndUsuarioId(
-            UUID id, UUID assessoriaId, UUID usuarioId);
+    Optional<Notificacao> findByIdAndUsuarioId(UUID id, UUID usuarioId);
 
     @Modifying
     @Query(
             """
         UPDATE Notificacao n SET n.lidaEm = :agora
-        WHERE n.assessoriaId = :assessoriaId
-          AND n.usuarioId = :usuarioId
+        WHERE n.usuarioId = :usuarioId
           AND n.lidaEm IS NULL
         """)
-    int marcarTodasLidas(UUID assessoriaId, UUID usuarioId, Instant agora);
+    int marcarTodasLidas(UUID usuarioId, Instant agora);
 
     @Query(
             """
         SELECT n FROM Notificacao n
-        WHERE n.assessoriaId = :assessoriaId
-          AND n.usuarioId = :usuarioId
+        WHERE n.usuarioId = :usuarioId
           AND n.tipo = :tipo
           AND n.alvoId = :alvoId
           AND n.lidaEm IS NULL
         ORDER BY n.createdAt DESC
         """)
     Page<Notificacao> findPendingForDedupe(
-            UUID assessoriaId,
             UUID usuarioId,
             NotificacaoTipo tipo,
             UUID alvoId,

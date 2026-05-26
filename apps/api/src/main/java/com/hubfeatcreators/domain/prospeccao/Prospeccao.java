@@ -4,21 +4,16 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "prospeccoes")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 @SQLRestriction("deleted_at IS NULL")
 public class Prospeccao {
 
     @Id private UUID id = UUID.randomUUID();
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Column(name = "marca_id", nullable = false)
     private UUID marcaId;
@@ -76,12 +71,10 @@ public class Prospeccao {
     protected Prospeccao() {}
 
     public Prospeccao(
-            UUID assessoriaId,
             UUID marcaId,
             UUID assessorResponsavelId,
             String titulo,
             UUID createdBy) {
-        this.assessoriaId = assessoriaId;
         this.marcaId = marcaId;
         this.assessorResponsavelId = assessorResponsavelId;
         this.titulo = titulo;
@@ -90,10 +83,6 @@ public class Prospeccao {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getMarcaId() {

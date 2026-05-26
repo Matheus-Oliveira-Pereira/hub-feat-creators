@@ -10,9 +10,9 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * Token helpers for email unsubscribe links.
  *
- * <p>Format: base64url( assessoriaId ":" email ":" hmacHex )
+ * <p>Format: base64url( email ":" hmacHex )
  *
- * <p>hmacHex = HmacSHA256(emailKey, assessoriaId ":" email) — always 64 hex chars.
+ * <p>hmacHex = HmacSHA256(emailKey, email) — always 64 hex chars.
  */
 final class EmailUnsubscribeTokens {
 
@@ -20,37 +20,33 @@ final class EmailUnsubscribeTokens {
 
     private EmailUnsubscribeTokens() {}
 
-    static String generate(String emailKey, String assessoriaId, String email) {
-        String payload = assessoriaId + ":" + email;
-        String hmac = hmacSha256Hex(emailKey, payload);
+    static String generate(String emailKey, String email) {
+        String hmac = hmacSha256Hex(emailKey, email);
         return Base64.getUrlEncoder()
                 .withoutPadding()
-                .encodeToString((payload + ":" + hmac).getBytes(StandardCharsets.UTF_8));
+                .encodeToString((email + ":" + hmac).getBytes(StandardCharsets.UTF_8));
     }
 
     /**
-     * Returns [assessoriaId, email] if signature is valid, or null if invalid/tampered.
-     * Constant-time HMAC comparison.
+     * Returns email if signature is valid, or null if invalid/tampered. Constant-time HMAC
+     * comparison.
      */
-    static String[] verify(String emailKey, String token) {
+    static String verify(String emailKey, String token) {
         try {
             String decoded =
                     new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
-            // last HMAC_HEX_LEN+1 chars = ':' + hmac
             int hmacSep = decoded.length() - HMAC_HEX_LEN - 1;
-            if (hmacSep < 37 || decoded.charAt(hmacSep) != ':') return null;
-            String payload = decoded.substring(0, hmacSep);
+            if (hmacSep < 1 || decoded.charAt(hmacSep) != ':') return null;
+            String email = decoded.substring(0, hmacSep);
             String receivedHmac = decoded.substring(hmacSep + 1);
             if (receivedHmac.length() != HMAC_HEX_LEN) return null;
-            String expectedHmac = hmacSha256Hex(emailKey, payload);
+            String expectedHmac = hmacSha256Hex(emailKey, email);
             if (!MessageDigest.isEqual(
                     expectedHmac.getBytes(StandardCharsets.UTF_8),
                     receivedHmac.getBytes(StandardCharsets.UTF_8))) {
                 return null;
             }
-            int sep = payload.indexOf(':');
-            if (sep < 1) return null;
-            return new String[] {payload.substring(0, sep), payload.substring(sep + 1)};
+            return email;
         } catch (Exception e) {
             return null;
         }

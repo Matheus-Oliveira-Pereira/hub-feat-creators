@@ -13,9 +13,6 @@ public class Consentimento {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "titular_tipo", nullable = false)
     private String titularTipo;
 
@@ -38,12 +35,10 @@ public class Consentimento {
     public Consentimento() {}
 
     public Consentimento(
-            UUID assessoriaId,
             String titularTipo,
             UUID titularId,
             String finalidade,
             Map<String, Object> prova) {
-        this.assessoriaId = assessoriaId;
         this.titularTipo = titularTipo;
         this.titularId = titularId;
         this.finalidade = finalidade;
@@ -52,10 +47,6 @@ public class Consentimento {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getTitularTipo() {

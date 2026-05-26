@@ -13,9 +13,6 @@ public class TarefaComentario {
     @Column(name = "tarefa_id", nullable = false)
     private UUID tarefaId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "autor_id", nullable = false)
     private UUID autorId;
 
@@ -36,18 +33,15 @@ public class TarefaComentario {
 
     protected TarefaComentario() {}
 
-    public TarefaComentario(UUID tarefaId, UUID assessoriaId, UUID autorId, String texto) {
+    public TarefaComentario(UUID tarefaId, UUID autorId, String texto) {
         this.tarefaId = tarefaId;
-        this.assessoriaId = assessoriaId;
         this.autorId = autorId;
         this.texto = texto;
     }
 
-    public static TarefaComentario fromCreator(
-            UUID tarefaId, UUID assessoriaId, UUID creatorUserId, String texto) {
+    public static TarefaComentario fromCreator(UUID tarefaId, UUID creatorUserId, String texto) {
         TarefaComentario c = new TarefaComentario();
         c.tarefaId = tarefaId;
-        c.assessoriaId = assessoriaId;
         c.autorId = creatorUserId;
         c.creatorUserId = creatorUserId;
         c.texto = texto;
@@ -62,10 +56,6 @@ public class TarefaComentario {
 
     public UUID getTarefaId() {
         return tarefaId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getAutorId() {

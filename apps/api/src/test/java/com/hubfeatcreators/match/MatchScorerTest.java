@@ -42,8 +42,7 @@ class MatchScorerTest {
 
     @Test
     void channelHealthScore_uses_engagement_and_freq() {
-        CreatorProfileFeature features =
-                new CreatorProfileFeature(UUID.randomUUID(), UUID.randomUUID());
+        CreatorProfileFeature features = new CreatorProfileFeature(UUID.randomUUID());
         features.update(null, null, null, null, BigDecimal.valueOf(5.0), BigDecimal.valueOf(15));
 
         double health = scorer.channelHealthScore(features);
@@ -57,21 +56,12 @@ class MatchScorerTest {
     }
 
     private Briefing buildBriefing(String vertical, String objetivo, String formato) {
-        return new Briefing(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                vertical,
-                objetivo,
-                null,
-                formato,
-                null,
-                null,
-                null);
+        return new Briefing(UUID.randomUUID(), vertical, objetivo, null, formato, null, null, null);
     }
 
     private CreatorProfileFeature buildFeatures(
             String vertical, BigDecimal engagement, BigDecimal freq) {
-        CreatorProfileFeature f = new CreatorProfileFeature(UUID.randomUUID(), UUID.randomUUID());
+        CreatorProfileFeature f = new CreatorProfileFeature(UUID.randomUUID());
         f.update(vertical, null, null, null, engagement, freq);
         return f;
     }

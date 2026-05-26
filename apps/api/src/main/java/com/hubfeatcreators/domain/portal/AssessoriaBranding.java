@@ -9,8 +9,8 @@ import java.util.UUID;
 public class AssessoriaBranding {
 
     @Id
-    @Column(name = "assessoria_id")
-    private UUID assessoriaId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "logo_url")
     private String logoUrl;
@@ -23,12 +23,13 @@ public class AssessoriaBranding {
 
     protected AssessoriaBranding() {}
 
-    public AssessoriaBranding(UUID assessoriaId) {
-        this.assessoriaId = assessoriaId;
+    public AssessoriaBranding(String logoUrl, String corPrimaria) {
+        this.logoUrl = logoUrl;
+        this.corPrimaria = corPrimaria;
     }
 
-    public UUID getAssessoriaId() {
-        return assessoriaId;
+    public UUID getId() {
+        return id;
     }
 
     public String getLogoUrl() {

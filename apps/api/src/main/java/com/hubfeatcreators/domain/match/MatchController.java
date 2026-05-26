@@ -28,8 +28,7 @@ public class MatchController {
     @RequirePermission("MTCW")
     public ResponseEntity<List<SugestaoDto>> runMatch(
             @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID prospeccaoId) {
-        List<MatchSugestao> sugestoes =
-                matchService.runMatch(principal.assessoriaId(), prospeccaoId);
+        List<MatchSugestao> sugestoes = matchService.runMatch(prospeccaoId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
     }
 
@@ -37,8 +36,7 @@ public class MatchController {
     @RequirePermission("MTCR")
     public ResponseEntity<List<SugestaoDto>> getSugestoes(
             @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID prospeccaoId) {
-        List<MatchSugestao> sugestoes =
-                matchService.getSugestoes(principal.assessoriaId(), prospeccaoId);
+        List<MatchSugestao> sugestoes = matchService.getSugestoes(prospeccaoId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
     }
 
@@ -46,8 +44,7 @@ public class MatchController {
     @RequirePermission("MTCR")
     public ResponseEntity<List<SugestaoDto>> getReverse(
             @AuthenticationPrincipal AuthPrincipal principal, @RequestParam UUID influenciadorId) {
-        List<MatchSugestao> sugestoes =
-                matchService.getReverse(principal.assessoriaId(), influenciadorId);
+        List<MatchSugestao> sugestoes = matchService.getReverse(influenciadorId);
         return ResponseEntity.ok(sugestoes.stream().map(SugestaoDto::from).toList());
     }
 
@@ -58,7 +55,6 @@ public class MatchController {
             @Valid @RequestBody FeedbackRequest req) {
         MatchFeedback fb =
                 matchService.addFeedback(
-                        principal.assessoriaId(),
                         req.sugestaoId(),
                         principal.usuarioId(),
                         req.sinal(),
@@ -72,7 +68,7 @@ public class MatchController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID influenciadorId,
             @RequestParam(required = false) String motivo) {
-        matchService.optout(principal.assessoriaId(), influenciadorId, motivo);
+        matchService.optout(influenciadorId, motivo);
         return ResponseEntity.noContent().build();
     }
 
@@ -80,7 +76,7 @@ public class MatchController {
     @RequirePermission("MTCW")
     public ResponseEntity<Void> optin(
             @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID influenciadorId) {
-        matchService.optin(principal.assessoriaId(), influenciadorId);
+        matchService.optin(influenciadorId);
         return ResponseEntity.noContent().build();
     }
 

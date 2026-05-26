@@ -5,22 +5,17 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "prospeccao_eventos")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class ProspeccaoEvento {
 
     @Id private UUID id = UUID.randomUUID();
 
     @Column(name = "prospeccao_id", nullable = false)
     private UUID prospeccaoId;
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,12 +35,10 @@ public class ProspeccaoEvento {
 
     public ProspeccaoEvento(
             UUID prospeccaoId,
-            UUID assessoriaId,
             EventoTipo tipo,
             Map<String, Object> payload,
             UUID autorId) {
         this.prospeccaoId = prospeccaoId;
-        this.assessoriaId = assessoriaId;
         this.tipo = tipo;
         this.payload = payload != null ? payload : new HashMap<>();
         this.autorId = autorId;
@@ -57,10 +50,6 @@ public class ProspeccaoEvento {
 
     public UUID getProspeccaoId() {
         return prospeccaoId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public EventoTipo getTipo() {

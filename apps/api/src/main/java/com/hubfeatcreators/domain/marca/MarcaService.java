@@ -33,18 +33,16 @@ public class MarcaService {
 
     @Transactional
     public Marca criar(AuthPrincipal principal, MarcaRequest req) {
-        Marca marca = new Marca(principal.assessoriaId(), req.nome(), principal.usuarioId());
+        Marca marca = new Marca(req.nome(), principal.usuarioId());
         applyRequest(marca, req);
         marca = repo.save(marca);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "marca",
                 marca.getId(),
                 AuditLog.Acao.CREATE,
                 toMap(marca));
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 EventoTipo.MARCA_CRIADA,
                 Map.of("nome", marca.getNome()),
@@ -73,7 +71,6 @@ public class MarcaService {
         marca.setUpdatedAt(Instant.now());
         marca = repo.save(marca);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "marca",
                 id,
@@ -89,7 +86,6 @@ public class MarcaService {
         marca.setUpdatedAt(Instant.now());
         repo.save(marca);
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "marca",
                 id,

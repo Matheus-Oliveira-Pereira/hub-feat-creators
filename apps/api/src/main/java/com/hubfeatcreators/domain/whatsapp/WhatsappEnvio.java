@@ -14,9 +14,6 @@ public class WhatsappEnvio {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "account_id", nullable = false)
     private UUID accountId;
 
@@ -69,7 +66,6 @@ public class WhatsappEnvio {
     protected WhatsappEnvio() {}
 
     public WhatsappEnvio(
-            UUID assessoriaId,
             UUID accountId,
             UUID templateId,
             String destinatarioE164,
@@ -77,7 +73,6 @@ public class WhatsappEnvio {
             String payload,
             UUID idempotencyKey,
             UUID autorId) {
-        this.assessoriaId = assessoriaId;
         this.accountId = accountId;
         this.templateId = templateId;
         this.destinatarioE164 = destinatarioE164;
@@ -89,10 +84,6 @@ public class WhatsappEnvio {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getAccountId() {

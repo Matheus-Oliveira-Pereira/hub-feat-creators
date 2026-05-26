@@ -1,7 +1,6 @@
 package com.hubfeatcreators.domain.portal;
 
 import com.hubfeatcreators.config.AppProperties;
-import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
 import com.hubfeatcreators.domain.influenciador.Influenciador;
 import com.hubfeatcreators.domain.influenciador.InfluenciadorRepository;
 import com.hubfeatcreators.infra.mail.SystemMailService;
@@ -29,7 +28,6 @@ public class CreatorAuthService {
     private final CreatorUserRepository creatorUserRepo;
     private final CreatorInviteRepository inviteRepo;
     private final InfluenciadorRepository influenciadorRepo;
-    private final AssessoriaRepository assessoriaRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final SystemMailService mailService;
@@ -39,7 +37,6 @@ public class CreatorAuthService {
             CreatorUserRepository creatorUserRepo,
             CreatorInviteRepository inviteRepo,
             InfluenciadorRepository influenciadorRepo,
-            AssessoriaRepository assessoriaRepo,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             SystemMailService mailService,
@@ -47,7 +44,6 @@ public class CreatorAuthService {
         this.creatorUserRepo = creatorUserRepo;
         this.inviteRepo = inviteRepo;
         this.influenciadorRepo = influenciadorRepo;
-        this.assessoriaRepo = assessoriaRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.mailService = mailService;
@@ -75,8 +71,7 @@ public class CreatorAuthService {
         }
 
         String token =
-                jwtService.generateCreatorToken(
-                        user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
+                jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 
@@ -88,9 +83,7 @@ public class CreatorAuthService {
             throw BusinessException.forbidden("PORTAL_DISABLED", "Portal não habilitado.");
         }
 
-        UUID assessoriaId = principal.assessoriaId();
-
-        if (!influenciadorRepo.findByIdAndAssessoriaId(influenciadorId, assessoriaId).isPresent()) {
+        if (!influenciadorRepo.existsById(influenciadorId)) {
             throw BusinessException.notFound();
         }
 
@@ -107,23 +100,16 @@ public class CreatorAuthService {
         CreatorInvite invite =
                 new CreatorInvite(
                         influenciadorId,
-                        assessoriaId,
                         targetEmail,
                         tokenHash,
                         expiresAt,
                         principal.usuarioId());
         inviteRepo.save(invite);
 
-        var assessoria =
-                assessoriaRepo.findById(assessoriaId).orElseThrow(BusinessException::notFound);
         String portalUrl =
-                props.getWeb().getBaseUrl()
-                        + "/portal/"
-                        + assessoria.getSlug()
-                        + "/convite?token="
-                        + rawToken;
+                props.getWeb().getBaseUrl() + "/portal/convite?token=" + rawToken;
 
-        mailService.sendInvite(targetEmail, assessoria.getNome(), portalUrl);
+        mailService.sendInvite(targetEmail, "HUB Feat Creators", portalUrl);
 
         return invite;
     }
@@ -142,8 +128,7 @@ public class CreatorAuthService {
             throw BusinessException.gone("INVITE_EXPIRED", "Convite expirado ou já utilizado.");
         }
 
-        if (creatorUserRepo.existsByInfluenciadorIdAndAssessoriaId(
-                invite.getInfluenciadorId(), invite.getAssessoriaId())) {
+        if (creatorUserRepo.existsByInfluenciadorId(invite.getInfluenciadorId())) {
             throw BusinessException.conflict("CREATOR_ALREADY_EXISTS", "Creator já cadastrado.");
         }
 
@@ -151,7 +136,6 @@ public class CreatorAuthService {
         CreatorUser user =
                 new CreatorUser(
                         invite.getInfluenciadorId(),
-                        invite.getAssessoriaId(),
                         invite.getEmail(),
                         senhaHash);
         creatorUserRepo.save(user);
@@ -160,8 +144,7 @@ public class CreatorAuthService {
         inviteRepo.save(invite);
 
         String token =
-                jwtService.generateCreatorToken(
-                        user.getId(), user.getAssessoriaId(), user.getInfluenciadorId());
+                jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 

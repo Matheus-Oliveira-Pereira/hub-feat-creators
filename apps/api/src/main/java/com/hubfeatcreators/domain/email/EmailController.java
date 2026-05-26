@@ -276,7 +276,7 @@ public class EmailController {
             @Valid @RequestBody PreviewRequest req) {
         EmailTemplate template = templateService.buscar(principal, id);
         Map<String, Object> vars = req.vars() != null ? req.vars() : Map.of();
-        String html = templateService.preview(principal.assessoriaId(), template, vars);
+        String html = templateService.preview(template, vars);
         return Map.of("html", html);
     }
 
@@ -285,10 +285,7 @@ public class EmailController {
     @GetMapping("/layout")
     @RequirePermission(PermissionCodes.B_EML)
     public LayoutResponse buscarLayout(@AuthenticationPrincipal AuthPrincipal principal) {
-        EmailLayout layout =
-                layoutRepo
-                        .findByAssessoriaId(principal.assessoriaId())
-                        .orElse(new EmailLayout(principal.assessoriaId()));
+        EmailLayout layout = layoutRepo.findFirst().orElse(new EmailLayout());
         return toLayoutResponse(layout);
     }
 
@@ -297,10 +294,7 @@ public class EmailController {
     public LayoutResponse salvarLayout(
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody LayoutRequest req) {
-        EmailLayout layout =
-                layoutRepo
-                        .findByAssessoriaId(principal.assessoriaId())
-                        .orElse(new EmailLayout(principal.assessoriaId()));
+        EmailLayout layout = layoutRepo.findFirst().orElse(new EmailLayout());
         if (req.headerHtml() != null) layout.setHeaderHtml(req.headerHtml());
         if (req.footerHtml() != null) layout.setFooterHtml(req.footerHtml());
         layout.setUpdatedAt(Instant.now());

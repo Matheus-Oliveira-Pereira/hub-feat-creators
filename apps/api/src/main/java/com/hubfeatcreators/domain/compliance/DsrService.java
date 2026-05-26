@@ -49,9 +49,9 @@ public class DsrService {
     /** Creates DSR and returns raw token (caller must send to titular via e-mail). */
     @Transactional
     public DsrResult criarSolicitacao(
-            UUID assessoriaId, String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {
-        assertTitularOwnership(assessoriaId, titularTipo, titularId);
-        var solicitacao = new DsrSolicitacao(assessoriaId, titularTipo, titularId, tipo);
+            String titularTipo, UUID titularId, DsrSolicitacao.TipoDsr tipo) {
+        assertTitularExists(titularTipo, titularId);
+        var solicitacao = new DsrSolicitacao(titularTipo, titularId, tipo);
         solicitacao = solicitacaoRepo.save(solicitacao);
 
         String rawToken = generateRawToken();
@@ -217,19 +217,14 @@ public class DsrService {
         }
     }
 
-    private void assertTitularOwnership(UUID assessoriaId, String titularTipo, UUID titularId) {
+    private void assertTitularExists(String titularTipo, UUID titularId) {
         switch (titularTipo) {
             case "INFLUENCIADOR" -> {
-                Influenciador inf =
-                        influenciadorRepo
-                                .findById(titularId)
-                                .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
-                if (!inf.getAssessoriaId().equals(assessoriaId))
+                if (!influenciadorRepo.existsById(titularId))
                     throw BusinessException.notFound("INFLUENCIADOR");
             }
             case "CONTATO" -> {
                 if (!contatoRepo.existsById(titularId)) throw BusinessException.notFound("CONTATO");
-                // TODO(PRD-007): chain check via Marca.assessoriaId when contatos carry direct FK
             }
             default ->
                     throw BusinessException.badRequest(

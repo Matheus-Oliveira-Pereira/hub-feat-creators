@@ -14,9 +14,6 @@ public class WhatsappEventoInbound {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "account_id", nullable = false)
     private UUID accountId;
 
@@ -42,13 +39,11 @@ public class WhatsappEventoInbound {
     protected WhatsappEventoInbound() {}
 
     public WhatsappEventoInbound(
-            UUID assessoriaId,
             UUID accountId,
             String fromE164,
             String wamid,
             String tipo,
             String payload) {
-        this.assessoriaId = assessoriaId;
         this.accountId = accountId;
         this.fromE164 = fromE164;
         this.wamid = wamid;
@@ -58,10 +53,6 @@ public class WhatsappEventoInbound {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getAccountId() {

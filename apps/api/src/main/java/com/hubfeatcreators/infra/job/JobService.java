@@ -24,21 +24,16 @@ public class JobService {
     }
 
     @Transactional
-    public void enqueue(UUID assessoriaId, String tipo, Object payload, UUID idempotencyKey) {
-        enqueue(assessoriaId, tipo, payload, idempotencyKey, Instant.now());
+    public void enqueue(String tipo, Object payload, UUID idempotencyKey) {
+        enqueue(tipo, payload, idempotencyKey, Instant.now());
     }
 
     @Transactional
-    public void enqueue(
-            UUID assessoriaId,
-            String tipo,
-            Object payload,
-            UUID idempotencyKey,
-            Instant scheduledFor) {
+    public void enqueue(String tipo, Object payload, UUID idempotencyKey, Instant scheduledFor) {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> payloadMap = mapper.convertValue(payload, Map.class);
-            Job job = new Job(assessoriaId, tipo, payloadMap, idempotencyKey);
+            Job job = new Job(tipo, payloadMap, idempotencyKey);
             job.setAgendadoPara(scheduledFor);
             job.setProximaTentativaEm(scheduledFor);
             repository.save(job);

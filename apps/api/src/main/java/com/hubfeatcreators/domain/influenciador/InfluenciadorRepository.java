@@ -13,18 +13,22 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
     Optional<Influenciador> findByIdAndDeletedAtIsNull(UUID id);
 
     @Query(
-            "SELECT i FROM Influenciador i WHERE i.id = :id AND i.assessoriaId = :assessoriaId AND i.deletedAt IS NULL")
-    Optional<Influenciador> findByIdAndAssessoriaId(
-            @Param("id") UUID id, @Param("assessoriaId") UUID assessoriaId);
-
-    @Query(
-            """
-      SELECT i FROM Influenciador i
-      WHERE i.deletedAt IS NULL
-        AND (:nome IS NULL OR LOWER(i.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-        AND (:nicho IS NULL OR i.nicho = :nicho)
-      ORDER BY i.createdAt DESC
-      """)
+            value =
+                    """
+      SELECT * FROM influenciadores
+      WHERE deleted_at IS NULL
+        AND (:nome IS NULL OR LOWER(nome) LIKE LOWER('%' || CAST(:nome AS text) || '%'))
+        AND (:nicho IS NULL OR nicho = :nicho)
+      ORDER BY created_at DESC
+      """,
+            countQuery =
+                    """
+      SELECT COUNT(*) FROM influenciadores
+      WHERE deleted_at IS NULL
+        AND (:nome IS NULL OR LOWER(nome) LIKE LOWER('%' || CAST(:nome AS text) || '%'))
+        AND (:nicho IS NULL OR nicho = :nicho)
+      """,
+            nativeQuery = true)
     Page<Influenciador> search(
             @Param("nome") String nome, @Param("nicho") String nicho, Pageable pageable);
 
@@ -35,14 +39,11 @@ public interface InfluenciadorRepository extends JpaRepository<Influenciador, UU
             value =
                     """
       SELECT * FROM influenciadores
-      WHERE assessoria_id = :assessoriaId
-        AND deleted_at IS NULL
+      WHERE deleted_at IS NULL
         AND handles->>:handleKey = :handleValue
       LIMIT 1
       """,
             nativeQuery = true)
-    Optional<Influenciador> findByHandleAndAssessoria(
-            @Param("assessoriaId") UUID assessoriaId,
-            @Param("handleKey") String handleKey,
-            @Param("handleValue") String handleValue);
+    Optional<Influenciador> findByHandle(
+            @Param("handleKey") String handleKey, @Param("handleValue") String handleValue);
 }

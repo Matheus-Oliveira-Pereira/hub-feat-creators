@@ -74,7 +74,6 @@ public class TarefaService {
         Instant fimSemana = inicioDiaBr.plusDays(7).toInstant();
 
         return repo.findAllFiltered(
-                principal.assessoriaId(),
                 status,
                 prioridade,
                 resp,
@@ -88,22 +87,20 @@ public class TarefaService {
 
     @Transactional(readOnly = true)
     public Tarefa buscar(AuthPrincipal principal, UUID id) {
-        Tarefa t = repo.findById(id).orElseThrow(() -> BusinessException.notFound("TAREFA"));
-        ensureTenant(principal, t);
-        return t;
+        return repo.findById(id).orElseThrow(() -> BusinessException.notFound("TAREFA"));
     }
 
     @Transactional(readOnly = true)
     public long contarAlerta(AuthPrincipal principal) {
         ZonedDateTime inicioDiaBr = ZonedDateTime.now(TZ_BR).toLocalDate().atStartOfDay(TZ_BR);
         Instant fimDia = inicioDiaBr.plusDays(1).toInstant();
-        return repo.countAlerta(principal.assessoriaId(), principal.usuarioId(), fimDia);
+        return repo.countAlerta(principal.usuarioId(), fimDia);
     }
 
     @Transactional(readOnly = true)
     public List<Tarefa> listarPorEntidade(
             AuthPrincipal principal, EntidadeTipo tipo, UUID entidadeId) {
-        return repo.findByEntidade(principal.assessoriaId(), tipo, entidadeId);
+        return repo.findByEntidade(tipo, entidadeId);
     }
 
     // ─── Write ──────────────────────────────────────────────────────────────
@@ -120,8 +117,7 @@ public class TarefaService {
             UUID entidadeId) {
 
         UUID respId = resolveResponsavel(principal, responsavelId);
-        Tarefa t =
-                new Tarefa(principal.assessoriaId(), titulo, prazo, respId, principal.usuarioId());
+        Tarefa t = new Tarefa(titulo, prazo, respId, principal.usuarioId());
         t.setDescricao(descricao);
         if (prioridade != null) t.setPrioridade(prioridade);
         if (entidadeTipo != null) {
@@ -134,7 +130,6 @@ public class TarefaService {
         Counter.builder("tarefas_criadas_total").register(meterRegistry).increment();
 
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "TAREFA",
                 saved.getId(),
@@ -148,7 +143,6 @@ public class TarefaService {
         EntidadeRef tarefaRef = new EntidadeRef("TAREFA", saved.getId());
         if (saved.getEntidadeId() != null && saved.getEntidadeTipo() != null) {
             eventoService.registrar(
-                    principal.assessoriaId(),
                     principal.usuarioId(),
                     EventoTipo.TAREFA_CRIADA,
                     Map.of("titulo", saved.getTitulo()),
@@ -156,7 +150,6 @@ public class TarefaService {
                     new EntidadeRef(saved.getEntidadeTipo().name(), saved.getEntidadeId()));
         } else {
             eventoService.registrar(
-                    principal.assessoriaId(),
                     principal.usuarioId(),
                     EventoTipo.TAREFA_CRIADA,
                     Map.of("titulo", saved.getTitulo()),
@@ -197,7 +190,6 @@ public class TarefaService {
 
         Tarefa saved = repo.save(t);
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "TAREFA",
                 saved.getId(),
@@ -217,14 +209,12 @@ public class TarefaService {
             t.setConcluidaEm(Instant.now());
             Counter.builder("tarefas_concluidas_total").register(meterRegistry).increment();
         } else if (antes == TarefaStatus.FEITA) {
-            // Reabrindo: limpa concluidaEm
             t.setConcluidaEm(null);
         }
         t.setUpdatedAt(Instant.now());
 
         Tarefa saved = repo.save(t);
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "TAREFA",
                 saved.getId(),
@@ -233,7 +223,6 @@ public class TarefaService {
 
         if (novoStatus == TarefaStatus.FEITA) {
             eventoService.registrar(
-                    principal.assessoriaId(),
                     principal.usuarioId(),
                     EventoTipo.TAREFA_CONCLUIDA,
                     Map.of("titulo", saved.getTitulo()),
@@ -251,7 +240,6 @@ public class TarefaService {
         repo.save(t);
 
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "TAREFA",
                 t.getId(),
@@ -268,9 +256,7 @@ public class TarefaService {
         if (texto == null || texto.isBlank()) {
             throw BusinessException.badRequest("COMENTARIO_VAZIO", "Texto obrigatório.");
         }
-        return comentarioRepo.save(
-                new TarefaComentario(
-                        t.getId(), principal.assessoriaId(), principal.usuarioId(), texto));
+        return comentarioRepo.save(new TarefaComentario(t.getId(), principal.usuarioId(), texto));
     }
 
     @Transactional(readOnly = true)
@@ -311,15 +297,9 @@ public class TarefaService {
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
-    private void ensureTenant(AuthPrincipal principal, Tarefa t) {
-        if (!t.getAssessoriaId().equals(principal.assessoriaId())) {
-            throw BusinessException.notFound("TAREFA");
-        }
-    }
-
     /**
-     * Resolve responsavelId conforme AC-2: - OWNER pode atribuir a qualquer usuário da assessoria -
-     * ASSESSOR: só pode auto-atribuir OU devolver ao OWNER (responsavelId = null → próprio)
+     * Resolve responsavelId conforme AC-2: OWNER pode atribuir a qualquer usuário. ASSESSOR só pode
+     * auto-atribuir OU devolver ao OWNER (responsavelId = null → próprio).
      */
     private UUID resolveResponsavel(AuthPrincipal principal, UUID responsavelId) {
         if (responsavelId == null) return principal.usuarioId();

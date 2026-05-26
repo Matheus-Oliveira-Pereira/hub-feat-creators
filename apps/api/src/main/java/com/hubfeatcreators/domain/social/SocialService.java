@@ -56,7 +56,7 @@ public class SocialService {
     }
 
     @Transactional
-    public SocialAccount connectInstagram(UUID assessoriaId, UUID influenciadorId, String code) {
+    public SocialAccount connectInstagram(UUID influenciadorId, String code) {
         InstagramApiClient.TokenResponse token = instagramClient.exchangeCode(code);
         Map<String, Object> profile = instagramClient.getUserProfile(token.accessToken());
 
@@ -72,7 +72,6 @@ public class SocialService {
         if (account == null) {
             account =
                     new SocialAccount(
-                            assessoriaId,
                             influenciadorId,
                             "INSTAGRAM",
                             token.userId(),
@@ -91,12 +90,12 @@ public class SocialService {
         }
         account = accountRepo.save(account);
         gravarConsentimento(influenciadorId, "INSTAGRAM", token.userId());
-        enqueueSync(assessoriaId, account.getId());
+        enqueueSync(account.getId());
         return account;
     }
 
     @Transactional
-    public SocialAccount connectYoutube(UUID assessoriaId, UUID influenciadorId, String code) {
+    public SocialAccount connectYoutube(UUID influenciadorId, String code) {
         YoutubeApiClient.TokenResponse token = youtubeClient.exchangeCode(code);
         Map<String, Object> stats = youtubeClient.getChannelStats(token.accessToken());
 
@@ -117,7 +116,6 @@ public class SocialService {
         if (account == null) {
             account =
                     new SocialAccount(
-                            assessoriaId,
                             influenciadorId,
                             "YOUTUBE",
                             channelId,
@@ -138,12 +136,12 @@ public class SocialService {
         }
         account = accountRepo.save(account);
         gravarConsentimento(influenciadorId, "YOUTUBE", channelId);
-        enqueueSync(assessoriaId, account.getId());
+        enqueueSync(account.getId());
         return account;
     }
 
     @Transactional
-    public SocialAccount connectTiktok(UUID assessoriaId, UUID influenciadorId, String code) {
+    public SocialAccount connectTiktok(UUID influenciadorId, String code) {
         TiktokApiClient.TokenResponse token = tiktokClient.exchangeCode(code);
         Map<String, Object> userInfo = tiktokClient.getUserInfo(token.accessToken());
 
@@ -165,7 +163,6 @@ public class SocialService {
         if (account == null) {
             account =
                     new SocialAccount(
-                            assessoriaId,
                             influenciadorId,
                             "TIKTOK",
                             token.openId(),
@@ -186,16 +183,15 @@ public class SocialService {
         }
         account = accountRepo.save(account);
         gravarConsentimento(influenciadorId, "TIKTOK", token.openId());
-        enqueueSync(assessoriaId, account.getId());
+        enqueueSync(account.getId());
         return account;
     }
 
     @Transactional
-    public void disconnect(UUID assessoriaId, UUID accountId) {
+    public void disconnect(UUID accountId) {
         SocialAccount account =
                 accountRepo
                         .findById(accountId)
-                        .filter(a -> a.getAssessoriaId().equals(assessoriaId))
                         .orElseThrow(
                                 () ->
                                         com.hubfeatcreators.infra.web.BusinessException.notFound(
@@ -289,15 +285,14 @@ public class SocialService {
         }
     }
 
-    public List<SocialAccount> listByInfluenciador(UUID assessoriaId, UUID influenciadorId) {
-        return accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId);
+    public List<SocialAccount> listByInfluenciador(UUID influenciadorId) {
+        return accountRepo.findByInfluenciadorId(influenciadorId);
     }
 
-    public List<SocialSnapshot> listSnapshots(UUID assessoriaId, UUID accountId, int limit) {
+    public List<SocialSnapshot> listSnapshots(UUID accountId, int limit) {
         SocialAccount account =
                 accountRepo
                         .findById(accountId)
-                        .filter(a -> a.getAssessoriaId().equals(assessoriaId))
                         .orElseThrow(
                                 () ->
                                         com.hubfeatcreators.infra.web.BusinessException.notFound(
@@ -419,9 +414,8 @@ public class SocialService {
                         Map.of("externalUserId", userId, "ts", Instant.now().toString())));
     }
 
-    private void enqueueSync(UUID assessoriaId, UUID accountId) {
+    private void enqueueSync(UUID accountId) {
         jobService.enqueue(
-                assessoriaId,
                 "SOCIAL_SYNC",
                 Map.of("accountId", accountId.toString()),
                 UUID.nameUUIDFromBytes(

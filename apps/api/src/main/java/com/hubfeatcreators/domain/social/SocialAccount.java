@@ -13,9 +13,6 @@ public class SocialAccount {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "influenciador_id", nullable = false)
     private UUID influenciadorId;
 
@@ -54,7 +51,6 @@ public class SocialAccount {
     protected SocialAccount() {}
 
     public SocialAccount(
-            UUID assessoriaId,
             UUID influenciadorId,
             String plataforma,
             String externalUserId,
@@ -64,7 +60,6 @@ public class SocialAccount {
             byte[] refreshTokenEnc,
             byte[] refreshNonce,
             Instant expiresAt) {
-        this.assessoriaId = assessoriaId;
         this.influenciadorId = influenciadorId;
         this.plataforma = plataforma;
         this.externalUserId = externalUserId;
@@ -78,10 +73,6 @@ public class SocialAccount {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getInfluenciadorId() {

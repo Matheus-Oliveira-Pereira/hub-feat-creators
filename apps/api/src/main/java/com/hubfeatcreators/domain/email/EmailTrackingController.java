@@ -60,7 +60,6 @@ public class EmailTrackingController {
                                 eventoRepo.save(
                                         new EmailEvento(
                                                 envioId,
-                                                envio.getAssessoriaId(),
                                                 EmailEventoTipo.ABERTO,
                                                 Map.of()));
                                 log.info("email.open envioId={}", envioId);
@@ -87,7 +86,6 @@ public class EmailTrackingController {
                             eventoRepo.save(
                                     new EmailEvento(
                                             envioId,
-                                            envio.getAssessoriaId(),
                                             EmailEventoTipo.CLICADO,
                                             Map.of("url", url)));
                             log.info("email.click envioId={}", envioId);
@@ -127,16 +125,14 @@ public class EmailTrackingController {
     private void processUnsubscribe(String token) {
         try {
             String emailKey = appProperties.getSecrets().getEmailKey();
-            String[] parts = EmailUnsubscribeTokens.verify(emailKey, token);
-            if (parts == null) {
+            String email = EmailUnsubscribeTokens.verify(emailKey, token);
+            if (email == null) {
                 log.warn("email.unsubscribe.invalid_signature");
                 return;
             }
-            UUID assessoriaId = UUID.fromString(parts[0]);
-            String email = parts[1];
-            if (!optoutRepo.existsByAssessoriaIdAndEmailIgnoreCase(assessoriaId, email)) {
-                optoutRepo.save(new EmailOptout(assessoriaId, email, "unsubscribe_link"));
-                log.info("email.unsubscribe assessoriaId={}", assessoriaId);
+            if (!optoutRepo.existsByEmailIgnoreCase(email)) {
+                optoutRepo.save(new EmailOptout(email, "unsubscribe_link"));
+                log.info("email.unsubscribe email={}", email);
             }
         } catch (Exception e) {
             log.warn("email.unsubscribe.error");

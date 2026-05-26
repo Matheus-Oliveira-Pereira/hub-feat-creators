@@ -13,9 +13,6 @@ public class Job {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id")
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String tipo;
 
@@ -59,8 +56,7 @@ public class Job {
 
     public Job() {}
 
-    public Job(UUID assessoriaId, String tipo, Map<String, Object> payload, UUID idempotencyKey) {
-        this.assessoriaId = assessoriaId;
+    public Job(String tipo, Map<String, Object> payload, UUID idempotencyKey) {
         this.tipo = tipo;
         this.payload = payload;
         this.idempotencyKey = idempotencyKey;
@@ -68,10 +64,6 @@ public class Job {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getTipo() {

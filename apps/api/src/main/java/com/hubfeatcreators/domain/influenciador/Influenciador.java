@@ -6,19 +6,14 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "influenciadores")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class Influenciador {
 
     @Id private UUID id = UUID.randomUUID();
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Column(nullable = false)
     private String nome;
@@ -60,18 +55,13 @@ public class Influenciador {
 
     public Influenciador() {}
 
-    public Influenciador(UUID assessoriaId, String nome, UUID createdBy) {
-        this.assessoriaId = assessoriaId;
+    public Influenciador(String nome, UUID createdBy) {
         this.nome = nome;
         this.createdBy = createdBy;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

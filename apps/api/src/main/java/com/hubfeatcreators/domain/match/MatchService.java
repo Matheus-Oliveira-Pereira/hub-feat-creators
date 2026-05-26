@@ -1,6 +1,5 @@
 package com.hubfeatcreators.domain.match;
 
-import com.hubfeatcreators.domain.influenciador.Influenciador;
 import com.hubfeatcreators.domain.influenciador.InfluenciadorRepository;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.math.BigDecimal;
@@ -59,7 +58,7 @@ public class MatchService {
     }
 
     @Transactional
-    public List<MatchSugestao> runMatch(UUID assessoriaId, UUID prospeccaoId) {
+    public List<MatchSugestao> runMatch(UUID prospeccaoId) {
         Briefing briefing =
                 briefingRepo
                         .findByProspeccaoId(prospeccaoId)
@@ -74,7 +73,7 @@ public class MatchService {
         vectorRepo.upsertBriefingEmbedding(briefing.getId(), briefingEmbedding);
 
         List<Map<String, Object>> candidates =
-                vectorRepo.findSimilarCreators(assessoriaId, briefingEmbedding, TOP_K * 2);
+                vectorRepo.findSimilarCreators(briefingEmbedding, TOP_K * 2);
 
         // Batch-load features and optouts to avoid N+1
         List<UUID> candidateIds =
@@ -106,8 +105,7 @@ public class MatchService {
 
             double cosineSim = ((Number) candidate.get("cosine_sim")).doubleValue();
             int historicalDeals =
-                    sugestaoRepo.countByInfluenciadorIdAndAssessoriaId(
-                            influenciadorId, assessoriaId);
+                    sugestaoRepo.countByInfluenciadorId(influenciadorId);
             double health = scorer.channelHealthScore(features);
 
             MatchScorer.ScoreInput input =
@@ -126,7 +124,6 @@ public class MatchService {
 
             MatchSugestao sugestao =
                     new MatchSugestao(
-                            assessoriaId,
                             prospeccaoId,
                             influenciadorId,
                             BigDecimal.valueOf(finalScore).setScale(4, RoundingMode.HALF_UP),
@@ -141,42 +138,32 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchSugestao> getSugestoes(UUID assessoriaId, UUID prospeccaoId) {
+    public List<MatchSugestao> getSugestoes(UUID prospeccaoId) {
         MatchModelVersion model =
                 modelRepo
                         .findActiveVersion()
                         .orElseThrow(() -> BusinessException.notFound("MATCH_MODEL_VERSION"));
-        List<MatchSugestao> list =
-                sugestaoRepo.findByProspeccaoIdAndModeloVersaoOrderByScoreDesc(
-                        prospeccaoId, model.getVersao());
-        list.forEach(s -> assertAssessoria(assessoriaId, s.getAssessoriaId()));
-        return list;
+        return sugestaoRepo.findByProspeccaoIdAndModeloVersaoOrderByScoreDesc(
+                prospeccaoId, model.getVersao());
     }
 
     @Transactional(readOnly = true)
-    public List<MatchSugestao> getReverse(UUID assessoriaId, UUID influenciadorId) {
-        return sugestaoRepo.findByInfluenciadorIdAndAssessoriaIdOrderByScoreDesc(
-                influenciadorId, assessoriaId);
+    public List<MatchSugestao> getReverse(UUID influenciadorId) {
+        return sugestaoRepo.findByInfluenciadorIdOrderByScoreDesc(influenciadorId);
     }
 
     @Transactional
     public MatchFeedback addFeedback(
-            UUID assessoriaId, UUID sugestaoId, UUID autorId, String sinal, String comentario) {
-        MatchSugestao sugestao =
-                sugestaoRepo
-                        .findById(sugestaoId)
-                        .orElseThrow(() -> BusinessException.notFound("MATCH_SUGESTAO"));
-        assertAssessoria(assessoriaId, sugestao.getAssessoriaId());
+            UUID sugestaoId, UUID autorId, String sinal, String comentario) {
+        sugestaoRepo
+                .findById(sugestaoId)
+                .orElseThrow(() -> BusinessException.notFound("MATCH_SUGESTAO"));
         return feedbackRepo.save(new MatchFeedback(sugestaoId, autorId, sinal, comentario));
     }
 
     @Transactional
-    public void optout(UUID assessoriaId, UUID influenciadorId, String motivo) {
-        Influenciador inf =
-                influenciadorRepo
-                        .findById(influenciadorId)
-                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
-        if (!inf.getAssessoriaId().equals(assessoriaId))
+    public void optout(UUID influenciadorId, String motivo) {
+        if (!influenciadorRepo.existsById(influenciadorId))
             throw BusinessException.notFound("INFLUENCIADOR");
         if (!optoutRepo.existsById(influenciadorId)) {
             optoutRepo.save(new CreatorMatchOptout(influenciadorId, motivo));
@@ -184,12 +171,8 @@ public class MatchService {
     }
 
     @Transactional
-    public void optin(UUID assessoriaId, UUID influenciadorId) {
-        Influenciador inf =
-                influenciadorRepo
-                        .findById(influenciadorId)
-                        .orElseThrow(() -> BusinessException.notFound("INFLUENCIADOR"));
-        if (!inf.getAssessoriaId().equals(assessoriaId))
+    public void optin(UUID influenciadorId) {
+        if (!influenciadorRepo.existsById(influenciadorId))
             throw BusinessException.notFound("INFLUENCIADOR");
         optoutRepo.deleteById(influenciadorId);
     }
@@ -201,9 +184,5 @@ public class MatchService {
         if (briefing.getFormato() != null) sb.append(briefing.getFormato()).append(" ");
         if (briefing.getTexto() != null) sb.append(briefing.getTexto());
         return sb.toString().trim();
-    }
-
-    private void assertAssessoria(UUID expected, UUID actual) {
-        if (!expected.equals(actual)) throw BusinessException.notFound("MATCH_SUGESTAO");
     }
 }

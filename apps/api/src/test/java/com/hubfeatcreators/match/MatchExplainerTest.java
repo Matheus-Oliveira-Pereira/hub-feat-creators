@@ -128,23 +128,21 @@ class MatchExplainerTest {
     }
 
     private Briefing briefing(String vertical) {
-        return new Briefing(
-                UUID.randomUUID(), UUID.randomUUID(), vertical, null, null, null, null, null, null);
+        return new Briefing(UUID.randomUUID(), vertical, null, null, null, null, null, null);
     }
 
     private Briefing emptyBriefing() {
-        return new Briefing(
-                UUID.randomUUID(), UUID.randomUUID(), null, null, null, null, null, null, null);
+        return new Briefing(UUID.randomUUID(), null, null, null, null, null, null, null);
     }
 
     private CreatorProfileFeature features(
             String vertical, BigDecimal engagement, BigDecimal freq) {
-        CreatorProfileFeature f = new CreatorProfileFeature(UUID.randomUUID(), UUID.randomUUID());
+        CreatorProfileFeature f = new CreatorProfileFeature(UUID.randomUUID());
         f.update(vertical, null, null, null, engagement, freq);
         return f;
     }
 
     private CreatorProfileFeature emptyFeatures() {
-        return new CreatorProfileFeature(UUID.randomUUID(), UUID.randomUUID());
+        return new CreatorProfileFeature(UUID.randomUUID());
     }
 }

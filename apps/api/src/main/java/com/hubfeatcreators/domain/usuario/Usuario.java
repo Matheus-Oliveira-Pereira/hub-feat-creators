@@ -3,24 +3,13 @@ package com.hubfeatcreators.domain.usuario;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
 
 @Entity
-@Table(
-        name = "usuarios",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"assessoria_id", "email"}))
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
+@Table(name = "usuarios")
 public class Usuario {
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "tipo", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private TipoUsuario tipo = TipoUsuario.INTERNO;
-
-    @Column(name = "assessoria_id", nullable = true)
-    private UUID assessoriaId;
-
-    @Column(nullable = false, columnDefinition = "CITEXT")
+    @Column(nullable = false, columnDefinition = "CITEXT", unique = true)
     private String email;
 
     @Column(name = "senha_hash", nullable = false)
@@ -58,11 +47,6 @@ public class Usuario {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    public enum TipoUsuario {
-        INTERNO,
-        ADM
-    }
-
     public enum Role {
         OWNER,
         ASSESSOR
@@ -76,34 +60,10 @@ public class Usuario {
 
     public Usuario() {}
 
-    public Usuario(UUID assessoriaId, String email, String senhaHash, Role role) {
-        this.assessoriaId = assessoriaId;
+    public Usuario(String email, String senhaHash, Role role) {
         this.email = email;
         this.senhaHash = senhaHash;
         this.role = role;
-        this.tipo = TipoUsuario.INTERNO;
-    }
-
-    public static Usuario createAdm(String email, String senhaHash) {
-        Usuario u = new Usuario();
-        u.tipo = TipoUsuario.ADM;
-        u.assessoriaId = null;
-        u.email = email;
-        u.senhaHash = senhaHash;
-        u.role = Role.OWNER;
-        return u;
-    }
-
-    public boolean isAdm() {
-        return tipo == TipoUsuario.ADM;
-    }
-
-    public TipoUsuario getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoUsuario tipo) {
-        this.tipo = tipo;
     }
 
     public boolean isEmailVerificado() {
@@ -114,103 +74,51 @@ public class Usuario {
         return status == Status.ATIVO && deletedAt == null;
     }
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
 
-    public UUID getAssessoriaId() {
-        return assessoriaId;
-    }
+    public String getEmail() { return email; }
 
-    public String getEmail() {
-        return email;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getSenhaHash() { return senhaHash; }
 
-    public String getSenhaHash() {
-        return senhaHash;
-    }
+    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
 
-    public void setSenhaHash(String senhaHash) {
-        this.senhaHash = senhaHash;
-    }
+    public Role getRole() { return role; }
 
-    public Role getRole() {
-        return role;
-    }
+    public void setRole(Role role) { this.role = role; }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+    public UUID getProfileId() { return profileId; }
 
-    public UUID getProfileId() {
-        return profileId;
-    }
+    public void setProfileId(UUID profileId) { this.profileId = profileId; }
 
-    public void setProfileId(UUID profileId) {
-        this.profileId = profileId;
-    }
+    public String getMfaSecretEnc() { return mfaSecretEnc; }
 
-    public String getMfaSecretEnc() {
-        return mfaSecretEnc;
-    }
+    public void setMfaSecretEnc(String mfaSecretEnc) { this.mfaSecretEnc = mfaSecretEnc; }
 
-    public void setMfaSecretEnc(String mfaSecretEnc) {
-        this.mfaSecretEnc = mfaSecretEnc;
-    }
+    public boolean isMfaAtivo() { return mfaAtivo; }
 
-    public boolean isMfaAtivo() {
-        return mfaAtivo;
-    }
+    public void setMfaAtivo(boolean mfaAtivo) { this.mfaAtivo = mfaAtivo; }
 
-    public void setMfaAtivo(boolean mfaAtivo) {
-        this.mfaAtivo = mfaAtivo;
-    }
+    public Instant getEmailVerificadoEm() { return emailVerificadoEm; }
 
-    public Instant getEmailVerificadoEm() {
-        return emailVerificadoEm;
-    }
+    public void setEmailVerificadoEm(Instant emailVerificadoEm) { this.emailVerificadoEm = emailVerificadoEm; }
 
-    public void setEmailVerificadoEm(Instant emailVerificadoEm) {
-        this.emailVerificadoEm = emailVerificadoEm;
-    }
+    public Status getStatus() { return status; }
 
-    public Status getStatus() {
-        return status;
-    }
+    public void setStatus(Status status) { this.status = status; }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+    public Instant getUltimoLoginEm() { return ultimoLoginEm; }
 
-    public Instant getUltimoLoginEm() {
-        return ultimoLoginEm;
-    }
+    public void setUltimoLoginEm(Instant ultimoLoginEm) { this.ultimoLoginEm = ultimoLoginEm; }
 
-    public void setUltimoLoginEm(Instant ultimoLoginEm) {
-        this.ultimoLoginEm = ultimoLoginEm;
-    }
+    public Instant getCreatedAt() { return createdAt; }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public Instant getUpdatedAt() { return updatedAt; }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public Instant getDeletedAt() { return deletedAt; }
 
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(Instant deletedAt) {
-        this.deletedAt = deletedAt;
-    }
+    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
 }

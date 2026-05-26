@@ -46,7 +46,7 @@ class OnboardingServiceTest {
 
     @Test
     void sendVerification_savesTokenAndSendsEmail() {
-        Usuario usuario = new Usuario(UUID.randomUUID(), "a@b.com", "hash", Usuario.Role.ASSESSOR);
+        Usuario usuario = new Usuario("a@b.com", "hash", Usuario.Role.ASSESSOR);
         when(verifyRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         doNothing().when(verifyRepo).invalidateExisting(any());
 
@@ -64,7 +64,7 @@ class OnboardingServiceTest {
                 new EmailVerifyToken(
                         UUID.randomUUID(), hash, Instant.now().plus(1, ChronoUnit.HOURS));
 
-        Usuario usuario = new Usuario(UUID.randomUUID(), "a@b.com", "hash", Usuario.Role.ASSESSOR);
+        Usuario usuario = new Usuario("a@b.com", "hash", Usuario.Role.ASSESSOR);
 
         when(verifyRepo.findByTokenHash(hash)).thenReturn(Optional.of(token));
         when(usuarioRepo.findById(token.getUsuarioId())).thenReturn(Optional.of(usuario));
@@ -107,7 +107,7 @@ class OnboardingServiceTest {
         PasswordResetToken token =
                 new PasswordResetToken(uid, hash, Instant.now().plus(1, ChronoUnit.HOURS));
 
-        Usuario usuario = new Usuario(uid, "a@b.com", "old", Usuario.Role.ASSESSOR);
+        Usuario usuario = new Usuario("a@b.com", "old", Usuario.Role.ASSESSOR);
         when(resetRepo.findByTokenHash(hash)).thenReturn(Optional.of(token));
         when(usuarioRepo.findById(uid)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.encode("nova123!")).thenReturn("argon2hash");

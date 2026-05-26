@@ -43,7 +43,7 @@ public class MembrosController {
     @GetMapping
     @RequirePermission(PermissionCodes.B_USU)
     public List<MembroResponse> listar(@AuthenticationPrincipal AuthPrincipal principal) {
-        return usuarioRepo.findAllByAssessoriaId(principal.assessoriaId()).stream()
+        return usuarioRepo.findAllActive().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -55,7 +55,7 @@ public class MembrosController {
             @RequestBody AtualizarStatusRequest req,
             @AuthenticationPrincipal AuthPrincipal principal,
             HttpServletRequest http) {
-        Usuario membro = findInTenant(id, principal);
+        Usuario membro = findMembro(id);
 
         if (membro.getId().equals(principal.usuarioId())) {
             throw BusinessException.badRequest(
@@ -73,7 +73,6 @@ public class MembrosController {
                         ? AuditLog.Acao.MEMBER_ACTIVATED
                         : AuditLog.Acao.MEMBER_DEACTIVATED;
         auditLogService.logAuth(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 acao,
                 Map.of("membroId", id, "de", anterior.name(), "para", novoStatus.name()),
@@ -94,13 +93,12 @@ public class MembrosController {
             throw BusinessException.badRequest("SELF_REMOVE", "Não é possível remover a si mesmo.");
         }
 
-        Usuario membro = findInTenant(id, principal);
+        Usuario membro = findMembro(id);
         membro.setDeletedAt(Instant.now());
         membro.setUpdatedAt(Instant.now());
         usuarioRepo.save(membro);
 
         auditLogService.logAuth(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 AuditLog.Acao.MEMBER_REMOVED,
                 Map.of("membroId", id, "email", membro.getEmail()),
@@ -110,9 +108,9 @@ public class MembrosController {
 
     // ── helpers ──────────────────────────────────────────────────────────
 
-    private Usuario findInTenant(UUID id, AuthPrincipal principal) {
+    private Usuario findMembro(UUID id) {
         return usuarioRepo
-                .findByIdAndAssessoriaId(id, principal.assessoriaId())
+                .findById(id)
                 .orElseThrow(() -> BusinessException.notFound("USUARIO"));
     }
 

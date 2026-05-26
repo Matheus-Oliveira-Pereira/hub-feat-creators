@@ -39,13 +39,7 @@ public class NotificacaoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Page<Notificacao> result =
-                service.listar(
-                        principal.assessoriaId(),
-                        principal.usuarioId(),
-                        tipo,
-                        apenasNaoLidas,
-                        page,
-                        size);
+                service.listar(principal.usuarioId(), tipo, apenasNaoLidas, page, size);
         String nextCursor = result.hasNext() ? String.valueOf(page + 1) : null;
         return PageResponse.of(result.getContent(), nextCursor, size);
     }
@@ -53,7 +47,7 @@ public class NotificacaoController {
     @GetMapping("/contagem")
     @RequirePermission(PermissionCodes.B_NOT)
     public Map<String, Long> contagem(@AuthenticationPrincipal AuthPrincipal principal) {
-        long naoLidas = service.contarNaoLidas(principal.assessoriaId(), principal.usuarioId());
+        long naoLidas = service.contarNaoLidas(principal.usuarioId());
         return Map.of("naoLidas", naoLidas);
     }
 
@@ -61,13 +55,13 @@ public class NotificacaoController {
     @RequirePermission(PermissionCodes.B_NOT)
     public void marcarLida(
             @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
-        service.marcarLida(principal.assessoriaId(), id, principal.usuarioId());
+        service.marcarLida(id, principal.usuarioId());
     }
 
     @PostMapping("/lidas")
     @RequirePermission(PermissionCodes.B_NOT)
     public void marcarTodasLidas(@AuthenticationPrincipal AuthPrincipal principal) {
-        service.marcarTodasLidas(principal.assessoriaId(), principal.usuarioId());
+        service.marcarTodasLidas(principal.usuarioId());
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

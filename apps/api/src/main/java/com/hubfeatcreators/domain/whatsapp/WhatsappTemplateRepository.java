@@ -5,13 +5,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface WhatsappTemplateRepository extends JpaRepository<WhatsappTemplate, UUID> {
-    List<WhatsappTemplate> findByAssessoriaId(UUID assessoriaId);
+
+    @Query("SELECT t FROM WhatsappTemplate t ORDER BY t.nome ASC")
+    List<WhatsappTemplate> findAllTemplates();
 
     List<WhatsappTemplate> findByAccountIdAndStatus(UUID accountId, String status);
-
-    Optional<WhatsappTemplate> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
 
     List<WhatsappTemplate> findByStatusAndMetaTemplateIdIsNotNull(String status, Pageable pageable);
 }

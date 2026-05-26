@@ -71,13 +71,13 @@ public class RelatorioService {
     // ─── Funil de Prospecção ─────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public FunilResult funil(UUID assessoriaId, Instant from, Instant to, UUID assessorId) {
+    public FunilResult funil(Instant from, Instant to, UUID assessorId) {
         validate(from, to);
 
         Instant[] prev = previousPeriod(from, to);
 
-        List<Map<String, Object>> current = queryFunil(assessoriaId, from, to, assessorId);
-        List<Map<String, Object>> previous = queryFunil(assessoriaId, prev[0], prev[1], assessorId);
+        List<Map<String, Object>> current = queryFunil(from, to, assessorId);
+        List<Map<String, Object>> previous = queryFunil(prev[0], prev[1], assessorId);
 
         List<FunilItem> itens = new ArrayList<>();
         List<String> allStatuses =
@@ -100,8 +100,7 @@ public class RelatorioService {
         return new FunilResult(itens, fmtPeriod(from, to), fmtPeriod(prev[0], prev[1]));
     }
 
-    private List<Map<String, Object>> queryFunil(
-            UUID assessoriaId, Instant from, Instant to, UUID assessorId) {
+    private List<Map<String, Object>> queryFunil(Instant from, Instant to, UUID assessorId) {
         String sql =
                 """
             SELECT
@@ -111,29 +110,27 @@ public class RelatorioService {
               COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400.0)
                 FILTER (WHERE status IN ('FECHADA_GANHA','FECHADA_PERDIDA')), 0) AS tempo_medio_dias
             FROM prospeccoes
-            WHERE assessoria_id = ?
-              AND deleted_at IS NULL
+            WHERE deleted_at IS NULL
               AND created_at >= ? AND created_at < ?
               AND (? IS NULL OR assessor_responsavel_id = ?)
             GROUP BY status
             """;
-        return jdbc.queryForList(sql, assessoriaId, from, to, assessorId, assessorId);
+        return jdbc.queryForList(sql, from, to, assessorId, assessorId);
     }
 
     // ─── Performance Assessor ────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public PerformanceResult performanceAssessor(UUID assessoriaId, Instant from, Instant to) {
+    public PerformanceResult performanceAssessor(Instant from, Instant to) {
         validate(from, to);
         Instant[] prev = previousPeriod(from, to);
 
-        List<Map<String, Object>> current = queryPerformance(assessoriaId, from, to);
-        List<Map<String, Object>> previous = queryPerformance(assessoriaId, prev[0], prev[1]);
+        List<Map<String, Object>> current = queryPerformance(from, to);
+        List<Map<String, Object>> previous = queryPerformance(prev[0], prev[1]);
 
         List<Map<String, Object>> usuarios =
                 jdbc.queryForList(
-                        "SELECT id, email FROM usuarios WHERE assessoria_id = ? AND deleted_at IS NULL",
-                        assessoriaId);
+                        "SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
 
         List<AssessorItem> assessores = new ArrayList<>();
         for (Map<String, Object> row : current) {
@@ -168,8 +165,7 @@ public class RelatorioService {
         return new PerformanceResult(assessores, fmtPeriod(from, to), fmtPeriod(prev[0], prev[1]));
     }
 
-    private List<Map<String, Object>> queryPerformance(
-            UUID assessoriaId, Instant from, Instant to) {
+    private List<Map<String, Object>> queryPerformance(Instant from, Instant to) {
         String sql =
                 """
             SELECT
@@ -181,30 +177,26 @@ public class RelatorioService {
               COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400.0)
                 FILTER (WHERE status IN ('FECHADA_GANHA','FECHADA_PERDIDA')), 0) AS tempo_medio_fechamento_dias
             FROM prospeccoes
-            WHERE assessoria_id = ?
-              AND deleted_at IS NULL
+            WHERE deleted_at IS NULL
               AND created_at >= ? AND created_at < ?
             GROUP BY assessor_responsavel_id
             """;
-        return jdbc.queryForList(sql, assessoriaId, from, to);
+        return jdbc.queryForList(sql, from, to);
     }
 
     // ─── Tarefas SLA ─────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public TarefaSlaResult tarefaSla(
-            UUID assessoriaId, Instant from, Instant to, UUID responsavelId) {
+    public TarefaSlaResult tarefaSla(Instant from, Instant to, UUID responsavelId) {
         validate(from, to);
         Instant[] prev = previousPeriod(from, to);
 
-        List<Map<String, Object>> current = querySla(assessoriaId, from, to, responsavelId);
-        List<Map<String, Object>> previous =
-                querySla(assessoriaId, prev[0], prev[1], responsavelId);
+        List<Map<String, Object>> current = querySla(from, to, responsavelId);
+        List<Map<String, Object>> previous = querySla(prev[0], prev[1], responsavelId);
 
         List<Map<String, Object>> usuarios =
                 jdbc.queryForList(
-                        "SELECT id, email FROM usuarios WHERE assessoria_id = ? AND deleted_at IS NULL",
-                        assessoriaId);
+                        "SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
 
         List<TarefaSlaItem> assessores = new ArrayList<>();
         for (Map<String, Object> row : current) {
@@ -237,8 +229,7 @@ public class RelatorioService {
         return new TarefaSlaResult(assessores, fmtPeriod(from, to), fmtPeriod(prev[0], prev[1]));
     }
 
-    private List<Map<String, Object>> querySla(
-            UUID assessoriaId, Instant from, Instant to, UUID responsavelId) {
+    private List<Map<String, Object>> querySla(Instant from, Instant to, UUID responsavelId) {
         String sql =
                 """
             SELECT
@@ -252,19 +243,17 @@ public class RelatorioService {
                 0
               ) AS atraso_medio_horas
             FROM tarefas
-            WHERE assessoria_id = ?
-              AND deleted_at IS NULL
+            WHERE deleted_at IS NULL
               AND created_at >= ? AND created_at < ?
               AND (? IS NULL OR responsavel_id = ?)
             GROUP BY responsavel_id
             """;
-        return jdbc.queryForList(sql, assessoriaId, from, to, responsavelId, responsavelId);
+        return jdbc.queryForList(sql, from, to, responsavelId, responsavelId);
     }
 
     // ─── Export CSV ──────────────────────────────────────────────────────────
 
-    public void exportFunilCsv(
-            UUID assessoriaId, Instant from, Instant to, UUID assessorId, PrintWriter out) {
+    public void exportFunilCsv(Instant from, Instant to, UUID assessorId, PrintWriter out) {
         writeBom(out);
         out.println(
                 "# tipo=FUNIL from="
@@ -273,7 +262,7 @@ public class RelatorioService {
                         + to
                         + (assessorId != null ? " assessor_id=" + assessorId : ""));
         out.println("status,qtd,qtd_anterior,delta_percent,valor_total_centavos,tempo_medio_dias");
-        FunilResult r = funil(assessoriaId, from, to, assessorId);
+        FunilResult r = funil(from, to, assessorId);
         r.itens()
                 .forEach(
                         i ->
@@ -287,12 +276,12 @@ public class RelatorioService {
                                         i.tempoMedioDias()));
     }
 
-    public void exportPerformanceCsv(UUID assessoriaId, Instant from, Instant to, PrintWriter out) {
+    public void exportPerformanceCsv(Instant from, Instant to, PrintWriter out) {
         writeBom(out);
         out.println("# tipo=PERFORMANCE_ASSESSOR from=" + from + " to=" + to);
         out.println(
                 "assessor_id,assessor_email,abertas,ganhas,perdidas,ticket_medio_centavos,tempo_medio_fechamento_dias,abertas_anterior,ganhas_anterior,perdidas_anterior");
-        PerformanceResult r = performanceAssessor(assessoriaId, from, to);
+        PerformanceResult r = performanceAssessor(from, to);
         r.assessores()
                 .forEach(
                         i ->
@@ -310,13 +299,12 @@ public class RelatorioService {
                                         i.perdidasAnterior()));
     }
 
-    public void exportSlavCsv(
-            UUID assessoriaId, Instant from, Instant to, UUID responsavelId, PrintWriter out) {
+    public void exportSlavCsv(Instant from, Instant to, UUID responsavelId, PrintWriter out) {
         writeBom(out);
         out.println("# tipo=TAREFAS_SLA from=" + from + " to=" + to);
         out.println(
                 "responsavel_id,responsavel_email,total,no_prazo,atrasadas,atraso_medio_horas,total_anterior");
-        TarefaSlaResult r = tarefaSla(assessoriaId, from, to, responsavelId);
+        TarefaSlaResult r = tarefaSla(from, to, responsavelId);
         r.assessores()
                 .forEach(
                         i ->
@@ -342,19 +330,18 @@ public class RelatorioService {
             AuthPrincipal principal, String nome, String tipo, Map<String, Object> filtros) {
         validateTipo(tipo);
         return savedRepo.save(
-                new RelatorioSalvo(
-                        principal.assessoriaId(), principal.usuarioId(), nome, tipo, filtros));
+                new RelatorioSalvo(principal.usuarioId(), nome, tipo, filtros));
     }
 
     @Transactional(readOnly = true)
     public List<RelatorioSalvo> listarSalvos(AuthPrincipal principal) {
-        return savedRepo.findByAssessoriaIdOrderByCreatedAtDesc(principal.assessoriaId());
+        return savedRepo.findByUsuarioIdOrderByCreatedAtDesc(principal.usuarioId());
     }
 
     @Transactional
     public void deletarSalvo(AuthPrincipal principal, UUID id) {
         savedRepo
-                .findByIdAndAssessoriaId(id, principal.assessoriaId())
+                .findByIdAndUsuarioId(id, principal.usuarioId())
                 .ifPresentOrElse(
                         savedRepo::delete,
                         () -> {

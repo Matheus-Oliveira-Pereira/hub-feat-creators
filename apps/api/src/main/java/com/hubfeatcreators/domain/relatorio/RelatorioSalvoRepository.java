@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RelatorioSalvoRepository extends JpaRepository<RelatorioSalvo, UUID> {
 
-    List<RelatorioSalvo> findByAssessoriaIdOrderByCreatedAtDesc(UUID assessoriaId);
+    List<RelatorioSalvo> findByUsuarioIdOrderByCreatedAtDesc(UUID usuarioId);
 
-    Optional<RelatorioSalvo> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
+    Optional<RelatorioSalvo> findByIdAndUsuarioId(UUID id, UUID usuarioId);
 }

@@ -44,7 +44,6 @@ public class ImportJobHandler implements JobHandler {
                                                 "ImportJob não encontrado: " + jobId));
 
         String entidade = importJob.getEntidade();
-        UUID assessoriaId = importJob.getAssessoriaId();
         UUID usuarioId = importJob.getUsuarioId();
         String baseLegal =
                 importJob.getBaseLegal() != null ? importJob.getBaseLegal() : "LEGITIMO_INTERESSE";
@@ -94,7 +93,6 @@ public class ImportJobHandler implements JobHandler {
                                     persist(
                                             entidade,
                                             row,
-                                            assessoriaId,
                                             usuarioId,
                                             baseLegal,
                                             dedupStrategy);
@@ -144,7 +142,6 @@ public class ImportJobHandler implements JobHandler {
                 importJob.getId(),
                 chunk,
                 importJob.getEntidade(),
-                importJob.getAssessoriaId(),
                 importJob.getUsuarioId(),
                 importJob.getBaseLegal(),
                 importJob.getDedupStrategy());
@@ -162,20 +159,16 @@ public class ImportJobHandler implements JobHandler {
     private UUID persist(
             String entidade,
             Map<String, String> row,
-            UUID assessoriaId,
             UUID usuarioId,
             String baseLegal,
             String dedupStrategy) {
         return switch (entidade) {
             case "INFLUENCIADOR" ->
-                    importService.persistInfluenciador(
-                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+                    importService.persistInfluenciador(row, usuarioId, baseLegal, dedupStrategy);
             case "MARCA" ->
-                    importService.persistMarca(
-                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+                    importService.persistMarca(row, usuarioId, baseLegal, dedupStrategy);
             case "CONTATO" ->
-                    importService.persistContato(
-                            row, assessoriaId, usuarioId, baseLegal, dedupStrategy);
+                    importService.persistContato(row, usuarioId, baseLegal, dedupStrategy);
             default -> null;
         };
     }

@@ -14,9 +14,6 @@ public class WhatsappTemplate {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "account_id", nullable = false)
     private UUID accountId;
 
@@ -57,14 +54,12 @@ public class WhatsappTemplate {
     protected WhatsappTemplate() {}
 
     public WhatsappTemplate(
-            UUID assessoriaId,
             UUID accountId,
             String nome,
             String idioma,
             String categoria,
             String corpo,
             String[] variaveis) {
-        this.assessoriaId = assessoriaId;
         this.accountId = accountId;
         this.nome = nome;
         this.idioma = idioma;
@@ -75,10 +70,6 @@ public class WhatsappTemplate {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getAccountId() {

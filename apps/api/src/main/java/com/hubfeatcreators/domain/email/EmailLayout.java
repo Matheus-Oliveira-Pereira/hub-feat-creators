@@ -10,9 +10,6 @@ public class EmailLayout {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false, unique = true)
-    private UUID assessoriaId;
-
     @Column(name = "header_html", nullable = false)
     private String headerHtml = "";
 
@@ -24,18 +21,10 @@ public class EmailLayout {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
-    protected EmailLayout() {}
-
-    public EmailLayout(UUID assessoriaId) {
-        this.assessoriaId = assessoriaId;
-    }
+    public EmailLayout() {}
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getHeaderHtml() {
