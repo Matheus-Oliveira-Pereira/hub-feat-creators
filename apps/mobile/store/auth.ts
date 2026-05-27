@@ -2,7 +2,6 @@ import { create } from 'zustand';
 
 export interface CreatorClaims {
   creatorUserId: string;
-  assessoriaId: string;
   influenciadorId: string;
   email?: string;
 }
