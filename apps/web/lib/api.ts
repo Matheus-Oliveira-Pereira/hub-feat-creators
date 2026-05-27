@@ -1045,8 +1045,8 @@ export const portalAuth = {
         return r.json() as Promise<InviteInfo>;
       }),
 
-  branding: (slug: string) =>
-    fetch(`${API_URL}/api/v1/portal/branding/${encodeURIComponent(slug)}`)
+  branding: () =>
+    fetch(`${API_URL}/api/v1/portal/branding`)
       .then(async (r) => {
         if (!r.ok) throw await r.json().catch(() => ({}));
         return r.json() as Promise<AssessoriaBranding>;

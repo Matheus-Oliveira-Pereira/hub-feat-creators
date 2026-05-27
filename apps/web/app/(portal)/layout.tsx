@@ -1,17 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
 import { portalAuth, type AssessoriaBranding } from '@/lib/api';
 import { BrandingContext } from './branding-context';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { slug } = useParams<{ slug: string }>();
   const [branding, setBranding] = React.useState<AssessoriaBranding | null>(null);
 
   React.useEffect(() => {
-    portalAuth.branding(slug).then(setBranding).catch(() => {});
-  }, [slug]);
+    portalAuth.branding().then(setBranding).catch(() => {});
+  }, []);
 
   const primary = branding?.corPrimaria ?? '#C2E000';
 
