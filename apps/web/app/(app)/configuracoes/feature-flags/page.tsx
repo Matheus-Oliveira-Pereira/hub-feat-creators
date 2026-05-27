@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { usePermission } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 interface Flag {
   key: string;
@@ -8,26 +10,32 @@ interface Flag {
 }
 
 export default function FeatureFlagsPage() {
+  const hasFlag = usePermission('FLAG');
+  const router = useRouter();
   const [flags, setFlags] = React.useState<Flag[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  const token = () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null);
-
   React.useEffect(() => {
-    fetch('/api/v1/admin/feature-flags', {
-      headers: { Authorization: `Bearer ${token()}` },
+    if (!hasFlag) {
+      router.replace('/');
+      return;
+    }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    fetch('/api/v1/configuracoes/feature-flags', {
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
       .then(setFlags)
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasFlag, router]);
 
   async function toggle(key: string, current: boolean) {
-    const res = await fetch(`/api/v1/admin/feature-flags/${encodeURIComponent(key)}`, {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const res = await fetch(`/api/v1/configuracoes/feature-flags/${encodeURIComponent(key)}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ enabled: !current }),
     });
@@ -37,10 +45,11 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  if (!hasFlag) return null;
   if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
 
   return (
-    <div>
+    <div className="max-w-2xl">
       <h1 className="text-xl font-semibold mb-6">Feature Flags</h1>
       <div className="border rounded-lg divide-y">
         {flags.map(flag => (

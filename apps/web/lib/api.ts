@@ -339,7 +339,6 @@ export type EntidadeTipo = 'PROSPECCAO' | 'INFLUENCIADOR' | 'MARCA' | 'CONTATO';
 
 export interface Tarefa {
   id: string;
-  assessoriaId: string;
   titulo: string;
   descricao: string | null;
   prazo: string;
@@ -950,7 +949,6 @@ export interface InviteInfo {
 }
 
 export interface AssessoriaBranding {
-  assessoriaId: string;
   logoUrl: string | null;
   corPrimaria: string | null;
 }
