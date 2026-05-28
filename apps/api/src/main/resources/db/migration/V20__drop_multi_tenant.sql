@@ -21,7 +21,7 @@ ALTER TABLE usuarios DROP COLUMN IF EXISTS tipo;
 
 -- 5. Drop assessoria_id from usuarios + make email UNIQUE globally
 ALTER TABLE usuarios DROP COLUMN IF EXISTS assessoria_id CASCADE;
-ALTER TABLE usuarios ADD CONSTRAINT uq_usuarios_email UNIQUE (email) NOT VALID;
+ALTER TABLE usuarios ADD CONSTRAINT uq_usuarios_email UNIQUE (email);
 
 -- 6. Drop assessoria_id from refresh_tokens
 ALTER TABLE refresh_tokens DROP COLUMN IF EXISTS assessoria_id CASCADE;
@@ -37,7 +37,11 @@ ALTER TABLE tarefa_comentarios DROP COLUMN IF EXISTS assessoria_id CASCADE;
 ALTER TABLE notificacoes DROP COLUMN IF EXISTS assessoria_id CASCADE;
 ALTER TABLE notificacao_dedupe DROP COLUMN IF EXISTS assessoria_id CASCADE;
 ALTER TABLE notificacao_preferencias DROP COLUMN IF EXISTS assessoria_id CASCADE;
-ALTER TABLE notificacao_digest_log DROP COLUMN IF EXISTS assessoria_id CASCADE;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'notificacao_digest_log') THEN
+    ALTER TABLE notificacao_digest_log DROP COLUMN IF EXISTS assessoria_id CASCADE;
+  END IF;
+END $$;
 ALTER TABLE convites DROP COLUMN IF EXISTS assessoria_id CASCADE;
 ALTER TABLE email_accounts DROP COLUMN IF EXISTS assessoria_id CASCADE;
 ALTER TABLE email_envios DROP COLUMN IF EXISTS assessoria_id CASCADE;
