@@ -39,7 +39,6 @@ public class MatchScheduler {
             for (CreatorProfileFeature f : chunk) {
                 String key = "REEMBED:CREATOR:" + f.getInfluenciadorId() + ":" + date;
                 jobService.enqueue(
-                        f.getAssessoriaId(),
                         "REEMBED",
                         Map.of("type", "CREATOR", "id", f.getInfluenciadorId().toString()),
                         UUID.nameUUIDFromBytes(key.getBytes()));

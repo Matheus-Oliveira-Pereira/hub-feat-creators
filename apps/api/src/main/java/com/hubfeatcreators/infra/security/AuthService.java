@@ -1,9 +1,6 @@
 package com.hubfeatcreators.infra.security;
 
 import com.hubfeatcreators.config.AppProperties;
-import com.hubfeatcreators.domain.admin.AdminAuditService;
-import com.hubfeatcreators.domain.assessoria.Assessoria;
-import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
 import com.hubfeatcreators.domain.onboarding.LoginLockoutService;
 import com.hubfeatcreators.domain.onboarding.MfaService;
 import com.hubfeatcreators.domain.onboarding.OnboardingService;
@@ -33,7 +30,6 @@ public class AuthService {
 
     private static final int REFRESH_TOKEN_DAYS = 30;
 
-    private final AssessoriaRepository assessoriaRepo;
     private final UsuarioRepository usuarioRepo;
     private final RefreshTokenRepository refreshRepo;
     private final JwtService jwtService;
@@ -44,11 +40,9 @@ public class AuthService {
     private final OnboardingService onboardingService;
     private final MfaService mfaService;
     private final AuditLogService auditLogService;
-    private final AdminAuditService adminAuditService;
     private final AppProperties props;
 
     public AuthService(
-            AssessoriaRepository assessoriaRepo,
             UsuarioRepository usuarioRepo,
             RefreshTokenRepository refreshRepo,
             JwtService jwtService,
@@ -59,9 +53,7 @@ public class AuthService {
             OnboardingService onboardingService,
             MfaService mfaService,
             AuditLogService auditLogService,
-            AdminAuditService adminAuditService,
             AppProperties props) {
-        this.assessoriaRepo = assessoriaRepo;
         this.usuarioRepo = usuarioRepo;
         this.refreshRepo = refreshRepo;
         this.jwtService = jwtService;
@@ -72,17 +64,11 @@ public class AuthService {
         this.onboardingService = onboardingService;
         this.mfaService = mfaService;
         this.auditLogService = auditLogService;
-        this.adminAuditService = adminAuditService;
         this.props = props;
     }
 
     @Transactional
-    public SignupResult signup(
-            String assessoriaNome,
-            String slug,
-            String email,
-            String senha,
-            HttpServletRequest req) {
+    public SignupResult signup(String email, String senha, HttpServletRequest req) {
         if (!props.getFeatures().isSignupEnabled()) {
             throw BusinessException.forbidden(
                     "SIGNUP_DISABLED", "Novos cadastros estão temporariamente desativados.");
@@ -91,45 +77,27 @@ public class AuthService {
             throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já está cadastrado.");
         }
 
-        // Bootstrap: first signup on empty system creates ADM instead of assessoria
-        long admCount = usuarioRepo.countByTipoAndDeletedAtIsNull(Usuario.TipoUsuario.ADM);
-        if (admCount == 0) {
-            Usuario adm = Usuario.createAdm(email, passwordEncoder.encode(senha));
-            adm.setEmailVerificadoEm(Instant.now()); // ADM e-mail auto-verified
-            adm = usuarioRepo.save(adm);
+        // First user becomes OWNER
+        Usuario.Role role = usuarioRepo.count() == 0 ? Usuario.Role.OWNER : Usuario.Role.ASSESSOR;
 
-            adminAuditService.log(adm.getId(), "SIGNUP_ADM", ip(req), ua(req));
+        // Find system perfil for role
+        String perfilNome = role == Usuario.Role.OWNER ? "Owner" : "Assessor";
+        Perfil perfil = perfilRepo.findByNome(perfilNome).orElse(null);
 
-            return new SignupResult(adm.getId(), email, false, true);
-        }
+        Usuario usuario = new Usuario(email, passwordEncoder.encode(senha), role);
+        if (perfil != null) usuario.setProfileId(perfil.getId());
+        usuario = usuarioRepo.save(usuario);
 
-        if (assessoriaRepo.existsBySlug(slug)) {
-            throw BusinessException.conflict("SLUG_IN_USE", "Este slug já está em uso.");
-        }
-
-        Assessoria assessoria = assessoriaRepo.save(new Assessoria(assessoriaNome, slug));
-        Perfil ownerProfile = rbacBootstrap.seedAssessoria(assessoria.getId());
-
-        Usuario owner =
-                new Usuario(
-                        assessoria.getId(),
-                        email,
-                        passwordEncoder.encode(senha),
-                        Usuario.Role.OWNER);
-        owner.setProfileId(ownerProfile.getId());
-        owner = usuarioRepo.save(owner);
-
-        onboardingService.sendVerification(owner);
+        onboardingService.sendVerification(usuario);
 
         auditLogService.logAuth(
-                assessoria.getId(),
-                owner.getId(),
+                usuario.getId(),
                 AuditLog.Acao.SIGNUP,
-                Map.of("email", email, "slug", slug),
+                Map.of("email", email),
                 ip(req),
                 ua(req));
 
-        return new SignupResult(owner.getId(), email, false, false);
+        return new SignupResult(usuario.getId(), email, false);
     }
 
     @Transactional
@@ -143,17 +111,12 @@ public class AuthService {
         if (usuario == null || !passwordEncoder.matches(senha, usuario.getSenhaHash())) {
             if (usuario != null) {
                 lockoutService.recordFailure(lockKey);
-                if (usuario.isAdm()) {
-                    adminAuditService.log(usuario.getId(), "LOGIN_FAIL", ip(req), ua(req));
-                } else {
-                    auditLogService.logAuth(
-                            usuario.getAssessoriaId(),
-                            usuario.getId(),
-                            AuditLog.Acao.LOGIN_FAILED,
-                            Map.of("reason", "BAD_CREDENTIALS"),
-                            ip(req),
-                            ua(req));
-                }
+                auditLogService.logAuth(
+                        usuario.getId(),
+                        AuditLog.Acao.LOGIN_FAILED,
+                        Map.of("reason", "BAD_CREDENTIALS"),
+                        ip(req),
+                        ua(req));
             }
             throw BusinessException.unauthorized("Credenciais inválidas.");
         }
@@ -168,12 +131,6 @@ public class AuthService {
                     "EMAIL_NOT_VERIFIED", "Verifique seu e-mail antes de fazer login.");
         }
 
-        // ADM: MFA obrigatório — if not set up yet, return temp response
-        if (usuario.isAdm() && !usuario.isMfaAtivo()) {
-            String tempToken = jwtService.generateAdmToken(usuario.getId());
-            return new TokenPair(tempToken, null, true);
-        }
-
         // MFA check
         if (usuario.isMfaAtivo()) {
             if (totpCode == null || totpCode.isBlank()) {
@@ -182,9 +139,8 @@ public class AuthService {
             boolean valid = mfaService.verifyCode(usuario.getId(), totpCode);
             if (!valid) {
                 valid = mfaService.useRecoveryCode(usuario.getId(), totpCode);
-                if (valid && !usuario.isAdm()) {
+                if (valid) {
                     auditLogService.logAuth(
-                            usuario.getAssessoriaId(),
                             usuario.getId(),
                             AuditLog.Acao.MFA_RECOVERY_USED,
                             Map.of(),
@@ -194,9 +150,6 @@ public class AuthService {
             }
             if (!valid) {
                 lockoutService.recordFailure(lockKey);
-                if (usuario.isAdm()) {
-                    adminAuditService.log(usuario.getId(), "LOGIN_FAIL", ip(req), ua(req));
-                }
                 throw BusinessException.unauthorized("Código MFA inválido.");
             }
         }
@@ -205,33 +158,14 @@ public class AuthService {
         usuario.setUltimoLoginEm(Instant.now());
         usuarioRepo.save(usuario);
 
-        if (usuario.isAdm()) {
-            adminAuditService.log(usuario.getId(), "LOGIN", ip(req), ua(req));
-            String token = jwtService.generateAdmToken(usuario.getId());
-            String rawRefresh = UUID.randomUUID().toString();
-            UUID familyId = UUID.randomUUID();
-            RefreshToken rt =
-                    new RefreshToken(
-                            sha256(rawRefresh),
-                            usuario.getId(),
-                            null,
-                            familyId,
-                            Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
-                            ua(req),
-                            ip(req));
-            refreshRepo.save(rt);
-            return new TokenPair(token, rawRefresh, false);
-        }
-
         auditLogService.logAuth(
-                usuario.getAssessoriaId(),
                 usuario.getId(),
                 AuditLog.Acao.LOGIN,
                 Map.of(),
                 ip(req),
                 ua(req));
 
-        return issueTokenPair(usuario, usuario.getAssessoriaId(), req);
+        return issueTokenPair(usuario, req);
     }
 
     @Transactional
@@ -260,7 +194,6 @@ public class AuthService {
                 new RefreshToken(
                         sha256(newRaw),
                         stored.getUsuarioId(),
-                        stored.getAssessoriaId(),
                         stored.getFamilyId(),
                         Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
                         req.getHeader("User-Agent"),
@@ -270,17 +203,9 @@ public class AuthService {
         refreshRepo.save(stored);
         refreshRepo.save(newToken);
 
-        if (usuario.isAdm()) {
-            String accessToken = jwtService.generateAdmToken(usuario.getId());
-            return new TokenPair(accessToken, newRaw, false);
-        }
-
         String accessToken =
                 jwtService.generateAccessToken(
-                        usuario.getId(),
-                        stored.getAssessoriaId(),
-                        usuario.getRole().name(),
-                        permissionsOf(usuario));
+                        usuario.getId(), usuario.getRole().name(), permissionsOf(usuario));
 
         return new TokenPair(accessToken, newRaw, false);
     }
@@ -292,21 +217,18 @@ public class AuthService {
                 .ifPresent(
                         rt -> {
                             refreshRepo.revokeFamily(rt.getFamilyId());
-                            if (rt.getAssessoriaId() != null) {
-                                auditLogService.logAuth(
-                                        rt.getAssessoriaId(),
-                                        rt.getUsuarioId(),
-                                        AuditLog.Acao.LOGOUT,
-                                        Map.of(),
-                                        ip(req),
-                                        ua(req));
-                            }
+                            auditLogService.logAuth(
+                                    rt.getUsuarioId(),
+                                    AuditLog.Acao.LOGOUT,
+                                    Map.of(),
+                                    ip(req),
+                                    ua(req));
                         });
     }
 
     // ── helpers ──────────────────────────────────────────────────────────
 
-    private TokenPair issueTokenPair(Usuario usuario, UUID assessoriaId, HttpServletRequest req) {
+    private TokenPair issueTokenPair(Usuario usuario, HttpServletRequest req) {
         String rawRefresh = UUID.randomUUID().toString();
         UUID familyId = UUID.randomUUID();
 
@@ -314,7 +236,6 @@ public class AuthService {
                 new RefreshToken(
                         sha256(rawRefresh),
                         usuario.getId(),
-                        assessoriaId,
                         familyId,
                         Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS),
                         req.getHeader("User-Agent"),
@@ -323,10 +244,7 @@ public class AuthService {
 
         String accessToken =
                 jwtService.generateAccessToken(
-                        usuario.getId(),
-                        assessoriaId,
-                        usuario.getRole().name(),
-                        permissionsOf(usuario));
+                        usuario.getId(), usuario.getRole().name(), permissionsOf(usuario));
 
         return new TokenPair(accessToken, rawRefresh, false);
     }
@@ -361,6 +279,5 @@ public class AuthService {
 
     public record TokenPair(String accessToken, String refreshToken, boolean mfaSetupRequired) {}
 
-    public record SignupResult(
-            UUID usuarioId, String email, boolean emailVerificado, boolean isAdm) {}
+    public record SignupResult(UUID usuarioId, String email, boolean emailVerificado) {}
 }

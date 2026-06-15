@@ -13,8 +13,8 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
 
     @Query(
             """
-      SELECT t FROM Tarefa t WHERE t.assessoriaId = :assessoriaId
-        AND (:status IS NULL OR t.status = :status)
+      SELECT t FROM Tarefa t WHERE
+        (:status IS NULL OR t.status = :status)
         AND (:prioridade IS NULL OR t.prioridade = :prioridade)
         AND (:responsavelId IS NULL OR t.responsavelId = :responsavelId)
         AND (:prazoFiltro = 'VENCIDAS' AND t.prazo < :agora AND t.status NOT IN ('FEITA','CANCELADA')
@@ -24,7 +24,6 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
              OR :prazoFiltro IS NULL)
       """)
     Page<Tarefa> findAllFiltered(
-            @Param("assessoriaId") UUID assessoriaId,
             @Param("status") TarefaStatus status,
             @Param("prioridade") TarefaPrioridade prioridade,
             @Param("responsavelId") UUID responsavelId,
@@ -38,46 +37,43 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
     /** Contagem de tarefas vencidas + hoje para badge in-app. */
     @Query(
             """
-      SELECT COUNT(t) FROM Tarefa t WHERE t.assessoriaId = :assessoriaId
-        AND t.responsavelId = :usuarioId
+      SELECT COUNT(t) FROM Tarefa t WHERE
+        t.responsavelId = :usuarioId
         AND t.status NOT IN ('FEITA','CANCELADA')
         AND t.prazo < :fimDia
       """)
     long countAlerta(
-            @Param("assessoriaId") UUID assessoriaId,
             @Param("usuarioId") UUID usuarioId,
             @Param("fimDia") Instant fimDia);
 
     /** Tarefas para digest diário: vencidas + hoje + próximas 3 da semana. */
     @Query(
             """
-      SELECT t FROM Tarefa t WHERE t.assessoriaId = :assessoriaId
-        AND t.status NOT IN ('FEITA','CANCELADA')
+      SELECT t FROM Tarefa t WHERE
+        t.status NOT IN ('FEITA','CANCELADA')
         AND t.prazo < :fimSemana
       ORDER BY t.prazo ASC
       """)
-    List<Tarefa> findParaDigest(
-            @Param("assessoriaId") UUID assessoriaId, @Param("fimSemana") Instant fimSemana);
+    List<Tarefa> findParaDigest(@Param("fimSemana") Instant fimSemana);
 
     /** Tarefas vinculadas a uma entidade específica. */
     @Query(
             """
-      SELECT t FROM Tarefa t WHERE t.assessoriaId = :assessoriaId
-        AND t.entidadeTipo = :tipo AND t.entidadeId = :entidadeId
+      SELECT t FROM Tarefa t WHERE
+        t.entidadeTipo = :tipo AND t.entidadeId = :entidadeId
       ORDER BY t.prazo ASC
       """)
     List<Tarefa> findByEntidade(
-            @Param("assessoriaId") UUID assessoriaId,
             @Param("tipo") EntidadeTipo tipo,
             @Param("entidadeId") UUID entidadeId);
 
     @Query(
             value =
                     """
-      SELECT COUNT(*) FROM tarefas WHERE assessoria_id = :assessoriaId
-        AND status NOT IN ('FEITA','CANCELADA')
+      SELECT COUNT(*) FROM tarefas WHERE
+        status NOT IN ('FEITA','CANCELADA')
         AND prazo < :agora AND deleted_at IS NULL
       """,
             nativeQuery = true)
-    long countVencidas(@Param("assessoriaId") UUID assessoriaId, @Param("agora") Instant agora);
+    long countVencidas(@Param("agora") Instant agora);
 }

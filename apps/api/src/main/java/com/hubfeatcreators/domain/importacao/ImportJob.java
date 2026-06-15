@@ -15,9 +15,6 @@ public class ImportJob {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
@@ -75,13 +72,7 @@ public class ImportJob {
 
     protected ImportJob() {}
 
-    public ImportJob(
-            UUID assessoriaId,
-            UUID usuarioId,
-            String entidade,
-            String arquivoPath,
-            String arquivoNome) {
-        this.assessoriaId = assessoriaId;
+    public ImportJob(UUID usuarioId, String entidade, String arquivoPath, String arquivoNome) {
         this.usuarioId = usuarioId;
         this.entidade = entidade;
         this.arquivoPath = arquivoPath;
@@ -90,10 +81,6 @@ public class ImportJob {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getUsuarioId() {

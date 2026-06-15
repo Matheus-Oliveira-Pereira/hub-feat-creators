@@ -15,10 +15,7 @@ public class CreatorUser {
     @Column(name = "influenciador_id", nullable = false, unique = true)
     private UUID influenciadorId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, columnDefinition = "citext")
     private String email;
 
     @Column(name = "senha_hash", nullable = false)
@@ -38,9 +35,8 @@ public class CreatorUser {
 
     protected CreatorUser() {}
 
-    public CreatorUser(UUID influenciadorId, UUID assessoriaId, String email, String senhaHash) {
+    public CreatorUser(UUID influenciadorId, String email, String senhaHash) {
         this.influenciadorId = influenciadorId;
-        this.assessoriaId = assessoriaId;
         this.email = email;
         this.senhaHash = senhaHash;
         this.emailVerificadoEm = Instant.now(); // convite = e-mail verificado
@@ -52,10 +48,6 @@ public class CreatorUser {
 
     public UUID getInfluenciadorId() {
         return influenciadorId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getEmail() {

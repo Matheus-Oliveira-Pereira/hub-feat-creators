@@ -18,9 +18,6 @@ public class Notificacao {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
@@ -60,7 +57,6 @@ public class Notificacao {
     protected Notificacao() {}
 
     public Notificacao(
-            UUID assessoriaId,
             UUID usuarioId,
             NotificacaoTipo tipo,
             NotificacaoPrioridade prioridade,
@@ -69,7 +65,6 @@ public class Notificacao {
             Map<String, Object> payload,
             String alvoTipo,
             UUID alvoId) {
-        this.assessoriaId = assessoriaId;
         this.usuarioId = usuarioId;
         this.tipo = tipo;
         this.prioridade = prioridade;
@@ -82,10 +77,6 @@ public class Notificacao {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getUsuarioId() {

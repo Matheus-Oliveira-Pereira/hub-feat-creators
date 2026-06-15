@@ -32,14 +32,13 @@ public class PortalController {
 
     @GetMapping("/tarefas")
     public List<Tarefa> listarTarefas(@AuthenticationPrincipal CreatorPrincipal principal) {
-        return portalService.listarTarefas(principal.assessoriaId(), principal.influenciadorId());
+        return portalService.listarTarefas(principal.influenciadorId());
     }
 
     @GetMapping("/tarefas/{tarefaId}")
     public Tarefa detalharTarefa(
             @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
-        return portalService.detalharTarefa(
-                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+        return portalService.detalharTarefa(principal.influenciadorId(), tarefaId);
     }
 
     // ─── Comentários ──────────────────────────────────────────────────────────
@@ -47,8 +46,7 @@ public class PortalController {
     @GetMapping("/tarefas/{tarefaId}/comentarios")
     public List<TarefaComentario> listarComentarios(
             @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
-        return portalService.listarComentarios(
-                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+        return portalService.listarComentarios(principal.influenciadorId(), tarefaId);
     }
 
     @PostMapping("/tarefas/{tarefaId}/comentarios")
@@ -58,7 +56,6 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @Valid @RequestBody ComentarioRequest req) {
         return portalService.comentar(
-                principal.assessoriaId(),
                 principal.influenciadorId(),
                 tarefaId,
                 principal.creatorUserId(),
@@ -70,8 +67,7 @@ public class PortalController {
     @GetMapping("/tarefas/{tarefaId}/entregaveis")
     public List<CreatorEntregavel> listarEntregaveis(
             @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID tarefaId) {
-        return portalService.listarEntregaveis(
-                principal.assessoriaId(), principal.influenciadorId(), tarefaId);
+        return portalService.listarEntregaveis(principal.influenciadorId(), tarefaId);
     }
 
     @PostMapping("/tarefas/{tarefaId}/entregaveis")
@@ -81,7 +77,6 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @RequestParam("file") MultipartFile file) {
         return portalService.enviarEntregavel(
-                principal.assessoriaId(),
                 principal.influenciadorId(),
                 tarefaId,
                 principal.creatorUserId(),
@@ -92,7 +87,7 @@ public class PortalController {
     public ResponseEntity<InputStreamResource> download(
             @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID entregavelId) {
         PortalService.DownloadResult dl =
-                portalService.downloadEntregavel(principal.assessoriaId(), entregavelId);
+                portalService.downloadEntregavel(entregavelId);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,

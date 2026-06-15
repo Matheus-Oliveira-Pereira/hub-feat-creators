@@ -30,8 +30,6 @@ public class AuthController {
     // ── DTOs ──────────────────────────────────────────────────────────────
 
     record SignupRequest(
-            String assessoriaNome,
-            String slug,
             @NotBlank @Email String email,
             @NotBlank @Size(min = 8) String senha) {}
 
@@ -43,7 +41,7 @@ public class AuthController {
 
     record TokenResponse(String accessToken, String refreshToken, boolean mfaSetupRequired) {}
 
-    record SignupResponse(String email, boolean emailVerificado, boolean isAdm) {}
+    record SignupResponse(String email, boolean emailVerificado) {}
 
     record VerifyEmailRequest(@NotBlank String token) {}
 
@@ -63,10 +61,8 @@ public class AuthController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public SignupResponse signup(@Valid @RequestBody SignupRequest req, HttpServletRequest http) {
-        var result =
-                authService.signup(
-                        req.assessoriaNome(), req.slug(), req.email(), req.senha(), http);
-        return new SignupResponse(result.email(), result.emailVerificado(), result.isAdm());
+        var result = authService.signup(req.email(), req.senha(), http);
+        return new SignupResponse(result.email(), result.emailVerificado());
     }
 
     @PostMapping("/login")

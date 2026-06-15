@@ -13,9 +13,6 @@ public class RelatorioSalvo {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
@@ -38,12 +35,10 @@ public class RelatorioSalvo {
     protected RelatorioSalvo() {}
 
     public RelatorioSalvo(
-            UUID assessoriaId,
             UUID usuarioId,
             String nome,
             String relatorioTipo,
             Map<String, Object> filtros) {
-        this.assessoriaId = assessoriaId;
         this.usuarioId = usuarioId;
         this.nome = nome;
         this.relatorioTipo = relatorioTipo;
@@ -52,10 +47,6 @@ public class RelatorioSalvo {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getUsuarioId() {

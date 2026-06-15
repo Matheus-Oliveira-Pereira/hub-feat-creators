@@ -48,18 +48,14 @@ public class DigestJobHandler implements JobHandler {
     @Override
     public void handle(Job job) {
         Map<String, Object> payload = job.getPayload();
-        UUID assessoriaId = UUID.fromString((String) payload.get("assessoriaId"));
         String data = (String) payload.get("data");
 
         ZonedDateTime inicioDia = ZonedDateTime.now(TZ_BR).toLocalDate().atStartOfDay(TZ_BR);
         Instant fimSemana = inicioDia.plusDays(7).toInstant();
 
-        List<Tarefa> tarefas = tarefaRepo.findParaDigest(assessoriaId, fimSemana);
+        List<Tarefa> tarefas = tarefaRepo.findParaDigest(fimSemana);
         if (tarefas.isEmpty()) {
-            log.info(
-                    "digest.handler.skip assessoriaId={} data={} motivo=sem_tarefas",
-                    assessoriaId,
-                    data);
+            log.info("digest.handler.skip data={} motivo=sem_tarefas", data);
             return;
         }
 
@@ -118,10 +114,10 @@ public class DigestJobHandler implements JobHandler {
         sb.append("Seu resumo de tarefas — ").append(data).append("\n\n");
 
         if (!atrasadas.isEmpty()) {
-            sb.append("⚠ ATRASADAS (").append(atrasadas.size()).append(")\n");
+            sb.append("ATRASADAS (").append(atrasadas.size()).append(")\n");
             atrasadas.forEach(
                     t ->
-                            sb.append("  • ")
+                            sb.append("  - ")
                                     .append(t.getTitulo())
                                     .append(" (prazo: ")
                                     .append(t.getPrazo())
@@ -130,16 +126,16 @@ public class DigestJobHandler implements JobHandler {
         }
 
         if (!hoje.isEmpty()) {
-            sb.append("📅 HOJE\n");
-            hoje.forEach(t -> sb.append("  • ").append(t.getTitulo()).append("\n"));
+            sb.append("HOJE\n");
+            hoje.forEach(t -> sb.append("  - ").append(t.getTitulo()).append("\n"));
             sb.append("\n");
         }
 
         if (!proximas.isEmpty()) {
-            sb.append("🗓 PRÓXIMAS (esta semana)\n");
+            sb.append("PROXIMAS (esta semana)\n");
             proximas.forEach(
                     t ->
-                            sb.append("  • ")
+                            sb.append("  - ")
                                     .append(t.getTitulo())
                                     .append(" (")
                                     .append(t.getPrazo())
@@ -149,9 +145,7 @@ public class DigestJobHandler implements JobHandler {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setSubject("Suas tarefas de hoje — " + data);
         msg.setText(sb.toString());
-        // TODO (PRD-004): resolver e-mail do usuário via UserRepository quando e-mail estiver
-        // disponível.
-        // Por ora o job é enfileirado sem destinatário — integrará com PRD-004.
+        // TODO (PRD-004): resolver e-mail do usuário via UserRepository quando disponível.
         log.info(
                 "digest.send responsavelId={} atrasadas={} hoje={} proximas={}",
                 responsavelId,

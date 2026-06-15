@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WhatsappOptoutRepository extends JpaRepository<WhatsappOptout, UUID> {
-    boolean existsByAssessoriaIdAndE164IgnoreCase(UUID assessoriaId, String e164);
+    boolean existsByE164IgnoreCase(String e164);
 
-    Optional<WhatsappOptout> findByAssessoriaIdAndE164IgnoreCase(UUID assessoriaId, String e164);
+    Optional<WhatsappOptout> findByE164IgnoreCase(String e164);
 }

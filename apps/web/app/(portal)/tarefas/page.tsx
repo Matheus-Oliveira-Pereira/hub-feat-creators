@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, ChevronRight, Clock } from 'lucide-react';
 import { portalMe, getCreatorToken } from '@/lib/api';
@@ -23,14 +23,13 @@ const PRIORIDADE_COLOR: Record<string, string> = {
 };
 
 export default function PortalTarefasPage() {
-  const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
 
   React.useEffect(() => {
     if (!getCreatorToken()) {
-      router.replace(`/portal/${slug}/login` as Route);
+      router.replace('/portal/login' as Route);
     }
-  }, [slug, router]);
+  }, [router]);
 
   const { data: tarefas, isLoading, error } = useQuery({
     queryKey: ['portal', 'tarefas'],
@@ -63,7 +62,7 @@ export default function PortalTarefasPage() {
           <li key={t.id}>
             <button
               className="w-full text-left border rounded-lg px-4 py-3 hover:bg-gray-50 transition flex items-center gap-3"
-              onClick={() => router.push(`/portal/${slug}/tarefas/${t.id}` as Route)}
+              onClick={() => router.push(`/portal/tarefas/${t.id}` as Route)}
             >
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{t.titulo}</p>

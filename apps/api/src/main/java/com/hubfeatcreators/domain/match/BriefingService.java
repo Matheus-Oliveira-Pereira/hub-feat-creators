@@ -25,7 +25,6 @@ public class BriefingService {
 
     @Transactional
     public Briefing upsertByProspeccao(
-            UUID assessoriaId,
             UUID prospeccaoId,
             String vertical,
             String objetivo,
@@ -38,7 +37,6 @@ public class BriefingService {
         if (briefing == null) {
             briefing =
                     new Briefing(
-                            assessoriaId,
                             prospeccaoId,
                             vertical,
                             objetivo,
@@ -48,7 +46,6 @@ public class BriefingService {
                             budgetMax,
                             texto);
         } else {
-            assertAssessoria(assessoriaId, briefing.getAssessoriaId());
             briefing.update(vertical, objetivo, audiencia, formato, budgetMin, budgetMax, texto);
         }
         briefing = briefingRepo.save(briefing);
@@ -61,18 +58,15 @@ public class BriefingService {
     }
 
     @Transactional(readOnly = true)
-    public Briefing getByProspeccao(UUID assessoriaId, UUID prospeccaoId) {
-        Briefing briefing =
-                briefingRepo
-                        .findByProspeccaoId(prospeccaoId)
-                        .orElseThrow(() -> BusinessException.notFound("BRIEFING"));
-        assertAssessoria(assessoriaId, briefing.getAssessoriaId());
-        return briefing;
+    public Briefing getByProspeccao(UUID prospeccaoId) {
+        return briefingRepo
+                .findByProspeccaoId(prospeccaoId)
+                .orElseThrow(() -> BusinessException.notFound("BRIEFING"));
     }
 
     @Transactional(readOnly = true)
-    public List<Briefing> listByAssessoria(UUID assessoriaId) {
-        return briefingRepo.findByAssessoriaId(assessoriaId);
+    public List<Briefing> listAll() {
+        return briefingRepo.findAll();
     }
 
     private String buildText(String vertical, String objetivo, String formato, String texto) {
@@ -83,9 +77,5 @@ public class BriefingService {
                         formato != null ? formato : "",
                         texto != null ? texto : "")
                 .trim();
-    }
-
-    private void assertAssessoria(UUID expected, UUID actual) {
-        if (!expected.equals(actual)) throw BusinessException.notFound("BRIEFING");
     }
 }

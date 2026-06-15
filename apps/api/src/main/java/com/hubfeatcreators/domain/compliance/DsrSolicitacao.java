@@ -10,9 +10,6 @@ public class DsrSolicitacao {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "titular_tipo", nullable = false)
     private String titularTipo;
 
@@ -56,8 +53,7 @@ public class DsrSolicitacao {
 
     public DsrSolicitacao() {}
 
-    public DsrSolicitacao(UUID assessoriaId, String titularTipo, UUID titularId, TipoDsr tipo) {
-        this.assessoriaId = assessoriaId;
+    public DsrSolicitacao(String titularTipo, UUID titularId, TipoDsr tipo) {
         this.titularTipo = titularTipo;
         this.titularId = titularId;
         this.tipo = tipo;
@@ -67,10 +63,6 @@ public class DsrSolicitacao {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getTitularTipo() {

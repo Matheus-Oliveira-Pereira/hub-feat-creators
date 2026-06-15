@@ -1,9 +1,7 @@
 package com.hubfeatcreators.domain.portal;
 
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
-import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
-import com.hubfeatcreators.infra.web.BusinessException;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -18,21 +16,23 @@ public class BrandingController {
         this.brandingRepo = brandingRepo;
     }
 
-    /** Public — called by portal frontend before login. */
-    @GetMapping("/{slug}")
-    public AssessoriaBranding get(@PathVariable String slug) {
-        return brandingRepo.findByAssessoriaSlug(slug).orElseThrow(BusinessException::notFound);
+    /** Public — called by portal frontend before login. Single branding record. */
+    @GetMapping
+    public AssessoriaBranding get() {
+        return brandingRepo.findAll().stream()
+                .findFirst()
+                .orElse(new AssessoriaBranding(null, null));
     }
 
     @PutMapping
     @RequirePermission(PermissionCodes.OWNR)
     public AssessoriaBranding upsert(
-            @AuthenticationPrincipal AuthPrincipal principal,
+            @AuthenticationPrincipal Object principal,
             @Valid @RequestBody BrandingRequest req) {
         AssessoriaBranding branding =
-                brandingRepo
-                        .findById(principal.assessoriaId())
-                        .orElse(new AssessoriaBranding(principal.assessoriaId()));
+                brandingRepo.findAll().stream()
+                        .findFirst()
+                        .orElse(new AssessoriaBranding(null, null));
         branding.setLogoUrl(req.logoUrl());
         branding.setCorPrimaria(req.corPrimaria());
         return brandingRepo.save(branding);

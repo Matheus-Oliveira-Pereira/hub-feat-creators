@@ -10,10 +10,7 @@ public class EmailOptout {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "citext")
     private String email;
 
     @Column private String motivo;
@@ -23,18 +20,13 @@ public class EmailOptout {
 
     protected EmailOptout() {}
 
-    public EmailOptout(UUID assessoriaId, String email, String motivo) {
-        this.assessoriaId = assessoriaId;
+    public EmailOptout(String email, String motivo) {
         this.email = email;
         this.motivo = motivo;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getEmail() {

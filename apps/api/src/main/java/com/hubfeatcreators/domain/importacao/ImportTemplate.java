@@ -15,9 +15,6 @@ public class ImportTemplate {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String nome;
 
@@ -36,9 +33,7 @@ public class ImportTemplate {
 
     protected ImportTemplate() {}
 
-    public ImportTemplate(
-            UUID assessoriaId, String nome, String entidade, Map<String, String> mapeamento) {
-        this.assessoriaId = assessoriaId;
+    public ImportTemplate(String nome, String entidade, Map<String, String> mapeamento) {
         this.nome = nome;
         this.entidade = entidade;
         this.mapeamento = mapeamento;
@@ -46,10 +41,6 @@ public class ImportTemplate {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

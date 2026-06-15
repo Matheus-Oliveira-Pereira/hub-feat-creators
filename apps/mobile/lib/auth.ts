@@ -9,7 +9,6 @@ function decodeToken(token: string): CreatorClaims {
   const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
   return {
     creatorUserId: decoded.sub,
-    assessoriaId: decoded.ass,
     influenciadorId: decoded.inf,
   };
 }

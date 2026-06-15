@@ -7,7 +7,7 @@ public interface AttachmentStorage {
     record StoredFile(String storagePath, long sizeBytes) {}
 
     StoredFile store(
-            String assessoriaId,
+            String bucket,
             String filename,
             String contentType,
             InputStream data,

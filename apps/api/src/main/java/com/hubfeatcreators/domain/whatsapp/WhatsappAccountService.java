@@ -22,13 +22,12 @@ public class WhatsappAccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<WhatsappAccount> list(UUID assessoriaId) {
-        return repo.findByAssessoriaIdAndDeletedAtIsNull(assessoriaId);
+    public List<WhatsappAccount> list() {
+        return repo.findByDeletedAtIsNull();
     }
 
     @Transactional
     public WhatsappAccount create(
-            UUID assessoriaId,
             String wabaId,
             String phoneNumberId,
             String phoneE164,
@@ -42,7 +41,6 @@ public class WhatsappAccountService {
 
         var account =
                 new WhatsappAccount(
-                        assessoriaId,
                         wabaId,
                         phoneNumberId,
                         phoneE164,
@@ -55,9 +53,8 @@ public class WhatsappAccountService {
     }
 
     @Transactional
-    public WhatsappAccount update(
-            UUID assessoriaId, UUID id, String displayName, String accessToken, String appSecret) {
-        WhatsappAccount account = requireAccount(assessoriaId, id);
+    public WhatsappAccount update(UUID id, String displayName, String accessToken, String appSecret) {
+        WhatsappAccount account = requireAccount(id);
 
         if (accessToken != null && !accessToken.isBlank()) {
             meta.validateToken(accessToken);
@@ -75,8 +72,8 @@ public class WhatsappAccountService {
     }
 
     @Transactional
-    public void delete(UUID assessoriaId, UUID id) {
-        WhatsappAccount account = requireAccount(assessoriaId, id);
+    public void delete(UUID id) {
+        WhatsappAccount account = requireAccount(id);
         account.setDeletedAt(Instant.now());
         repo.save(account);
     }
@@ -89,8 +86,8 @@ public class WhatsappAccountService {
         return cipher.decrypt(account.getAppSecretEnc(), account.getAppSecretNonce());
     }
 
-    public WhatsappAccount requireAccount(UUID assessoriaId, UUID id) {
-        return repo.findByIdAndAssessoriaIdAndDeletedAtIsNull(id, assessoriaId)
+    public WhatsappAccount requireAccount(UUID id) {
+        return repo.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(BusinessException::notFound);
     }
 }

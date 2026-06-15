@@ -89,7 +89,7 @@ CREATE TABLE email_eventos (
 
 CREATE INDEX idx_email_eventos_envio ON email_eventos(envio_id, created_at DESC);
 
-CREATE TABLE email_optouts (
+CREATE TABLE IF NOT EXISTS email_optouts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     assessoria_id UUID NOT NULL REFERENCES assessorias(id) ON DELETE CASCADE,
     email CITEXT NOT NULL,

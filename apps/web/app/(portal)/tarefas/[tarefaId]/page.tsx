@@ -18,7 +18,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function PortalTarefaDetailPage() {
-  const { slug, tarefaId } = useParams<{ slug: string; tarefaId: string }>();
+  const { tarefaId } = useParams<{ tarefaId: string }>();
   const router = useRouter();
   const qc = useQueryClient();
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -26,9 +26,9 @@ export default function PortalTarefaDetailPage() {
 
   React.useEffect(() => {
     if (!getCreatorToken()) {
-      router.replace(`/portal/${slug}/login` as Route);
+      router.replace('/portal/login' as Route);
     }
-  }, [slug, router]);
+  }, [router]);
 
   const { data: tarefa, isLoading: loadingTarefa } = useQuery({
     queryKey: ['portal', 'tarefa', tarefaId],
@@ -86,7 +86,7 @@ export default function PortalTarefaDetailPage() {
     <div className="space-y-6">
       <button
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        onClick={() => router.push(`/portal/${slug}/tarefas` as Route)}
+        onClick={() => router.push('/portal/tarefas' as Route)}
       >
         <ArrowLeft className="h-4 w-4" /> Voltar
       </button>

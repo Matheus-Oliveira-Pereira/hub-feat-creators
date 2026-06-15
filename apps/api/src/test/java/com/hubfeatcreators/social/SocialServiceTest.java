@@ -42,7 +42,6 @@ class SocialServiceTest {
 
     @InjectMocks SocialService service;
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID influenciadorId = UUID.randomUUID();
 
     @BeforeEach
@@ -63,19 +62,18 @@ class SocialServiceTest {
                 .thenReturn(Optional.empty());
         when(accountRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SocialAccount account = service.connectInstagram(assessoriaId, influenciadorId, "code123");
+        SocialAccount account = service.connectInstagram(influenciadorId, "code123");
 
         assertThat(account.getPlataforma()).isEqualTo("INSTAGRAM");
         assertThat(account.getHandle()).isEqualTo("creator1");
         assertThat(account.getStatus()).isEqualTo("ATIVA");
-        verify(jobService).enqueue(eq(assessoriaId), eq("SOCIAL_SYNC"), any(), any());
+        verify(jobService).enqueue(eq("SOCIAL_SYNC"), any(), any());
     }
 
     @Test
     void connectInstagram_updates_existing_account() {
         SocialAccount existing =
                 new SocialAccount(
-                        assessoriaId,
                         influenciadorId,
                         "INSTAGRAM",
                         "ext-user-1",
@@ -93,7 +91,7 @@ class SocialServiceTest {
                 .thenReturn(Optional.of(existing));
         when(accountRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SocialAccount account = service.connectInstagram(assessoriaId, influenciadorId, "code456");
+        SocialAccount account = service.connectInstagram(influenciadorId, "code456");
 
         assertThat(account.getHandle()).isEqualTo("creator_new");
         assertThat(account.getStatus()).isEqualTo("ATIVA");
@@ -104,7 +102,6 @@ class SocialServiceTest {
         UUID accountId = UUID.randomUUID();
         SocialAccount account =
                 new SocialAccount(
-                        assessoriaId,
                         influenciadorId,
                         "INSTAGRAM",
                         "ext-1",
@@ -121,7 +118,7 @@ class SocialServiceTest {
                 .thenReturn(Optional.empty());
         when(accountRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.disconnect(assessoriaId, accountId);
+        service.disconnect(accountId);
 
         assertThat(account.getStatus()).isEqualTo("REVOGADA");
         assertThat(account.getAccessTokenEnc()).isNull();
@@ -132,7 +129,7 @@ class SocialServiceTest {
         UUID accountId = UUID.randomUUID();
         when(accountRepo.findById(accountId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.disconnect(assessoriaId, accountId))
+        assertThatThrownBy(() -> service.disconnect(accountId))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -141,7 +138,6 @@ class SocialServiceTest {
         UUID accountId = UUID.randomUUID();
         SocialAccount account =
                 new SocialAccount(
-                        assessoriaId,
                         influenciadorId,
                         "YOUTUBE",
                         "ch-1",
@@ -167,7 +163,6 @@ class SocialServiceTest {
         UUID accountId = UUID.randomUUID();
         SocialAccount account =
                 new SocialAccount(
-                        assessoriaId,
                         influenciadorId,
                         "INSTAGRAM",
                         "ext-1",

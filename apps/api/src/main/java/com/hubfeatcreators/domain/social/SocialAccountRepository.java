@@ -11,8 +11,7 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, UU
 
     List<SocialAccount> findByInfluenciadorId(UUID influenciadorId);
 
-    List<SocialAccount> findByAssessoriaIdAndInfluenciadorId(
-            UUID assessoriaId, UUID influenciadorId);
+    // assessoria scoping removed — single-tenant
 
     Optional<SocialAccount> findByPlataformaAndExternalUserId(
             String plataforma, String externalUserId);

@@ -12,9 +12,6 @@ public class Tarefa {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String titulo;
 
@@ -61,9 +58,7 @@ public class Tarefa {
 
     protected Tarefa() {}
 
-    public Tarefa(
-            UUID assessoriaId, String titulo, Instant prazo, UUID responsavelId, UUID criadorId) {
-        this.assessoriaId = assessoriaId;
+    public Tarefa(String titulo, Instant prazo, UUID responsavelId, UUID criadorId) {
         this.titulo = titulo;
         this.prazo = prazo;
         this.responsavelId = responsavelId;
@@ -72,10 +67,6 @@ public class Tarefa {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getTitulo() {

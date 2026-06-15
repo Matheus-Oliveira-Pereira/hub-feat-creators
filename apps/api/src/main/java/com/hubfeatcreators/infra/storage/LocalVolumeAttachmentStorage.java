@@ -35,7 +35,7 @@ public class LocalVolumeAttachmentStorage implements AttachmentStorage {
 
     @Override
     public StoredFile store(
-            String assessoriaId,
+            String bucket,
             String filename,
             String contentType,
             InputStream data,
@@ -43,7 +43,7 @@ public class LocalVolumeAttachmentStorage implements AttachmentStorage {
         LocalDate today = LocalDate.now();
         String safeFilename = UUID.randomUUID() + "-" + sanitize(filename);
         Path dir =
-                root.resolve(assessoriaId)
+                root.resolve(bucket)
                         .resolve(String.valueOf(today.getYear()))
                         .resolve(String.format("%02d", today.getMonthValue()));
         try {

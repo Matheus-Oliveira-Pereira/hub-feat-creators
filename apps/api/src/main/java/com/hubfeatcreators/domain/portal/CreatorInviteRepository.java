@@ -9,9 +9,7 @@ public interface CreatorInviteRepository extends JpaRepository<CreatorInvite, UU
 
     Optional<CreatorInvite> findByTokenHash(String tokenHash);
 
-    List<CreatorInvite> findByInfluenciadorIdAndAssessoriaIdAndAceitoEmIsNull(
-            UUID influenciadorId, UUID assessoriaId);
+    List<CreatorInvite> findByInfluenciadorIdAndAceitoEmIsNull(UUID influenciadorId);
 
-    boolean existsByInfluenciadorIdAndAssessoriaIdAndAceitoEmIsNull(
-            UUID influenciadorId, UUID assessoriaId);
+    boolean existsByInfluenciadorIdAndAceitoEmIsNull(UUID influenciadorId);
 }

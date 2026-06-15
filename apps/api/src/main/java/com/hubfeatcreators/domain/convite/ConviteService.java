@@ -1,8 +1,6 @@
 package com.hubfeatcreators.domain.convite;
 
 import com.hubfeatcreators.config.AppProperties;
-import com.hubfeatcreators.domain.assessoria.Assessoria;
-import com.hubfeatcreators.domain.assessoria.AssessoriaRepository;
 import com.hubfeatcreators.domain.rbac.Perfil;
 import com.hubfeatcreators.domain.rbac.PerfilRepository;
 import com.hubfeatcreators.domain.rbac.RbacBootstrap;
@@ -27,7 +25,6 @@ public class ConviteService {
 
     private final ConviteRepository conviteRepo;
     private final UsuarioRepository usuarioRepo;
-    private final AssessoriaRepository assessoriaRepo;
     private final PerfilRepository perfilRepo;
     private final PasswordEncoder passwordEncoder;
     private final RbacBootstrap rbacBootstrap;
@@ -38,7 +35,6 @@ public class ConviteService {
     public ConviteService(
             ConviteRepository conviteRepo,
             UsuarioRepository usuarioRepo,
-            AssessoriaRepository assessoriaRepo,
             PerfilRepository perfilRepo,
             PasswordEncoder passwordEncoder,
             RbacBootstrap rbacBootstrap,
@@ -47,7 +43,6 @@ public class ConviteService {
             AppProperties props) {
         this.conviteRepo = conviteRepo;
         this.usuarioRepo = usuarioRepo;
-        this.assessoriaRepo = assessoriaRepo;
         this.perfilRepo = perfilRepo;
         this.passwordEncoder = passwordEncoder;
         this.rbacBootstrap = rbacBootstrap;
@@ -59,19 +54,16 @@ public class ConviteService {
     @Transactional
     public Convite convidar(
             AuthPrincipal principal, String email, Convite.Role role, UUID perfilId) {
-        if (usuarioRepo
-                .findActiveByAssessoriaIdAndEmail(principal.assessoriaId(), email)
-                .isPresent()) {
+        if (usuarioRepo.findActiveByEmail(email).isPresent()) {
             throw BusinessException.conflict(
-                    "EMAIL_IN_USE", "Este e-mail já é membro da assessoria.");
+                    "EMAIL_IN_USE", "Este e-mail já é membro do sistema.");
         }
 
-        Perfil perfil = resolveProfile(principal.assessoriaId(), role, perfilId);
+        Perfil perfil = resolveProfile(role, perfilId);
 
         String rawToken = UUID.randomUUID().toString();
         Convite convite =
                 new Convite(
-                        principal.assessoriaId(),
                         email,
                         rawToken,
                         role,
@@ -87,15 +79,10 @@ public class ConviteService {
 
         conviteRepo.save(convite);
 
-        Assessoria assessoria =
-                assessoriaRepo
-                        .findById(principal.assessoriaId())
-                        .orElseThrow(() -> BusinessException.notFound("ASSESSORIA"));
         String inviteUrl = props.getWeb().getBaseUrl() + "/convite/" + rawToken;
-        mailService.sendInvite(email, assessoria.getNome(), inviteUrl);
+        mailService.sendInvite(email, "HUB Feat Creators", inviteUrl);
 
         auditLogService.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "convite",
                 convite.getId(),
@@ -107,7 +94,7 @@ public class ConviteService {
 
     @Transactional
     public List<Convite> listar(AuthPrincipal principal) {
-        return conviteRepo.findByAssessoriaIdAndUsedAtIsNull(principal.assessoriaId());
+        return conviteRepo.findByUsedAtIsNull();
     }
 
     @Transactional
@@ -127,14 +114,9 @@ public class ConviteService {
             throw BusinessException.badRequest("CONVITE_EXPIRADO", "Este convite expirou.");
         }
 
-        assessoriaRepo
-                .findById(convite.getAssessoriaId())
-                .orElseThrow(() -> BusinessException.notFound("ASSESSORIA"));
-
         Usuario.Role coarseRole = Usuario.Role.valueOf(convite.getRole().name());
         Usuario novo =
                 new Usuario(
-                        convite.getAssessoriaId(),
                         convite.getEmail(),
                         passwordEncoder.encode(senha),
                         coarseRole);
@@ -142,7 +124,7 @@ public class ConviteService {
 
         UUID profileId = convite.getPerfilId();
         if (profileId == null) {
-            Perfil seed = rbacBootstrap.seedFor(convite.getAssessoriaId(), coarseRole);
+            Perfil seed = rbacBootstrap.seedFor(coarseRole);
             profileId = seed.getId();
         }
         novo.setProfileId(profileId);
@@ -153,7 +135,6 @@ public class ConviteService {
         conviteRepo.save(convite);
 
         auditLogService.log(
-                convite.getAssessoriaId(),
                 usuario.getId(),
                 "convite",
                 convite.getId(),
@@ -165,12 +146,12 @@ public class ConviteService {
 
     // ── helpers ──────────────────────────────────────────────────────────
 
-    private Perfil resolveProfile(UUID assessoriaId, Convite.Role role, UUID perfilId) {
+    private Perfil resolveProfile(Convite.Role role, UUID perfilId) {
         if (perfilId != null) {
             return perfilRepo
                     .findById(perfilId)
                     .orElseThrow(() -> BusinessException.notFound("PERFIL"));
         }
-        return rbacBootstrap.seedFor(assessoriaId, Usuario.Role.valueOf(role.name()));
+        return rbacBootstrap.seedFor(Usuario.Role.valueOf(role.name()));
     }
 }

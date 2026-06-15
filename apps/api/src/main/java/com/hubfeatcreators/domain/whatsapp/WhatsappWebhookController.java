@@ -91,7 +91,8 @@ public class WhatsappWebhookController {
                 if (phoneNumberId == null) continue;
 
                 Optional<WhatsappAccount> accountOpt =
-                        accountRepo.findByPhoneNumberIdAndAtivoTrue(phoneNumberId);
+                        accountRepo.findByPhoneNumberIdAndStatusAndDeletedAtIsNull(
+                                phoneNumberId, "ATIVO");
                 if (accountOpt.isEmpty()) continue;
 
                 WhatsappAccount account = accountOpt.get();
@@ -121,7 +122,6 @@ public class WhatsappWebhookController {
                         if (wamid == null || from == null) continue;
                         try {
                             whatsappService.handleInbound(
-                                    account.getAssessoriaId(),
                                     account.getId(),
                                     from,
                                     wamid,

@@ -12,9 +12,6 @@ public class EmailAccount {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String nome;
 
@@ -33,7 +30,7 @@ public class EmailAccount {
     @Column(name = "password_nonce", nullable = false)
     private byte[] passwordNonce;
 
-    @Column(name = "from_address", nullable = false)
+    @Column(name = "from_address", nullable = false, columnDefinition = "citext")
     private String fromAddress;
 
     @Column(name = "from_name", nullable = false)
@@ -68,7 +65,6 @@ public class EmailAccount {
     protected EmailAccount() {}
 
     public EmailAccount(
-            UUID assessoriaId,
             String nome,
             String host,
             int port,
@@ -79,7 +75,6 @@ public class EmailAccount {
             String fromName,
             TlsMode tlsMode,
             int dailyQuota) {
-        this.assessoriaId = assessoriaId;
         this.nome = nome;
         this.host = host;
         this.port = port;
@@ -94,10 +89,6 @@ public class EmailAccount {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

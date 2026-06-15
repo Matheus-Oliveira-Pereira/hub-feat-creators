@@ -10,17 +10,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface EmailEnvioRepository extends JpaRepository<EmailEnvio, UUID> {
 
-    Optional<EmailEnvio> findByIdAndAssessoriaId(UUID id, UUID assessoriaId);
-
-    Optional<EmailEnvio> findByAssessoriaIdAndIdempotencyKey(
-            UUID assessoriaId, UUID idempotencyKey);
+    Optional<EmailEnvio> findByIdempotencyKey(UUID idempotencyKey);
 
     @Query(
-            "SELECT e FROM EmailEnvio e WHERE e.assessoriaId = :assessoriaId "
-                    + "AND (:contextoKey IS NULL OR CAST(e.contexto AS string) LIKE CONCAT('%', :contextoKey, '%'))"
+            "SELECT e FROM EmailEnvio e WHERE"
+                    + " (:contextoKey IS NULL OR CAST(e.contexto AS string) LIKE CONCAT('%', :contextoKey, '%'))"
                     + " ORDER BY e.createdAt DESC")
-    Page<EmailEnvio> findByAssessoriaId(
-            @Param("assessoriaId") UUID assessoriaId,
+    Page<EmailEnvio> findAllFiltered(
             @Param("contextoKey") String contextoKey,
             Pageable pageable);
 }

@@ -36,18 +36,17 @@ public class PortalService {
     // ─── Tarefas do creator ───────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<Tarefa> listarTarefas(UUID assessoriaId, UUID influenciadorId) {
+    public List<Tarefa> listarTarefas(UUID influenciadorId) {
         return tarefaRepo
-                .findByEntidade(assessoriaId, EntidadeTipo.INFLUENCIADOR, influenciadorId)
+                .findByEntidade(EntidadeTipo.INFLUENCIADOR, influenciadorId)
                 .stream()
                 .filter(Tarefa::isVisivelParaCreator)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Tarefa detalharTarefa(UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
+    public Tarefa detalharTarefa(UUID influenciadorId, UUID tarefaId) {
         Tarefa t = tarefaRepo.findById(tarefaId).orElseThrow(BusinessException::notFound);
-        if (!t.getAssessoriaId().equals(assessoriaId)) throw BusinessException.notFound();
         if (!t.isVisivelParaCreator()) throw BusinessException.notFound();
         if (!influenciadorId.equals(t.getEntidadeId())) throw BusinessException.notFound();
         return t;
@@ -56,50 +55,45 @@ public class PortalService {
     // ─── Comentários ─────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<TarefaComentario> listarComentarios(
-            UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
-        detalharTarefa(assessoriaId, influenciadorId, tarefaId); // validates access
-        return comentarioRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId).stream()
+    public List<TarefaComentario> listarComentarios(UUID influenciadorId, UUID tarefaId) {
+        detalharTarefa(influenciadorId, tarefaId); // validates access
+        return comentarioRepo.findByTarefaIdOrderByCreatedAtAsc(tarefaId).stream()
                 .filter(c -> !c.isInterno())
                 .toList();
     }
 
     @Transactional
     public TarefaComentario comentar(
-            UUID assessoriaId,
             UUID influenciadorId,
             UUID tarefaId,
             UUID creatorUserId,
             String texto) {
-        detalharTarefa(assessoriaId, influenciadorId, tarefaId); // validates access
-        TarefaComentario c =
-                TarefaComentario.fromCreator(tarefaId, assessoriaId, creatorUserId, texto);
+        detalharTarefa(influenciadorId, tarefaId); // validates access
+        TarefaComentario c = TarefaComentario.fromCreator(tarefaId, creatorUserId, texto);
         return comentarioRepo.save(c);
     }
 
     // ─── Entregáveis ──────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<CreatorEntregavel> listarEntregaveis(
-            UUID assessoriaId, UUID influenciadorId, UUID tarefaId) {
-        detalharTarefa(assessoriaId, influenciadorId, tarefaId);
-        return entregavelRepo.findByTarefaIdAndAssessoriaId(tarefaId, assessoriaId);
+    public List<CreatorEntregavel> listarEntregaveis(UUID influenciadorId, UUID tarefaId) {
+        detalharTarefa(influenciadorId, tarefaId);
+        return entregavelRepo.findByTarefaId(tarefaId);
     }
 
     @Transactional
     public CreatorEntregavel enviarEntregavel(
-            UUID assessoriaId,
             UUID influenciadorId,
             UUID tarefaId,
             UUID creatorUserId,
             MultipartFile file) {
-        detalharTarefa(assessoriaId, influenciadorId, tarefaId);
+        detalharTarefa(influenciadorId, tarefaId);
 
         AttachmentStorage.StoredFile stored;
         try (InputStream is = file.getInputStream()) {
             stored =
                     storage.store(
-                            assessoriaId.toString(),
+                            "portal",
                             file.getOriginalFilename(),
                             file.getContentType(),
                             is,
@@ -112,7 +106,6 @@ public class PortalService {
                 new CreatorEntregavel(
                         tarefaId,
                         creatorUserId,
-                        assessoriaId,
                         stored.storagePath(),
                         file.getOriginalFilename(),
                         file.getContentType(),
@@ -124,10 +117,10 @@ public class PortalService {
 
     @Transactional
     public CreatorEntregavel revisarEntregavel(
-            UUID assessoriaId, UUID entregavelId, String novoStatus, String feedback) {
+            UUID entregavelId, String novoStatus, String feedback) {
         CreatorEntregavel e =
                 entregavelRepo
-                        .findByIdAndAssessoriaId(entregavelId, assessoriaId)
+                        .findById(entregavelId)
                         .orElseThrow(BusinessException::notFound);
         e.setStatus(novoStatus);
         if (feedback != null) e.setFeedback(feedback);
@@ -137,10 +130,10 @@ public class PortalService {
     // ─── Download entregável ──────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public DownloadResult downloadEntregavel(UUID assessoriaId, UUID entregavelId) {
+    public DownloadResult downloadEntregavel(UUID entregavelId) {
         CreatorEntregavel e =
                 entregavelRepo
-                        .findByIdAndAssessoriaId(entregavelId, assessoriaId)
+                        .findById(entregavelId)
                         .orElseThrow(BusinessException::notFound);
         InputStream stream = storage.load(e.getArquivoPath());
         return new DownloadResult(stream, e.getFilename(), e.getContentType(), e.getSizeBytes());

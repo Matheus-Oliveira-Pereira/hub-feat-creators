@@ -19,9 +19,6 @@ public class CreatorProfileFeature {
     @Column(name = "influenciador_id", unique = true, nullable = false)
     private UUID influenciadorId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "vertical_inferido")
     private String verticalInferido;
 
@@ -47,9 +44,8 @@ public class CreatorProfileFeature {
 
     protected CreatorProfileFeature() {}
 
-    public CreatorProfileFeature(UUID influenciadorId, UUID assessoriaId) {
+    public CreatorProfileFeature(UUID influenciadorId) {
         this.influenciadorId = influenciadorId;
-        this.assessoriaId = assessoriaId;
     }
 
     public void update(
@@ -74,10 +70,6 @@ public class CreatorProfileFeature {
 
     public UUID getInfluenciadorId() {
         return influenciadorId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getVerticalInferido() {

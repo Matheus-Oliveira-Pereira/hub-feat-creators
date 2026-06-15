@@ -1,6 +1,5 @@
 package com.hubfeatcreators.domain.rbac;
 
-import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.web.BusinessException;
 import java.time.Instant;
 import java.util.List;
@@ -19,35 +18,32 @@ public class PerfilService {
     }
 
     @Transactional(readOnly = true)
-    public List<Perfil> listar(AuthPrincipal principal) {
-        return perfilRepo.findAllByAssessoriaId(principal.assessoriaId());
+    public List<Perfil> listar() {
+        return perfilRepo.findAll();
     }
 
     @Transactional(readOnly = true)
-    public Perfil buscar(AuthPrincipal principal, UUID id) {
-        Perfil p = perfilRepo.findById(id).orElseThrow(() -> BusinessException.notFound("PERFIL"));
-        ensureSameTenant(principal, p);
-        return p;
+    public Perfil buscar(UUID id) {
+        return perfilRepo.findById(id).orElseThrow(() -> BusinessException.notFound("PERFIL"));
     }
 
     @Transactional
-    public Perfil criar(AuthPrincipal principal, String nome, String descricao, Set<String> roles) {
+    public Perfil criar(String nome, String descricao, Set<String> roles) {
         validateRoles(roles);
         perfilRepo
-                .findByAssessoriaIdAndNome(principal.assessoriaId(), nome)
+                .findByNome(nome)
                 .ifPresent(
                         p -> {
                             throw BusinessException.conflict(
                                     "PERFIL_EM_USO", "Já existe perfil com esse nome.");
                         });
-        Perfil p = new Perfil(principal.assessoriaId(), nome, descricao, roles, false);
+        Perfil p = new Perfil(nome, descricao, roles, false);
         return perfilRepo.save(p);
     }
 
     @Transactional
-    public Perfil atualizar(
-            AuthPrincipal principal, UUID id, String nome, String descricao, Set<String> roles) {
-        Perfil p = buscar(principal, id);
+    public Perfil atualizar(UUID id, String nome, String descricao, Set<String> roles) {
+        Perfil p = buscar(id);
         if (p.isSystem() && !p.getNome().equals(nome)) {
             throw BusinessException.badRequest(
                     "PERFIL_SISTEMA", "Perfis do sistema não podem ter nome alterado.");
@@ -65,8 +61,8 @@ public class PerfilService {
     }
 
     @Transactional
-    public void deletar(AuthPrincipal principal, UUID id) {
-        Perfil p = buscar(principal, id);
+    public void deletar(UUID id) {
+        Perfil p = buscar(id);
         if (p.isSystem()) {
             throw BusinessException.badRequest(
                     "PERFIL_SISTEMA", "Perfis do sistema não podem ser removidos.");
@@ -79,12 +75,6 @@ public class PerfilService {
         }
         p.setDeletedAt(Instant.now());
         perfilRepo.save(p);
-    }
-
-    private void ensureSameTenant(AuthPrincipal principal, Perfil p) {
-        if (!p.getAssessoriaId().equals(principal.assessoriaId())) {
-            throw BusinessException.notFound("PERFIL");
-        }
     }
 
     private void validateRoles(Set<String> roles) {

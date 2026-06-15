@@ -13,10 +13,7 @@ public class CreatorInvite {
     @Column(name = "influenciador_id", nullable = false)
     private UUID influenciadorId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "citext")
     private String email;
 
     @Column(name = "token_hash", nullable = false, unique = true)
@@ -38,13 +35,11 @@ public class CreatorInvite {
 
     public CreatorInvite(
             UUID influenciadorId,
-            UUID assessoriaId,
             String email,
             String tokenHash,
             Instant expiresAt,
             UUID criadoPorId) {
         this.influenciadorId = influenciadorId;
-        this.assessoriaId = assessoriaId;
         this.email = email;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
@@ -57,10 +52,6 @@ public class CreatorInvite {
 
     public UUID getInfluenciadorId() {
         return influenciadorId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getEmail() {

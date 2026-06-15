@@ -13,13 +13,22 @@ public interface MarcaRepository extends JpaRepository<Marca, UUID> {
     Optional<Marca> findByIdAndDeletedAtIsNull(UUID id);
 
     @Query(
-            """
-      SELECT m FROM Marca m
-      WHERE m.deletedAt IS NULL
-        AND (:nome IS NULL OR LOWER(m.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-        AND (:segmento IS NULL OR m.segmento = :segmento)
-      ORDER BY m.createdAt DESC
-      """)
+            value =
+                    """
+      SELECT * FROM marcas
+      WHERE deleted_at IS NULL
+        AND (:nome IS NULL OR LOWER(nome) LIKE LOWER('%' || CAST(:nome AS text) || '%'))
+        AND (:segmento IS NULL OR segmento = :segmento)
+      ORDER BY created_at DESC
+      """,
+            countQuery =
+                    """
+      SELECT COUNT(*) FROM marcas
+      WHERE deleted_at IS NULL
+        AND (:nome IS NULL OR LOWER(nome) LIKE LOWER('%' || CAST(:nome AS text) || '%'))
+        AND (:segmento IS NULL OR segmento = :segmento)
+      """,
+            nativeQuery = true)
     Page<Marca> search(
             @Param("nome") String nome, @Param("segmento") String segmento, Pageable pageable);
 
@@ -29,10 +38,8 @@ public interface MarcaRepository extends JpaRepository<Marca, UUID> {
     @Query(
             """
       SELECT m FROM Marca m
-      WHERE m.assessoriaId = :assessoriaId
-        AND m.deletedAt IS NULL
+      WHERE m.deletedAt IS NULL
         AND LOWER(m.nome) = LOWER(:nome)
       """)
-    java.util.Optional<Marca> findByNomeIgnoreCaseAndAssessoriaId(
-            @Param("nome") String nome, @Param("assessoriaId") UUID assessoriaId);
+    java.util.Optional<Marca> findByNomeIgnoreCase(@Param("nome") String nome);
 }

@@ -4,16 +4,10 @@ import com.hubfeatcreators.domain.usuario.Usuario;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
-
 @Entity
 @Table(name = "convites")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class Convite {
     @Id private UUID id = UUID.randomUUID();
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Column(nullable = false, columnDefinition = "CITEXT")
     private String email;
@@ -48,8 +42,7 @@ public class Convite {
 
     public Convite() {}
 
-    public Convite(UUID assessoriaId, String email, String token, Role role, Instant expiresAt) {
-        this.assessoriaId = assessoriaId;
+    public Convite(String email, String token, Role role, Instant expiresAt) {
         this.email = email;
         this.token = token;
         this.role = role;
@@ -58,10 +51,6 @@ public class Convite {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getEmail() {

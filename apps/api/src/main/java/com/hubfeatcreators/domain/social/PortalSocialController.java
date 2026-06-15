@@ -41,7 +41,7 @@ public class PortalSocialController {
     public List<SocialSnapshotController.SocialAccountDto> listMineAccounts(
             @AuthenticationPrincipal CreatorPrincipal creator) {
         return socialService
-                .listByInfluenciador(creator.assessoriaId(), creator.influenciadorId())
+                .listByInfluenciador(creator.influenciadorId())
                 .stream()
                 .map(SocialSnapshotController.SocialAccountDto::from)
                 .toList();
@@ -50,7 +50,7 @@ public class PortalSocialController {
     @GetMapping("/auth/{plataforma}/start")
     public ResponseEntity<Void> startOAuth(
             @PathVariable String plataforma, @AuthenticationPrincipal CreatorPrincipal creator) {
-        String state = stateStore.generate(creator.influenciadorId(), creator.assessoriaId());
+        String state = stateStore.generate(creator.influenciadorId());
         String url =
                 switch (plataforma.toUpperCase()) {
                     case "INSTAGRAM" -> instagramClient.buildAuthUrl(state);
@@ -66,7 +66,7 @@ public class PortalSocialController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> disconnect(
             @PathVariable UUID id, @AuthenticationPrincipal CreatorPrincipal creator) {
-        socialService.disconnect(creator.assessoriaId(), id);
+        socialService.disconnect(id);
         return ResponseEntity.noContent().build();
     }
 }

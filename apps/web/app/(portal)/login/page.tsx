@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,7 +20,6 @@ const schema = z.object({
 type Fields = z.infer<typeof schema>;
 
 export default function PortalLoginPage() {
-  const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const {
     register,
@@ -32,7 +31,7 @@ export default function PortalLoginPage() {
     try {
       const resp = await portalAuth.login(data.email, data.senha);
       setCreatorToken(resp.token);
-      router.push(`/portal/${slug}/tarefas` as Route);
+      router.push('/portal/tarefas' as Route);
     } catch {
       toast.error('E-mail ou senha incorretos.');
     }

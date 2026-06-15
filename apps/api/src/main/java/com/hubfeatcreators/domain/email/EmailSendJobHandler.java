@@ -105,7 +105,6 @@ public class EmailSendJobHandler implements JobHandler {
             log.info("email.send.ok envioId={} smtpMessageId={}", envioId, smtpMessageId);
 
             eventoService.registrar(
-                    envio.getAssessoriaId(),
                     null,
                     EventoTipo.EMAIL_ENVIADO,
                     Map.of(
@@ -125,8 +124,7 @@ public class EmailSendJobHandler implements JobHandler {
                     .increment();
             log.error("email.send.auth_fail envioId={} accountId={}", envioId, account.getId());
             eventPublisher.publishEvent(
-                    new EmailAuthFalhouEvent(
-                            account.getAssessoriaId(), account.getId(), account.getFromAddress()));
+                    new EmailAuthFalhouEvent(account.getId(), account.getFromAddress()));
             throw e;
 
         } catch (Exception e) {
@@ -199,7 +197,6 @@ public class EmailSendJobHandler implements JobHandler {
         String token =
                 EmailUnsubscribeTokens.generate(
                         appProperties.getSecrets().getEmailKey(),
-                        envio.getAssessoriaId().toString(),
                         envio.getDestinatarioEmail());
         return "/api/v1/email/unsubscribe?token=" + token;
     }

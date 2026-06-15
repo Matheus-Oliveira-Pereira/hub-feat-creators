@@ -3,7 +3,6 @@ package com.hubfeatcreators.domain.admin;
 import com.hubfeatcreators.domain.rbac.PermissionCodes;
 import com.hubfeatcreators.infra.security.AuthPrincipal;
 import com.hubfeatcreators.infra.security.rbac.RequirePermission;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -11,17 +10,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/admin/feature-flags")
-@RequirePermission(PermissionCodes.ADMN)
+@RequestMapping("/api/v1/configuracoes/feature-flags")
+@RequirePermission(PermissionCodes.FLAG)
 public class AdminFeatureFlagController {
 
     private final PlatformFeatureFlagService service;
-    private final AdminAuditService auditService;
 
-    public AdminFeatureFlagController(
-            PlatformFeatureFlagService service, AdminAuditService auditService) {
+    public AdminFeatureFlagController(PlatformFeatureFlagService service) {
         this.service = service;
-        this.auditService = auditService;
     }
 
     record FeatureFlagResponse(String key, boolean enabled) {}
@@ -39,24 +35,8 @@ public class AdminFeatureFlagController {
     public FeatureFlagResponse toggle(
             @PathVariable String key,
             @Valid @RequestBody ToggleRequest req,
-            @AuthenticationPrincipal AuthPrincipal principal,
-            HttpServletRequest http) {
+            @AuthenticationPrincipal AuthPrincipal principal) {
         PlatformFeatureFlag flag = service.toggle(key, req.enabled(), principal.usuarioId());
-        auditService.log(
-                principal.usuarioId(),
-                "FEATURE_FLAG_CHANGE",
-                null,
-                "feature_flag",
-                null,
-                null,
-                "{\"key\":\"" + key + "\",\"enabled\":" + req.enabled() + "}",
-                ip(http),
-                http.getHeader("User-Agent"));
         return new FeatureFlagResponse(flag.getKey(), flag.isEnabled());
-    }
-
-    private String ip(HttpServletRequest req) {
-        String xff = req.getHeader("X-Forwarded-For");
-        return xff != null ? xff.split(",")[0].trim() : req.getRemoteAddr();
     }
 }

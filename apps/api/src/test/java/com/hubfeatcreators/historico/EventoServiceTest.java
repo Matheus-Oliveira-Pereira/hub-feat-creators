@@ -33,7 +33,6 @@ class EventoServiceTest {
 
     EventoService service;
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID autorId = UUID.randomUUID();
     UUID entidadeId = UUID.randomUUID();
 
@@ -51,7 +50,6 @@ class EventoServiceTest {
 
         Evento saved =
                 service.registrar(
-                        assessoriaId,
                         autorId,
                         EventoTipo.PROSPECCAO_CRIADA,
                         Map.of("titulo", "Test"),
@@ -62,7 +60,6 @@ class EventoServiceTest {
         verify(repo).save(cap.capture());
 
         Evento e = cap.getValue();
-        assertThat(e.getAssessoriaId()).isEqualTo(assessoriaId);
         assertThat(e.getAutorId()).isEqualTo(autorId);
         assertThat(e.getTipo()).isEqualTo(EventoTipo.PROSPECCAO_CRIADA.name());
         assertThat(e.getEntidadesRelacionadas()).hasSize(2);
@@ -75,12 +72,12 @@ class EventoServiceTest {
     void listar_owner_usa_query_owner() {
         AuthPrincipal owner = principal("OWNER", Set.of("OWNR"));
 
-        when(repo.findOwnerFirst(any(), any(), any(), any(), anyInt())).thenReturn(List.of());
+        when(repo.findOwnerFirst(any(), any(), any(), anyInt())).thenReturn(List.of());
 
         service.listar(owner, "PROSPECCAO", entidadeId, null, null, 50);
 
-        verify(repo).findOwnerFirst(assessoriaId, "PROSPECCAO", entidadeId.toString(), null, 50);
-        verify(repo, never()).findAssessorFirst(any(), any(), any(), any(), any(), anyInt());
+        verify(repo).findOwnerFirst("PROSPECCAO", entidadeId.toString(), null, 50);
+        verify(repo, never()).findAssessorFirst(any(), any(), any(), any(), anyInt());
     }
 
     @Test
@@ -88,15 +85,12 @@ class EventoServiceTest {
         UUID userId = UUID.randomUUID();
         AuthPrincipal assessor = principalAssessor(userId);
 
-        when(repo.findAssessorFirst(any(), any(), any(), any(), any(), anyInt()))
-                .thenReturn(List.of());
+        when(repo.findAssessorFirst(any(), any(), any(), any(), anyInt())).thenReturn(List.of());
 
         service.listar(assessor, "PROSPECCAO", entidadeId, null, null, 50);
 
-        verify(repo)
-                .findAssessorFirst(
-                        assessoriaId, userId, "PROSPECCAO", entidadeId.toString(), null, 50);
-        verify(repo, never()).findOwnerFirst(any(), any(), any(), any(), anyInt());
+        verify(repo).findAssessorFirst(userId, "PROSPECCAO", entidadeId.toString(), null, 50);
+        verify(repo, never()).findOwnerFirst(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -115,20 +109,10 @@ class EventoServiceTest {
     }
 
     private AuthPrincipal principal(String role, Set<String> perms) {
-        AuthPrincipal p = mock(AuthPrincipal.class);
-        when(p.assessoriaId()).thenReturn(assessoriaId);
-        when(p.usuarioId()).thenReturn(autorId);
-        when(p.role()).thenReturn(role);
-        when(p.permissions()).thenReturn(perms);
-        return p;
+        return new AuthPrincipal(autorId, role, perms);
     }
 
     private AuthPrincipal principalAssessor(UUID userId) {
-        AuthPrincipal p = mock(AuthPrincipal.class);
-        when(p.assessoriaId()).thenReturn(assessoriaId);
-        when(p.usuarioId()).thenReturn(userId);
-        when(p.role()).thenReturn("ASSESSOR");
-        when(p.permissions()).thenReturn(Set.of());
-        return p;
+        return new AuthPrincipal(userId, "ASSESSOR", Set.of());
     }
 }

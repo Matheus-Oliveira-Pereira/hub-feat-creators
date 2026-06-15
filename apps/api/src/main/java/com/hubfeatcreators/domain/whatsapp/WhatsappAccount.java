@@ -12,9 +12,6 @@ public class WhatsappAccount {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "waba_id", nullable = false)
     private String wabaId;
 
@@ -60,7 +57,6 @@ public class WhatsappAccount {
     protected WhatsappAccount() {}
 
     public WhatsappAccount(
-            UUID assessoriaId,
             String wabaId,
             String phoneNumberId,
             String phoneE164,
@@ -69,7 +65,6 @@ public class WhatsappAccount {
             byte[] tokenNonce,
             byte[] appSecretEnc,
             byte[] appSecretNonce) {
-        this.assessoriaId = assessoriaId;
         this.wabaId = wabaId;
         this.phoneNumberId = phoneNumberId;
         this.phoneE164 = phoneE164;
@@ -100,10 +95,6 @@ public class WhatsappAccount {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getWabaId() {

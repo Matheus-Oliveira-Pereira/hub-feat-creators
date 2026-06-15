@@ -9,8 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface DsrSolicitacaoRepository extends JpaRepository<DsrSolicitacao, UUID> {
 
-    List<DsrSolicitacao> findByAssessoriaIdAndStatus(
-            UUID assessoriaId, DsrSolicitacao.StatusDsr status);
+    List<DsrSolicitacao> findByStatus(DsrSolicitacao.StatusDsr status);
 
     @Query(
             "SELECT d FROM DsrSolicitacao d WHERE d.status = 'PENDENTE' AND d.prazoLegalEm < :limite")

@@ -32,9 +32,6 @@ public class UsuarioController {
             @Valid @RequestBody AtribuirPerfilRequest req) {
         Usuario u =
                 usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
-        if (!u.getAssessoriaId().equals(principal.assessoriaId())) {
-            throw BusinessException.notFound("USUARIO");
-        }
         u.setProfileId(req.profileId());
         usuarioRepo.save(u);
     }

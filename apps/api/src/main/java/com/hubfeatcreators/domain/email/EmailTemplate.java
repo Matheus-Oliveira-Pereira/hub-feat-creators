@@ -14,9 +14,6 @@ public class EmailTemplate {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(nullable = false)
     private String nome;
 
@@ -44,8 +41,7 @@ public class EmailTemplate {
 
     protected EmailTemplate() {}
 
-    public EmailTemplate(UUID assessoriaId, String nome, String assunto, String corpoHtml) {
-        this.assessoriaId = assessoriaId;
+    public EmailTemplate(String nome, String assunto, String corpoHtml) {
         this.nome = nome;
         this.assunto = assunto;
         this.corpoHtml = corpoHtml;
@@ -53,10 +49,6 @@ public class EmailTemplate {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

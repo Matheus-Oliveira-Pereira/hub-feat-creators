@@ -13,9 +13,6 @@ public class AuditLog {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "usuario_id")
     private UUID usuarioId;
 
@@ -68,13 +65,11 @@ public class AuditLog {
     public AuditLog() {}
 
     public AuditLog(
-            UUID assessoriaId,
             UUID usuarioId,
             String entidade,
             UUID entidadeId,
             Acao acao,
             Map<String, Object> payload) {
-        this.assessoriaId = assessoriaId;
         this.usuarioId = usuarioId;
         this.entidade = entidade;
         this.entidadeId = entidadeId;
@@ -83,7 +78,6 @@ public class AuditLog {
     }
 
     public AuditLog(
-            UUID assessoriaId,
             UUID usuarioId,
             String entidade,
             UUID entidadeId,
@@ -91,17 +85,13 @@ public class AuditLog {
             Map<String, Object> payload,
             String ip,
             String userAgent) {
-        this(assessoriaId, usuarioId, entidade, entidadeId, acao, payload);
+        this(usuarioId, entidade, entidadeId, acao, payload);
         this.ip = ip;
         this.userAgent = userAgent;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getUsuarioId() {

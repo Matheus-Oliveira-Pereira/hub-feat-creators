@@ -25,15 +25,12 @@ class NotificacaoFanoutTest {
 
     @Test
     void onTarefaVencendo_chama_service_com_tipo_correto() {
-        var event =
-                new TarefaVencendoEvent(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Tarefa X");
+        var event = new TarefaVencendoEvent(UUID.randomUUID(), UUID.randomUUID(), "Tarefa X");
 
         fanout.onTarefaVencendo(event);
 
         verify(notificacaoService)
                 .criar(
-                        eq(event.assessoriaId()),
                         eq(event.usuarioId()),
                         eq(NotificacaoTipo.TAREFA_VENCENDO),
                         eq(NotificacaoPrioridade.HIGH),
@@ -50,7 +47,6 @@ class NotificacaoFanoutTest {
                 new ProspeccaoMudouStatusEvent(
                         UUID.randomUUID(),
                         UUID.randomUUID(),
-                        UUID.randomUUID(),
                         "Prosp Y",
                         "NOVA",
                         "CONTATADA");
@@ -59,7 +55,6 @@ class NotificacaoFanoutTest {
 
         verify(notificacaoService)
                 .criar(
-                        eq(event.assessoriaId()),
                         eq(event.responsavelId()),
                         eq(NotificacaoTipo.PROSPECCAO_MUDOU_STATUS),
                         eq(NotificacaoPrioridade.NORMAL),
@@ -72,11 +67,9 @@ class NotificacaoFanoutTest {
 
     @Test
     void fanout_nao_propaga_excecao_do_service() {
-        var event =
-                new TarefaVencendoEvent(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Titulo");
+        var event = new TarefaVencendoEvent(UUID.randomUUID(), UUID.randomUUID(), "Titulo");
         when(notificacaoService.criar(
-                        any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                        any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("DB down"));
 
         // deve capturar silenciosamente

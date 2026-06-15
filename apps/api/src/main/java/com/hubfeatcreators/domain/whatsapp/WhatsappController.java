@@ -68,7 +68,7 @@ public class WhatsappController {
     @RequirePermission(PermissionCodes.B_WAP)
     @GetMapping("/accounts")
     public List<AccountResponse> listAccounts(@AuthenticationPrincipal AuthPrincipal p) {
-        return accountService.list(p.assessoriaId()).stream().map(this::toAccountResp).toList();
+        return accountService.list().stream().map(this::toAccountResp).toList();
     }
 
     @RequirePermission(PermissionCodes.C_WAP)
@@ -78,7 +78,6 @@ public class WhatsappController {
             @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid AccountRequest req) {
         return toAccountResp(
                 accountService.create(
-                        p.assessoriaId(),
                         req.wabaId(),
                         req.phoneNumberId(),
                         req.phoneE164(),
@@ -94,19 +93,14 @@ public class WhatsappController {
             @PathVariable UUID id,
             @RequestBody AccountUpdateRequest req) {
         return toAccountResp(
-                accountService.update(
-                        p.assessoriaId(),
-                        id,
-                        req.displayName(),
-                        req.accessToken(),
-                        req.appSecret()));
+                accountService.update(id, req.displayName(), req.accessToken(), req.appSecret()));
     }
 
     @RequirePermission(PermissionCodes.D_WAP)
     @DeleteMapping("/accounts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAccount(@AuthenticationPrincipal AuthPrincipal p, @PathVariable UUID id) {
-        accountService.delete(p.assessoriaId(), id);
+        accountService.delete(id);
     }
 
     // ─── Templates ──────────────────────────────────────────────────────────────
@@ -148,7 +142,7 @@ public class WhatsappController {
     @RequirePermission(PermissionCodes.B_WAP)
     @GetMapping("/templates")
     public List<TemplateResponse> listTemplates(@AuthenticationPrincipal AuthPrincipal p) {
-        return templateService.list(p.assessoriaId()).stream().map(this::toTemplateResp).toList();
+        return templateService.list().stream().map(this::toTemplateResp).toList();
     }
 
     @RequirePermission(PermissionCodes.C_WAP)
@@ -158,7 +152,6 @@ public class WhatsappController {
             @AuthenticationPrincipal AuthPrincipal p, @RequestBody @Valid TemplateRequest req) {
         return toTemplateResp(
                 templateService.create(
-                        p.assessoriaId(),
                         req.accountId(),
                         req.nome(),
                         req.idioma() != null ? req.idioma() : "pt_BR",
@@ -171,7 +164,7 @@ public class WhatsappController {
     @PostMapping("/templates/{id}/submit")
     public TemplateResponse submitTemplate(
             @AuthenticationPrincipal AuthPrincipal p, @PathVariable UUID id) {
-        return toTemplateResp(templateService.submit(p.assessoriaId(), id));
+        return toTemplateResp(templateService.submit(id));
     }
 
     // ─── Envios ─────────────────────────────────────────────────────────────────
@@ -205,7 +198,6 @@ public class WhatsappController {
         UUID key = req.idempotencyKey() != null ? req.idempotencyKey() : UUID.randomUUID();
         return toEnvioResp(
                 whatsappService.sendTemplate(
-                        p.assessoriaId(),
                         req.accountId(),
                         req.templateId(),
                         req.destinatarioE164(),
@@ -222,7 +214,6 @@ public class WhatsappController {
         UUID key = req.idempotencyKey() != null ? req.idempotencyKey() : UUID.randomUUID();
         return toEnvioResp(
                 whatsappService.sendFreeform(
-                        p.assessoriaId(),
                         req.accountId(),
                         req.destinatarioE164(),
                         req.text(),

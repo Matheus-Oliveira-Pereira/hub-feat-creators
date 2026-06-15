@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,7 +22,6 @@ const schema = z
 type Fields = z.infer<typeof schema>;
 
 function ConviteInner() {
-  const { slug } = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const rawToken = searchParams.get('token') ?? '';
   const router = useRouter();
@@ -46,7 +45,7 @@ function ConviteInner() {
       const resp = await portalAuth.aceitarConvite(rawToken, data.senha);
       setCreatorToken(resp.token);
       toast.success('Conta criada! Bem-vindo(a).');
-      router.push(`/portal/${slug}/tarefas` as Route);
+      router.push('/portal/tarefas' as Route);
     } catch (e: unknown) {
       const err = e as { code?: string };
       if (err?.code === 'INVITE_EXPIRED') toast.error('Convite expirado ou já utilizado.');

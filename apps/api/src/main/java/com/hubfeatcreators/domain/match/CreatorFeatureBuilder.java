@@ -40,9 +40,9 @@ public class CreatorFeatureBuilder {
         this.vectorRepo = vectorRepo;
     }
 
-    public CreatorProfileFeature buildAndSave(UUID influenciadorId, UUID assessoriaId) {
+    public CreatorProfileFeature buildAndSave(UUID influenciadorId) {
         List<SocialAccount> accounts =
-                accountRepo.findByAssessoriaIdAndInfluenciadorId(assessoriaId, influenciadorId);
+                accountRepo.findByInfluenciadorId(influenciadorId);
 
         BigDecimal avgEngagement = computeEngagement(accounts);
         BigDecimal freqPost = computeFreqPost(accounts);
@@ -52,7 +52,7 @@ public class CreatorFeatureBuilder {
         CreatorProfileFeature feature =
                 featureRepo
                         .findByInfluenciadorId(influenciadorId)
-                        .orElseGet(() -> new CreatorProfileFeature(influenciadorId, assessoriaId));
+                        .orElseGet(() -> new CreatorProfileFeature(influenciadorId));
 
         feature.update(vertical, topTemas, null, null, avgEngagement, freqPost);
         featureRepo.save(feature);

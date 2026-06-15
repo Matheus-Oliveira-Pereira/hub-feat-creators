@@ -37,7 +37,6 @@ class RelatorioServiceTest {
 
     RelatorioService service;
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID usuarioId = UUID.randomUUID();
     AuthPrincipal principal;
 
@@ -47,7 +46,7 @@ class RelatorioServiceTest {
     @BeforeEach
     void setUp() {
         service = new RelatorioService(jdbc, savedRepo);
-        principal = new AuthPrincipal(usuarioId, assessoriaId, "OWNER", Set.of("OWNR"));
+        principal = new AuthPrincipal(usuarioId, "OWNER", Set.of("OWNR"));
     }
 
     // ─── validate ────────────────────────────────────────────────────────────
@@ -55,7 +54,7 @@ class RelatorioServiceTest {
     @Test
     void validate_fromAfterTo_throws() {
         stubFunilQuery(List.of());
-        assertThatThrownBy(() -> service.funil(assessoriaId, to, from, null))
+        assertThatThrownBy(() -> service.funil(to, from, null))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -63,7 +62,7 @@ class RelatorioServiceTest {
     void validate_periodExceeds24Months_throws() {
         Instant longFrom = Instant.parse("2022-01-01T00:00:00Z");
         Instant longTo = Instant.parse("2024-03-01T00:00:00Z");
-        assertThatThrownBy(() -> service.funil(assessoriaId, longFrom, longTo, null))
+        assertThatThrownBy(() -> service.funil(longFrom, longTo, null))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -72,7 +71,7 @@ class RelatorioServiceTest {
     @Test
     void funil_emptyData_returnsAllStatusesWithZeros() {
         stubFunilQuery(List.of());
-        FunilResult result = service.funil(assessoriaId, from, to, null);
+        FunilResult result = service.funil(from, to, null);
         assertThat(result.itens()).hasSize(5);
         assertThat(result.itens())
                 .allSatisfy(
@@ -104,7 +103,7 @@ class RelatorioServiceTest {
                                 0L,
                                 "tempo_medio_dias",
                                 0.0)));
-        FunilResult result = service.funil(assessoriaId, from, to, null);
+        FunilResult result = service.funil(from, to, null);
         FunilItem nova =
                 result.itens().stream()
                         .filter(i -> "NOVA".equals(i.status()))
@@ -120,11 +119,10 @@ class RelatorioServiceTest {
     void funil_withFilter_passesAssessorId() {
         UUID assessorId = UUID.randomUUID();
         stubFunilQuery(List.of());
-        service.funil(assessoriaId, from, to, assessorId);
+        service.funil(from, to, assessorId);
         verify(jdbc, atLeastOnce())
                 .queryForList(
                         anyString(),
-                        eq(assessoriaId),
                         any(Instant.class),
                         any(Instant.class),
                         eq(assessorId),
@@ -135,7 +133,6 @@ class RelatorioServiceTest {
     void funil_noData_currentGt0_delta100() {
         when(jdbc.queryForList(
                         anyString(),
-                        eq(assessoriaId),
                         any(Instant.class),
                         any(Instant.class),
                         isNull(),
@@ -152,7 +149,7 @@ class RelatorioServiceTest {
                                         "tempo_medio_dias",
                                         0.0)))
                 .thenReturn(List.of());
-        FunilResult result = service.funil(assessoriaId, from, to, null);
+        FunilResult result = service.funil(from, to, null);
         FunilItem nova =
                 result.itens().stream()
                         .filter(i -> "NOVA".equals(i.status()))
@@ -165,21 +162,16 @@ class RelatorioServiceTest {
 
     @Test
     void performance_empty_returnsEmptyList() {
-        // 3-arg varargs (assessoriaId, from, to) → performance queries
-        when(jdbc.queryForList(
-                        anyString(), any(UUID.class), any(Instant.class), any(Instant.class)))
+        when(jdbc.queryForList(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of());
-        // 1-arg varargs (assessoriaId) → usuarios query
-        when(jdbc.queryForList(anyString(), eq(assessoriaId))).thenReturn(List.of());
-        PerformanceResult result = service.performanceAssessor(assessoriaId, from, to);
+        PerformanceResult result = service.performanceAssessor(from, to);
         assertThat(result.assessores()).isEmpty();
     }
 
     @Test
     void performance_withRow_mapsEmail() {
         UUID aid = UUID.randomUUID();
-        when(jdbc.queryForList(
-                        anyString(), any(UUID.class), any(Instant.class), any(Instant.class)))
+        when(jdbc.queryForList(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(
                         List.of(
                                 Map.of(
@@ -196,9 +188,9 @@ class RelatorioServiceTest {
                                         "tempo_medio_fechamento_dias",
                                         2.5)))
                 .thenReturn(List.of());
-        when(jdbc.queryForList(anyString(), eq(assessoriaId)))
+        when(jdbc.queryForList(anyString()))
                 .thenReturn(List.of(Map.of("id", aid, "email", "assessor@test.com")));
-        PerformanceResult result = service.performanceAssessor(assessoriaId, from, to);
+        PerformanceResult result = service.performanceAssessor(from, to);
         assertThat(result.assessores()).hasSize(1);
         assertThat(result.assessores().get(0).assessorEmail()).isEqualTo("assessor@test.com");
         assertThat(result.assessores().get(0).abertas()).isEqualTo(3L);
@@ -208,17 +200,14 @@ class RelatorioServiceTest {
 
     @Test
     void sla_empty_returnsEmptyList() {
-        // 5-arg varargs (assessoriaId, from, to, null, null) → SLA query
         when(jdbc.queryForList(
                         anyString(),
-                        eq(assessoriaId),
                         any(Instant.class),
                         any(Instant.class),
                         isNull(),
                         isNull()))
                 .thenReturn(List.of());
-        when(jdbc.queryForList(anyString(), eq(assessoriaId))).thenReturn(List.of());
-        TarefaSlaResult result = service.tarefaSla(assessoriaId, from, to, null);
+        TarefaSlaResult result = service.tarefaSla(from, to, null);
         assertThat(result.assessores()).isEmpty();
     }
 
@@ -227,7 +216,6 @@ class RelatorioServiceTest {
         UUID rid = UUID.randomUUID();
         when(jdbc.queryForList(
                         anyString(),
-                        eq(assessoriaId),
                         any(Instant.class),
                         any(Instant.class),
                         isNull(),
@@ -246,9 +234,9 @@ class RelatorioServiceTest {
                                         "atraso_medio_horas",
                                         3.5)))
                 .thenReturn(List.of());
-        when(jdbc.queryForList(anyString(), eq(assessoriaId)))
+        when(jdbc.queryForList(anyString()))
                 .thenReturn(List.of(Map.of("id", rid, "email", "resp@test.com")));
-        TarefaSlaResult result = service.tarefaSla(assessoriaId, from, to, null);
+        TarefaSlaResult result = service.tarefaSla(from, to, null);
         assertThat(result.assessores()).hasSize(1);
         assertThat(result.assessores().get(0).total()).isEqualTo(10L);
         assertThat(result.assessores().get(0).noPrazo()).isEqualTo(8L);
@@ -258,8 +246,7 @@ class RelatorioServiceTest {
 
     @Test
     void salvar_validTipo_persists() {
-        RelatorioSalvo saved =
-                new RelatorioSalvo(assessoriaId, usuarioId, "Funil Jan", "FUNIL", Map.of());
+        RelatorioSalvo saved = new RelatorioSalvo(usuarioId, "Funil Jan", "FUNIL", Map.of());
         when(savedRepo.save(any())).thenReturn(saved);
         RelatorioSalvo result = service.salvar(principal, "Funil Jan", "FUNIL", Map.of());
         assertThat(result.getNome()).isEqualTo("Funil Jan");
@@ -275,17 +262,17 @@ class RelatorioServiceTest {
 
     @Test
     void listar_delegatesToRepo() {
-        when(savedRepo.findByAssessoriaIdOrderByCreatedAtDesc(assessoriaId)).thenReturn(List.of());
+        when(savedRepo.findByUsuarioIdOrderByCreatedAtDesc(usuarioId)).thenReturn(List.of());
         List<RelatorioSalvo> result = service.listarSalvos(principal);
         assertThat(result).isEmpty();
-        verify(savedRepo).findByAssessoriaIdOrderByCreatedAtDesc(assessoriaId);
+        verify(savedRepo).findByUsuarioIdOrderByCreatedAtDesc(usuarioId);
     }
 
     @Test
     void deletar_found_deletes() {
-        RelatorioSalvo saved = new RelatorioSalvo(assessoriaId, usuarioId, "X", "FUNIL", Map.of());
+        RelatorioSalvo saved = new RelatorioSalvo(usuarioId, "X", "FUNIL", Map.of());
         UUID id = saved.getId();
-        when(savedRepo.findByIdAndAssessoriaId(id, assessoriaId)).thenReturn(Optional.of(saved));
+        when(savedRepo.findByIdAndUsuarioId(id, usuarioId)).thenReturn(Optional.of(saved));
         service.deletarSalvo(principal, id);
         verify(savedRepo).delete(saved);
     }
@@ -293,7 +280,7 @@ class RelatorioServiceTest {
     @Test
     void deletar_notFound_throws() {
         UUID id = UUID.randomUUID();
-        when(savedRepo.findByIdAndAssessoriaId(id, assessoriaId)).thenReturn(Optional.empty());
+        when(savedRepo.findByIdAndUsuarioId(id, usuarioId)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.deletarSalvo(principal, id))
                 .isInstanceOf(BusinessException.class);
     }
@@ -304,7 +291,7 @@ class RelatorioServiceTest {
     void exportFunilCsv_writesHeaderAndRows() {
         stubFunilQuery(List.of());
         StringWriter sw = new StringWriter();
-        service.exportFunilCsv(assessoriaId, from, to, null, new PrintWriter(sw));
+        service.exportFunilCsv(from, to, null, new PrintWriter(sw));
         String csv = sw.toString();
         assertThat(csv).contains("status,qtd");
         assertThat(csv).contains("NOVA");
@@ -316,7 +303,7 @@ class RelatorioServiceTest {
     void funil_periodLabel_containsDates() {
         // from/to are midnight UTC; BRT=UTC-3 shifts dates back one day in labels
         stubFunilQuery(List.of());
-        FunilResult result = service.funil(assessoriaId, from, to, null);
+        FunilResult result = service.funil(from, to, null);
         assertThat(result.periodoAtual()).contains("2024-12-31"); // 2025-01-01T00Z → BRT 2024-12-31
         assertThat(result.periodoAnterior()).contains("2024-12");
     }
@@ -326,7 +313,6 @@ class RelatorioServiceTest {
     private void stubFunilQuery(List<Map<String, Object>> rows) {
         when(jdbc.queryForList(
                         anyString(),
-                        eq(assessoriaId),
                         any(Instant.class),
                         any(Instant.class),
                         isNull(),

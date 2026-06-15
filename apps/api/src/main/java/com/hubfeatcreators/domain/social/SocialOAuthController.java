@@ -1,7 +1,5 @@
 package com.hubfeatcreators.domain.social;
 
-import com.hubfeatcreators.infra.security.AuthPrincipal;
-import com.hubfeatcreators.infra.security.CreatorPrincipal;
 import com.hubfeatcreators.infra.social.InstagramApiClient;
 import com.hubfeatcreators.infra.social.TiktokApiClient;
 import com.hubfeatcreators.infra.social.YoutubeApiClient;
@@ -40,8 +38,7 @@ public class SocialOAuthController {
             @PathVariable String plataforma,
             @RequestParam UUID influenciadorId,
             @AuthenticationPrincipal Object principal) {
-        UUID assessoriaId = resolveAssessoriaId(principal);
-        String state = stateStore.generate(influenciadorId, assessoriaId);
+        String state = stateStore.generate(influenciadorId);
         String url = buildAuthUrl(plataforma.toUpperCase(), state);
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
@@ -62,14 +59,11 @@ public class SocialOAuthController {
 
         switch (plataforma.toUpperCase()) {
             case "INSTAGRAM" ->
-                    socialService.connectInstagram(
-                            pending.assessoriaId(), pending.influenciadorId(), code);
+                    socialService.connectInstagram(pending.influenciadorId(), code);
             case "YOUTUBE" ->
-                    socialService.connectYoutube(
-                            pending.assessoriaId(), pending.influenciadorId(), code);
+                    socialService.connectYoutube(pending.influenciadorId(), code);
             case "TIKTOK" ->
-                    socialService.connectTiktok(
-                            pending.assessoriaId(), pending.influenciadorId(), code);
+                    socialService.connectTiktok(pending.influenciadorId(), code);
             default ->
                     throw com.hubfeatcreators.infra.web.BusinessException.badRequest(
                             "PLATAFORMA_INVALIDA", "Plataforma não suportada");
@@ -83,8 +77,7 @@ public class SocialOAuthController {
     @DeleteMapping("/accounts/{id}")
     public ResponseEntity<Void> disconnect(
             @PathVariable UUID id, @AuthenticationPrincipal Object principal) {
-        UUID assessoriaId = resolveAssessoriaId(principal);
-        socialService.disconnect(assessoriaId, id);
+        socialService.disconnect(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -97,11 +90,5 @@ public class SocialOAuthController {
                     throw com.hubfeatcreators.infra.web.BusinessException.badRequest(
                             "PLATAFORMA_INVALIDA", "Plataforma não suportada");
         };
-    }
-
-    private UUID resolveAssessoriaId(Object principal) {
-        if (principal instanceof AuthPrincipal ap) return ap.assessoriaId();
-        if (principal instanceof CreatorPrincipal cp) return cp.assessoriaId();
-        throw new org.springframework.security.access.AccessDeniedException("Unauthenticated");
     }
 }

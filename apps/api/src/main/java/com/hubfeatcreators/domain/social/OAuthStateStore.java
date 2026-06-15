@@ -13,14 +13,14 @@ public class OAuthStateStore {
 
     private static final long TTL_SECONDS = 600;
 
-    public record OAuthPending(UUID influenciadorId, UUID assessoriaId, Instant createdAt) {}
+    public record OAuthPending(UUID influenciadorId, Instant createdAt) {}
 
     private final Map<String, OAuthPending> store = new ConcurrentHashMap<>();
 
-    public String generate(UUID influenciadorId, UUID assessoriaId) {
+    public String generate(UUID influenciadorId) {
         evictExpired();
         String state = UUID.randomUUID().toString();
-        store.put(state, new OAuthPending(influenciadorId, assessoriaId, Instant.now()));
+        store.put(state, new OAuthPending(influenciadorId, Instant.now()));
         return state;
     }
 

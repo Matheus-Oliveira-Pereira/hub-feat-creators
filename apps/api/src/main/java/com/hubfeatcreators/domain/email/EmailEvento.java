@@ -16,9 +16,6 @@ public class EmailEvento {
     @Column(name = "envio_id", nullable = false)
     private UUID envioId;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmailEventoTipo tipo;
@@ -32,10 +29,8 @@ public class EmailEvento {
 
     protected EmailEvento() {}
 
-    public EmailEvento(
-            UUID envioId, UUID assessoriaId, EmailEventoTipo tipo, Map<String, Object> payload) {
+    public EmailEvento(UUID envioId, EmailEventoTipo tipo, Map<String, Object> payload) {
         this.envioId = envioId;
-        this.assessoriaId = assessoriaId;
         this.tipo = tipo;
         this.payload = payload != null ? payload : Map.of();
     }
@@ -46,10 +41,6 @@ public class EmailEvento {
 
     public UUID getEnvioId() {
         return envioId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public EmailEventoTipo getTipo() {

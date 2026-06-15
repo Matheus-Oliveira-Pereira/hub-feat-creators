@@ -122,7 +122,6 @@ public class ImportService {
 
         ImportJob job =
                 new ImportJob(
-                        principal.assessoriaId(),
                         principal.usuarioId(),
                         entidade,
                         dest.toString(),
@@ -295,10 +294,10 @@ public class ImportService {
         ImportJob job = requireJob(principal, jobId);
         requireStatus(job, "PRONTO_DRY_RUN");
 
-        if (jobRepo.countExecutandoByAssessoria(principal.assessoriaId()) >= 5) {
+        if (jobRepo.countExecutandoByUsuario(principal.usuarioId()) >= 5) {
             throw BusinessException.tooManyRequests(
-                    "IMPORT_CONCURRENT_TENANT",
-                    "Limite de 5 imports simultâneos por assessoria atingido.");
+                    "IMPORT_CONCURRENT_LIMIT",
+                    "Limite de 5 imports simultâneos atingido.");
         }
         if (jobRepo.countExecutandoByUsuario(principal.usuarioId()) >= 1) {
             throw BusinessException.tooManyRequests(
@@ -316,7 +315,6 @@ public class ImportService {
         ImportJob saved = jobRepo.save(job);
 
         jobService.enqueue(
-                principal.assessoriaId(),
                 "IMPORT_BULK",
                 Map.of("importJobId", saved.getId().toString()),
                 batchId);
@@ -410,8 +408,8 @@ public class ImportService {
 
     @Transactional(readOnly = true)
     public Page<ImportJob> list(AuthPrincipal principal, int page, int size) {
-        return jobRepo.findByAssessoriaIdOrderByCreatedAtDesc(
-                principal.assessoriaId(), PageRequest.of(page, size));
+        return jobRepo.findByUsuarioIdOrderByCreatedAtDesc(
+                principal.usuarioId(), PageRequest.of(page, size));
     }
 
     // ---- Templates ---
@@ -420,25 +418,22 @@ public class ImportService {
     public ImportTemplate saveTemplate(
             AuthPrincipal principal, String nome, String entidade, Map<String, String> mapeamento) {
         validateEntidade(entidade);
-        return templateRepo.save(
-                new ImportTemplate(principal.assessoriaId(), nome, entidade, mapeamento));
+        return templateRepo.save(new ImportTemplate(nome, entidade, mapeamento));
     }
 
     @Transactional(readOnly = true)
     public List<ImportTemplate> listTemplates(AuthPrincipal principal, String entidade) {
         if (entidade != null) {
-            return templateRepo.findByAssessoriaIdAndEntidadeAndDeletedAtIsNull(
-                    principal.assessoriaId(), entidade);
+            return templateRepo.findByEntidadeAndDeletedAtIsNull(entidade);
         }
-        return templateRepo.findByAssessoriaIdAndDeletedAtIsNull(principal.assessoriaId());
+        return templateRepo.findByDeletedAtIsNull();
     }
 
     @Transactional
     public void deleteTemplate(AuthPrincipal principal, UUID templateId) {
         ImportTemplate t =
                 templateRepo
-                        .findByIdAndAssessoriaIdAndDeletedAtIsNull(
-                                templateId, principal.assessoriaId())
+                        .findByIdAndDeletedAtIsNull(templateId)
                         .orElseThrow(BusinessException::notFound);
         t.setDeletedAt(Instant.now());
         templateRepo.save(t);
@@ -450,7 +445,6 @@ public class ImportService {
             UUID jobId,
             List<ImportJobLinha> linhas,
             String entidade,
-            UUID assessoriaId,
             UUID usuarioId,
             String baseLegal,
             String dedupStrategy) {
@@ -481,22 +475,20 @@ public class ImportService {
 
     public UUID persistInfluenciador(
             Map<String, String> row,
-            UUID assessoriaId,
             UUID usuarioId,
             String baseLegal,
             String dedupStrategy) {
 
-        String nome = row.getOrDefault("nome", "");
         String email = row.get("email");
         String instagram = row.get("instagram");
 
         // Dedup check
         Optional<Influenciador> existing = Optional.empty();
         if (instagram != null && !instagram.isBlank()) {
-            existing = infRepo.findByHandleAndAssessoria(assessoriaId, "instagram", instagram);
+            existing = infRepo.findByHandle("instagram", instagram);
         }
         if (existing.isEmpty() && email != null && !email.isBlank()) {
-            existing = infRepo.findByHandleAndAssessoria(assessoriaId, "email", email);
+            existing = infRepo.findByHandle("email", email);
         }
 
         if (existing.isPresent()) {
@@ -508,18 +500,16 @@ public class ImportService {
                     infRepo.save(inf);
                     yield inf.getId();
                 }
-                case "DUPLICATE" -> createInfluenciador(row, assessoriaId, usuarioId, baseLegal);
+                case "DUPLICATE" -> createInfluenciador(row, usuarioId, baseLegal);
                 default -> null;
             };
         }
 
-        return createInfluenciador(row, assessoriaId, usuarioId, baseLegal);
+        return createInfluenciador(row, usuarioId, baseLegal);
     }
 
-    private UUID createInfluenciador(
-            Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
-        Influenciador inf =
-                new Influenciador(assessoriaId, row.getOrDefault("nome", ""), usuarioId);
+    private UUID createInfluenciador(Map<String, String> row, UUID usuarioId, String baseLegal) {
+        Influenciador inf = new Influenciador(row.getOrDefault("nome", ""), usuarioId);
         applyInfluenciadorFields(inf, row, baseLegal);
         return infRepo.save(inf).getId();
     }
@@ -551,15 +541,13 @@ public class ImportService {
 
     public UUID persistMarca(
             Map<String, String> row,
-            UUID assessoriaId,
             UUID usuarioId,
             String baseLegal,
             String dedupStrategy) {
 
         String nome = row.getOrDefault("nome", "");
 
-        Optional<Marca> existing =
-                marcaRepo.findByNomeIgnoreCaseAndAssessoriaId(nome, assessoriaId);
+        Optional<Marca> existing = marcaRepo.findByNomeIgnoreCase(nome);
 
         if (existing.isPresent()) {
             return switch (dedupStrategy) {
@@ -570,17 +558,16 @@ public class ImportService {
                     marcaRepo.save(m);
                     yield m.getId();
                 }
-                case "DUPLICATE" -> createMarca(row, assessoriaId, usuarioId, baseLegal);
+                case "DUPLICATE" -> createMarca(row, usuarioId, baseLegal);
                 default -> null;
             };
         }
 
-        return createMarca(row, assessoriaId, usuarioId, baseLegal);
+        return createMarca(row, usuarioId, baseLegal);
     }
 
-    private UUID createMarca(
-            Map<String, String> row, UUID assessoriaId, UUID usuarioId, String baseLegal) {
-        Marca m = new Marca(assessoriaId, row.getOrDefault("nome", ""), usuarioId);
+    private UUID createMarca(Map<String, String> row, UUID usuarioId, String baseLegal) {
+        Marca m = new Marca(row.getOrDefault("nome", ""), usuarioId);
         applyMarcaFields(m, row, baseLegal);
         return marcaRepo.save(m).getId();
     }
@@ -598,7 +585,6 @@ public class ImportService {
 
     public UUID persistContato(
             Map<String, String> row,
-            UUID assessoriaId,
             UUID usuarioId,
             String baseLegal,
             String dedupStrategy) {
@@ -625,23 +611,17 @@ public class ImportService {
                         contatoRepo.save(c);
                         yield c.getId();
                     }
-                    case "DUPLICATE" ->
-                            createContato(row, assessoriaId, marcaId, usuarioId, baseLegal);
+                    case "DUPLICATE" -> createContato(row, marcaId, baseLegal);
                     default -> null;
                 };
             }
         }
 
-        return createContato(row, assessoriaId, marcaId, usuarioId, baseLegal);
+        return createContato(row, marcaId, baseLegal);
     }
 
-    private UUID createContato(
-            Map<String, String> row,
-            UUID assessoriaId,
-            UUID marcaId,
-            UUID usuarioId,
-            String baseLegal) {
-        Contato c = new Contato(marcaId, assessoriaId, row.getOrDefault("nome", ""));
+    private UUID createContato(Map<String, String> row, UUID marcaId, String baseLegal) {
+        Contato c = new Contato(marcaId, row.getOrDefault("nome", ""));
         applyContatoFields(c, row, baseLegal);
         return contatoRepo.save(c).getId();
     }
@@ -697,8 +677,7 @@ public class ImportService {
     }
 
     private ImportJob requireJob(AuthPrincipal principal, UUID jobId) {
-        return jobRepo.findByIdAndAssessoriaId(jobId, principal.assessoriaId())
-                .orElseThrow(BusinessException::notFound);
+        return jobRepo.findById(jobId).orElseThrow(BusinessException::notFound);
     }
 
     private void requireStatus(ImportJob job, String... allowed) {

@@ -29,15 +29,13 @@ public class VectorRepository {
                 influenciadorId);
     }
 
-    public List<Map<String, Object>> findSimilarCreators(
-            UUID assessoriaId, float[] queryEmbedding, int limit) {
+    public List<Map<String, Object>> findSimilarCreators(float[] queryEmbedding, int limit) {
         String sql =
                 """
                 SELECT cpf.influenciador_id,
                        1 - (cpf.embedding <=> ?::vector) AS cosine_sim
                 FROM creator_profile_features cpf
-                WHERE cpf.assessoria_id = ?
-                  AND cpf.embedding IS NOT NULL
+                WHERE cpf.embedding IS NOT NULL
                   AND NOT EXISTS (
                       SELECT 1 FROM creator_match_optout o WHERE o.influenciador_id = cpf.influenciador_id
                   )
@@ -45,24 +43,22 @@ public class VectorRepository {
                 LIMIT ?
                 """;
         String vec = toVectorString(queryEmbedding);
-        return jdbc.queryForList(sql, vec, assessoriaId, vec, limit);
+        return jdbc.queryForList(sql, vec, vec, limit);
     }
 
-    public List<Map<String, Object>> findSimilarBriefings(
-            UUID assessoriaId, float[] queryEmbedding, int limit) {
+    public List<Map<String, Object>> findSimilarBriefings(float[] queryEmbedding, int limit) {
         String sql =
                 """
                 SELECT b.id AS briefing_id,
                        b.prospeccao_id,
                        1 - (b.embedding <=> ?::vector) AS cosine_sim
                 FROM briefings b
-                WHERE b.assessoria_id = ?
-                  AND b.embedding IS NOT NULL
+                WHERE b.embedding IS NOT NULL
                 ORDER BY b.embedding <=> ?::vector
                 LIMIT ?
                 """;
         String vec = toVectorString(queryEmbedding);
-        return jdbc.queryForList(sql, vec, assessoriaId, vec, limit);
+        return jdbc.queryForList(sql, vec, vec, limit);
     }
 
     public Double getCosineSimilarity(UUID briefingId, UUID influenciadorId) {

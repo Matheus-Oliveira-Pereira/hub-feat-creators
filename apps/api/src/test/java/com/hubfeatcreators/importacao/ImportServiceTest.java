@@ -64,9 +64,7 @@ class ImportServiceTest {
                         contatoRepo,
                         jobService);
 
-        principal =
-                new AuthPrincipal(
-                        UUID.randomUUID(), UUID.randomUUID(), "ASSESSOR", Set.of("CIMP", "BIMP"));
+        principal = new AuthPrincipal(UUID.randomUUID(), "ASSESSOR", Set.of("CIMP", "BIMP"));
     }
 
     // ---- upload ---
@@ -134,7 +132,7 @@ class ImportServiceTest {
     @Test
     void setMapeamento_invalidBaseLegal_throws() {
         ImportJob job = makeJob("UPLOADADO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
 
         assertThatThrownBy(
                         () ->
@@ -150,7 +148,7 @@ class ImportServiceTest {
     @Test
     void setMapeamento_invalidStatus_throws() {
         ImportJob job = makeJob("EXECUTANDO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
 
         assertThatThrownBy(
                         () ->
@@ -168,8 +166,7 @@ class ImportServiceTest {
     @Test
     void dryRun_noMapeamento_throws() {
         ImportJob job = makeJob("UPLOADADO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
-        // requireMapeamento throws before save is reached
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
 
         assertThatThrownBy(() -> service.dryRun(principal, job.getId()))
                 .isInstanceOf(BusinessException.class)
@@ -181,7 +178,7 @@ class ImportServiceTest {
     @Test
     void execute_statusNotProntoDryRun_throws() {
         ImportJob job = makeJob("UPLOADADO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
 
         assertThatThrownBy(() -> service.execute(principal, job.getId()))
                 .isInstanceOf(BusinessException.class);
@@ -194,10 +191,8 @@ class ImportServiceTest {
         job.setBaseLegal("LEGITIMO_INTERESSE");
         job.setDedupStrategy("SKIP");
 
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
-        when(jobRepo.countExecutandoByAssessoria(any())).thenReturn(0L);
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
         when(jobRepo.countExecutandoByUsuario(any())).thenReturn(0L);
-        // Return a job with a non-null ID so the service can call getId().toString()
         when(jobRepo.save(any()))
                 .thenAnswer(
                         inv -> {
@@ -207,14 +202,14 @@ class ImportServiceTest {
 
         service.execute(principal, job.getId());
 
-        verify(jobService).enqueue(eq(principal.assessoriaId()), eq("IMPORT_BULK"), any(), any());
+        verify(jobService).enqueue(eq("IMPORT_BULK"), any(), any());
     }
 
     @Test
     void execute_tooManyConcurrent_throws() {
         ImportJob job = makeJob("PRONTO_DRY_RUN");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
-        when(jobRepo.countExecutandoByAssessoria(any())).thenReturn(5L);
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
+        when(jobRepo.countExecutandoByUsuario(any())).thenReturn(5L);
 
         assertThatThrownBy(() -> service.execute(principal, job.getId()))
                 .isInstanceOf(BusinessException.class)
@@ -226,7 +221,7 @@ class ImportServiceTest {
     @Test
     void cancel_terminalStatus_throws() {
         ImportJob job = makeJob("CONCLUIDO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
 
         assertThatThrownBy(() -> service.cancel(principal, job.getId()))
                 .isInstanceOf(BusinessException.class);
@@ -235,7 +230,7 @@ class ImportServiceTest {
     @Test
     void cancel_executando_ok() {
         ImportJob job = makeJob("EXECUTANDO");
-        when(jobRepo.findByIdAndAssessoriaId(any(), any())).thenReturn(Optional.of(job));
+        when(jobRepo.findById(any())).thenReturn(Optional.of(job));
         when(linhaRepo.findByJobIdAndStatus(any(), eq("OK"))).thenReturn(List.of());
         when(jobRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -261,27 +256,24 @@ class ImportServiceTest {
 
     @Test
     void deleteTemplate_notFound_throws() {
-        when(templateRepo.findByIdAndAssessoriaIdAndDeletedAtIsNull(any(), any()))
-                .thenReturn(Optional.empty());
+        when(templateRepo.findByIdAndDeletedAtIsNull(any())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteTemplate(principal, UUID.randomUUID()))
                 .isInstanceOf(BusinessException.class);
     }
 
-    // ---- validateInfluenciador via validateRow (indirectly through dryRun) ---
+    // ---- persistInfluenciador ---
 
     @Test
     void persistInfluenciador_dedup_skip() {
         com.hubfeatcreators.domain.influenciador.Influenciador existing =
                 new com.hubfeatcreators.domain.influenciador.Influenciador(
-                        principal.assessoriaId(), "Existing", principal.usuarioId());
-        when(infRepo.findByHandleAndAssessoria(any(), eq("instagram"), any()))
-                .thenReturn(Optional.of(existing));
+                        "Existing", principal.usuarioId());
+        when(infRepo.findByHandle(eq("instagram"), any())).thenReturn(Optional.of(existing));
 
         UUID result =
                 service.persistInfluenciador(
                         Map.of("nome", "João", "instagram", "joao_ig"),
-                        principal.assessoriaId(),
                         principal.usuarioId(),
                         "LEGITIMO_INTERESSE",
                         "SKIP");
@@ -291,18 +283,15 @@ class ImportServiceTest {
 
     @Test
     void persistInfluenciador_noDedup_creates() {
-        // No instagram/email in row → no dedup lookup; Influenciador.id is initialized inline
         when(infRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UUID result =
                 service.persistInfluenciador(
                         Map.of("nome", "João"),
-                        principal.assessoriaId(),
                         principal.usuarioId(),
                         "LEGITIMO_INTERESSE",
                         "SKIP");
 
-        // Influenciador sets id = UUID.randomUUID() in field initializer
         assertThat(result).isNotNull();
     }
 
@@ -311,7 +300,6 @@ class ImportServiceTest {
     private ImportJob makeJob(String status) {
         ImportJob job =
                 new ImportJob(
-                        principal.assessoriaId(),
                         principal.usuarioId(),
                         "INFLUENCIADOR",
                         tmpDir + "/test.csv",

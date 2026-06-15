@@ -12,10 +12,7 @@ public class WhatsappOptout {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "citext")
     private String e164;
 
     private String motivo;
@@ -25,18 +22,13 @@ public class WhatsappOptout {
 
     protected WhatsappOptout() {}
 
-    public WhatsappOptout(UUID assessoriaId, String e164, String motivo) {
-        this.assessoriaId = assessoriaId;
+    public WhatsappOptout(String e164, String motivo) {
         this.e164 = e164;
         this.motivo = motivo;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getE164() {

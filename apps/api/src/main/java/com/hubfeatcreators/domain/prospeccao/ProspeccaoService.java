@@ -62,17 +62,10 @@ public class ProspeccaoService {
             int size) {
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE));
         if (canSeeAll(principal)) {
-            return repo.findAllOwner(
-                    principal.assessoriaId(), status, assessorId, marcaId, nome, pageable);
+            return repo.findAllOwner(status, assessorId, marcaId, nome, pageable);
         }
         return repo.findAllAssessor(
-                principal.assessoriaId(),
-                principal.usuarioId(),
-                status,
-                assessorId,
-                marcaId,
-                nome,
-                pageable);
+                principal.usuarioId(), status, assessorId, marcaId, nome, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +91,6 @@ public class ProspeccaoService {
             String[] tags) {
         Prospeccao p =
                 new Prospeccao(
-                        principal.assessoriaId(),
                         marcaId,
                         assessorResponsavelId != null
                                 ? assessorResponsavelId
@@ -119,13 +111,11 @@ public class ProspeccaoService {
         eventoRepo.save(
                 new ProspeccaoEvento(
                         salvo.getId(),
-                        principal.assessoriaId(),
                         EventoTipo.STATUS_CHANGE,
                         Map.of("para", salvo.getStatus().name()),
                         principal.usuarioId()));
 
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "PROSPECCAO",
                 salvo.getId(),
@@ -133,7 +123,6 @@ public class ProspeccaoService {
                 Map.of("titulo", salvo.getTitulo(), "marcaId", salvo.getMarcaId().toString()));
 
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 com.hubfeatcreators.domain.historico.EventoTipo.PROSPECCAO_CRIADA,
                 Map.of("titulo", salvo.getTitulo()),
@@ -173,7 +162,6 @@ public class ProspeccaoService {
         Prospeccao saved = repo.save(p);
 
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "PROSPECCAO",
                 saved.getId(),
@@ -209,7 +197,6 @@ public class ProspeccaoService {
             p.setMotivoPerda(motivoPerda);
             p.setMotivoPerdaDetalhe(motivoPerdaDetalhe);
         } else if (novo == ProspeccaoStatus.NOVA && antes == ProspeccaoStatus.FECHADA_PERDIDA) {
-            // Reabrindo: limpa motivo
             p.setMotivoPerda(null);
             p.setMotivoPerdaDetalhe(null);
             p.setFechadaEm(null);
@@ -252,14 +239,12 @@ public class ProspeccaoService {
         eventoRepo.save(
                 new ProspeccaoEvento(
                         saved.getId(),
-                        principal.assessoriaId(),
                         EventoTipo.STATUS_CHANGE,
                         payload,
                         principal.usuarioId()));
 
         eventPublisher.publishEvent(
                 new ProspeccaoMudouStatusEvent(
-                        principal.assessoriaId(),
                         saved.getAssessorResponsavelId(),
                         saved.getId(),
                         saved.getTitulo(),
@@ -279,7 +264,6 @@ public class ProspeccaoService {
         evPayload.put("para", novo.name());
         if (motivoPerda != null) evPayload.put("motivo_perda", motivoPerda.name());
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 evTipo,
                 evPayload,
@@ -298,7 +282,6 @@ public class ProspeccaoService {
         repo.save(p);
 
         auditLog.log(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 "PROSPECCAO",
                 p.getId(),
@@ -318,13 +301,11 @@ public class ProspeccaoService {
                 eventoRepo.save(
                         new ProspeccaoEvento(
                                 p.getId(),
-                                principal.assessoriaId(),
                                 EventoTipo.COMMENT,
                                 Map.of("texto", texto),
                                 principal.usuarioId()));
 
         eventoService.registrar(
-                principal.assessoriaId(),
                 principal.usuarioId(),
                 com.hubfeatcreators.domain.historico.EventoTipo.PROSPECCAO_COMENTARIO,
                 Map.of("texto", texto),
@@ -348,7 +329,7 @@ public class ProspeccaoService {
 
     @Transactional(readOnly = true)
     public DashboardSummary dashboard(AuthPrincipal principal) {
-        var counts = repo.contarPorStatus(principal.assessoriaId());
+        var counts = repo.contarPorStatus();
         java.util.EnumMap<ProspeccaoStatus, Long> porStatus =
                 new java.util.EnumMap<>(ProspeccaoStatus.class);
         for (ProspeccaoStatus s : ProspeccaoStatus.values()) porStatus.put(s, 0L);
@@ -359,13 +340,13 @@ public class ProspeccaoService {
                         .withDayOfMonth(1)
                         .atStartOfDay(java.time.ZoneOffset.UTC)
                         .toInstant();
-        long fechadasMes = repo.countFechadasDesde(principal.assessoriaId(), inicioMes);
+        long fechadasMes = repo.countFechadasDesde(inicioMes);
 
         long ganhas = porStatus.get(ProspeccaoStatus.FECHADA_GANHA);
         long perdidas = porStatus.get(ProspeccaoStatus.FECHADA_PERDIDA);
         double taxa = (ganhas + perdidas) == 0 ? 0d : (double) ganhas / (ganhas + perdidas);
 
-        Double ttc = repo.timeToCloseDiasMedio(principal.assessoriaId());
+        Double ttc = repo.timeToCloseDiasMedio();
         return new DashboardSummary(porStatus, fechadasMes, taxa, ttc != null ? ttc : 0d);
     }
 
@@ -375,9 +356,6 @@ public class ProspeccaoService {
     }
 
     private void ensureVisible(AuthPrincipal principal, Prospeccao p) {
-        if (!p.getAssessoriaId().equals(principal.assessoriaId())) {
-            throw BusinessException.notFound("PROSPECCAO");
-        }
         if (canSeeAll(principal)) return;
         boolean ehResponsavel = principal.usuarioId().equals(p.getAssessorResponsavelId());
         boolean ehCriador =

@@ -15,9 +15,6 @@ public class Briefing {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
-
     @Column(name = "prospeccao_id", unique = true)
     private UUID prospeccaoId;
 
@@ -52,7 +49,6 @@ public class Briefing {
     protected Briefing() {}
 
     public Briefing(
-            UUID assessoriaId,
             UUID prospeccaoId,
             String vertical,
             String objetivo,
@@ -61,7 +57,6 @@ public class Briefing {
             Long budgetMin,
             Long budgetMax,
             String texto) {
-        this.assessoriaId = assessoriaId;
         this.prospeccaoId = prospeccaoId;
         this.vertical = vertical;
         this.objetivo = objetivo;
@@ -92,10 +87,6 @@ public class Briefing {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public UUID getProspeccaoId() {

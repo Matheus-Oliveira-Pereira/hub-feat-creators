@@ -50,7 +50,6 @@ public class WhatsappService {
     /** Enqueues a template message. Idempotent: same key returns existing envio. */
     @Transactional
     public WhatsappEnvio sendTemplate(
-            UUID assessoriaId,
             UUID accountId,
             UUID templateId,
             String destinatarioE164,
@@ -61,12 +60,12 @@ public class WhatsappService {
         var existing = envioRepo.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) return existing.get();
 
-        checkOptout(assessoriaId, destinatarioE164);
-        accountService.requireAccount(assessoriaId, accountId);
+        checkOptout(destinatarioE164);
+        accountService.requireAccount(accountId);
 
         var template =
                 templateRepo
-                        .findByIdAndAssessoriaId(templateId, assessoriaId)
+                        .findById(templateId)
                         .orElseThrow(BusinessException::notFound);
         if (!"APPROVED".equals(template.getStatus())) {
             throw BusinessException.unprocessable(
@@ -84,7 +83,6 @@ public class WhatsappService {
                                 template.getIdioma()));
         var envio =
                 new WhatsappEnvio(
-                        assessoriaId,
                         accountId,
                         templateId,
                         destinatarioE164,
@@ -100,7 +98,6 @@ public class WhatsappService {
     /** Enqueues a free-form message. Requires open 24h window. */
     @Transactional
     public WhatsappEnvio sendFreeform(
-            UUID assessoriaId,
             UUID accountId,
             String destinatarioE164,
             String text,
@@ -110,11 +107,11 @@ public class WhatsappService {
         var existing = envioRepo.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) return existing.get();
 
-        checkOptout(assessoriaId, destinatarioE164);
+        checkOptout(destinatarioE164);
 
         boolean windowOpen =
                 windowRepo
-                        .findByIdAssessoriaIdAndIdE164(assessoriaId, destinatarioE164)
+                        .findByE164(destinatarioE164)
                         .map(WhatsappWindowCache::isWindowOpen)
                         .orElse(false);
         if (!windowOpen) {
@@ -122,11 +119,10 @@ public class WhatsappService {
                     "JANELA_FECHADA", "Janela de 24h fechada. Use um template HSM aprovado.");
         }
 
-        accountService.requireAccount(assessoriaId, accountId);
+        accountService.requireAccount(accountId);
         String payload = toJson(Map.of("text", text));
         var envio =
                 new WhatsappEnvio(
-                        assessoriaId,
                         accountId,
                         null,
                         destinatarioE164,
@@ -145,8 +141,7 @@ public class WhatsappService {
         WhatsappEnvio envio = envioRepo.findById(envioId).orElseThrow(BusinessException::notFound);
         if (!"ENFILEIRADO".equals(envio.getStatus())) return;
 
-        WhatsappAccount account =
-                accountService.requireAccount(envio.getAssessoriaId(), envio.getAccountId());
+        WhatsappAccount account = accountService.requireAccount(envio.getAccountId());
         if (account.isRateLimited()) {
             throw BusinessException.tooManyRequests(
                     "RATE_LIMIT", "Limite diário de mensagens atingido para este número.");
@@ -206,7 +201,6 @@ public class WhatsappService {
     /** Records inbound message, updates 24h window, handles STOP keywords. */
     @Transactional
     public void handleInbound(
-            UUID assessoriaId,
             UUID accountId,
             String fromE164,
             String wamid,
@@ -215,30 +209,26 @@ public class WhatsappService {
         if (inboundRepo.existsByWamid(wamid)) return;
 
         var evento =
-                new WhatsappEventoInbound(
-                        assessoriaId, accountId, fromE164, wamid, tipo, messagePayload);
+                new WhatsappEventoInbound(accountId, fromE164, wamid, tipo, messagePayload);
         evento.setProcessadoEm(Instant.now());
         inboundRepo.save(evento);
 
         var window =
                 windowRepo
-                        .findByIdAssessoriaIdAndIdE164(assessoriaId, fromE164)
-                        .orElseGet(
-                                () ->
-                                        new WhatsappWindowCache(
-                                                assessoriaId, fromE164, Instant.now()));
+                        .findByE164(fromE164)
+                        .orElseGet(() -> new WhatsappWindowCache(fromE164, Instant.now()));
         window.setLastInboundAt(Instant.now());
         windowRepo.save(window);
 
         if (isOptoutKeyword(messagePayload)) {
-            if (!optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, fromE164)) {
-                optoutRepo.save(new WhatsappOptout(assessoriaId, fromE164, "STOP keyword"));
+            if (!optoutRepo.existsByE164IgnoreCase(fromE164)) {
+                optoutRepo.save(new WhatsappOptout(fromE164, "STOP keyword"));
             }
         }
     }
 
-    private void checkOptout(UUID assessoriaId, String e164) {
-        if (optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, e164)) {
+    private void checkOptout(String e164) {
+        if (optoutRepo.existsByE164IgnoreCase(e164)) {
             throw BusinessException.unprocessable(
                     "SEM_OPTIN", "Contato optou por não receber mensagens WhatsApp.");
         }
@@ -253,7 +243,6 @@ public class WhatsappService {
     private void enqueueJob(WhatsappEnvio envio) {
         var job =
                 new Job(
-                        envio.getAssessoriaId(),
                         "WHATSAPP_SEND",
                         Map.of("envioId", envio.getId().toString()),
                         null);

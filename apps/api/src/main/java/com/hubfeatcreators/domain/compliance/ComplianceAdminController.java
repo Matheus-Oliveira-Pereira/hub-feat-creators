@@ -31,8 +31,7 @@ public class ComplianceAdminController {
     public ResponseEntity<DsrTokenResponse> criarDsr(
             @AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody DsrRequest req) {
         var result =
-                dsrService.criarSolicitacao(
-                        principal.assessoriaId(), req.titularTipo(), req.titularId(), req.tipo());
+                dsrService.criarSolicitacao(req.titularTipo(), req.titularId(), req.tipo());
         return ResponseEntity.ok(
                 new DsrTokenResponse(result.solicitacao().getId(), result.rawToken()));
     }

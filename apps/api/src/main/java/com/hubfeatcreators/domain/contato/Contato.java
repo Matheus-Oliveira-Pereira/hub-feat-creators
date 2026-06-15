@@ -4,20 +4,14 @@ import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.Filter;
-
 @Entity
 @Table(name = "contatos")
-@Filter(name = "tenant_filter", condition = "assessoria_id = :assessoriaId")
 public class Contato {
 
     @Id private UUID id = UUID.randomUUID();
 
     @Column(name = "marca_id", nullable = false)
     private UUID marcaId;
-
-    @Column(name = "assessoria_id", nullable = false)
-    private UUID assessoriaId;
 
     @Column(nullable = false)
     private String nome;
@@ -47,9 +41,8 @@ public class Contato {
 
     public Contato() {}
 
-    public Contato(UUID marcaId, UUID assessoriaId, String nome) {
+    public Contato(UUID marcaId, String nome) {
         this.marcaId = marcaId;
-        this.assessoriaId = assessoriaId;
         this.nome = nome;
     }
 
@@ -59,10 +52,6 @@ public class Contato {
 
     public UUID getMarcaId() {
         return marcaId;
-    }
-
-    public UUID getAssessoriaId() {
-        return assessoriaId;
     }
 
     public String getNome() {

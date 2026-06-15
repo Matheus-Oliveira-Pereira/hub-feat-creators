@@ -296,16 +296,7 @@ public class AppProperties {
             this.aiMatchEnabled = aiMatchEnabled;
         }
 
-        // Boot-time flag — disabling requires restart (not runtime)
-        private boolean adminEnabled = true;
-
-        public boolean isAdminEnabled() {
-            return adminEnabled;
-        }
-
-        public void setAdminEnabled(boolean adminEnabled) {
-            this.adminEnabled = adminEnabled;
-        }
+        // admin module superseded by single-tenant (ADR-018 / PRD-018)
     }
 
     public Features getFeatures() {

@@ -36,7 +36,6 @@ class WhatsappServiceTest {
 
     final ObjectMapper objectMapper = new ObjectMapper();
 
-    UUID assessoriaId = UUID.randomUUID();
     UUID accountId = UUID.randomUUID();
     UUID templateId = UUID.randomUUID();
     UUID autorId = UUID.randomUUID();
@@ -63,7 +62,6 @@ class WhatsappServiceTest {
 
         account =
                 new WhatsappAccount(
-                        assessoriaId,
                         "waba-1",
                         "phone-id-1",
                         phone,
@@ -85,8 +83,8 @@ class WhatsappServiceTest {
                             return e;
                         });
         when(jobRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(accountService.requireAccount(any(), any())).thenReturn(account);
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(any(), any())).thenReturn(false);
+        when(accountService.requireAccount(any())).thenReturn(account);
+        when(optoutRepo.existsByE164IgnoreCase(any())).thenReturn(false);
     }
 
     // ── sendTemplate ──────────────────────────────────────────────────────────
@@ -98,7 +96,6 @@ class WhatsappServiceTest {
 
         WhatsappEnvio result =
                 service.sendTemplate(
-                        assessoriaId,
                         accountId,
                         templateId,
                         phone,
@@ -114,13 +111,11 @@ class WhatsappServiceTest {
     @Test
     void sendTemplate_throws_when_opted_out() {
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, phone))
-                .thenReturn(true);
+        when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(true);
 
         assertThatThrownBy(
                         () ->
                                 service.sendTemplate(
-                                        assessoriaId,
                                         accountId,
                                         templateId,
                                         phone,
@@ -136,16 +131,14 @@ class WhatsappServiceTest {
     void sendTemplate_throws_when_template_not_approved() {
         WhatsappTemplate tmpl =
                 new WhatsappTemplate(
-                        assessoriaId, accountId, "welcome", "pt_BR", "MARKETING", "body", null);
+                        accountId, "welcome", "pt_BR", "MARKETING", "body", null);
         // status default = PENDING
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(templateRepo.findByIdAndAssessoriaId(templateId, assessoriaId))
-                .thenReturn(Optional.of(tmpl));
+        when(templateRepo.findById(templateId)).thenReturn(Optional.of(tmpl));
 
         assertThatThrownBy(
                         () ->
                                 service.sendTemplate(
-                                        assessoriaId,
                                         accountId,
                                         templateId,
                                         phone,
@@ -163,14 +156,12 @@ class WhatsappServiceTest {
     void sendTemplate_enqueues_job_for_approved_template() {
         WhatsappTemplate tmpl =
                 new WhatsappTemplate(
-                        assessoriaId, accountId, "welcome", "pt_BR", "MARKETING", "body", null);
+                        accountId, "welcome", "pt_BR", "MARKETING", "body", null);
         tmpl.setStatus("APPROVED");
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(templateRepo.findByIdAndAssessoriaId(templateId, assessoriaId))
-                .thenReturn(Optional.of(tmpl));
+        when(templateRepo.findById(templateId)).thenReturn(Optional.of(tmpl));
 
-        service.sendTemplate(
-                assessoriaId, accountId, templateId, phone, List.of(), idempotencyKey, autorId);
+        service.sendTemplate(accountId, templateId, phone, List.of(), idempotencyKey, autorId);
 
         verify(envioRepo).save(any(WhatsappEnvio.class));
         ArgumentCaptor<Job> jobCaptor = ArgumentCaptor.forClass(Job.class);
@@ -186,8 +177,7 @@ class WhatsappServiceTest {
         when(envioRepo.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.of(existing));
 
         WhatsappEnvio result =
-                service.sendFreeform(
-                        assessoriaId, accountId, phone, "Olá", idempotencyKey, autorId);
+                service.sendFreeform(accountId, phone, "Olá", idempotencyKey, autorId);
 
         assertThat(result).isSameAs(existing);
         verify(envioRepo, never()).save(any());
@@ -196,13 +186,11 @@ class WhatsappServiceTest {
     @Test
     void sendFreeform_throws_when_opted_out() {
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, phone))
-                .thenReturn(true);
+        when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(true);
 
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        assessoriaId,
                                         accountId,
                                         phone,
                                         "Olá",
@@ -216,13 +204,11 @@ class WhatsappServiceTest {
     @Test
     void sendFreeform_throws_when_window_closed() {
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(assessoriaId, phone))
-                .thenReturn(Optional.empty());
+        when(windowRepo.findByE164(phone)).thenReturn(Optional.empty());
 
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        assessoriaId,
                                         accountId,
                                         phone,
                                         "Olá",
@@ -239,14 +225,12 @@ class WhatsappServiceTest {
     void sendFreeform_throws_when_window_expired() {
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
         WhatsappWindowCache expiredWindow =
-                new WhatsappWindowCache(assessoriaId, phone, Instant.now().minusSeconds(86401));
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(assessoriaId, phone))
-                .thenReturn(Optional.of(expiredWindow));
+                new WhatsappWindowCache(phone, Instant.now().minusSeconds(86401));
+        when(windowRepo.findByE164(phone)).thenReturn(Optional.of(expiredWindow));
 
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        assessoriaId,
                                         accountId,
                                         phone,
                                         "Olá",
@@ -262,12 +246,10 @@ class WhatsappServiceTest {
     @Test
     void sendFreeform_enqueues_job_when_window_open() {
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
-        WhatsappWindowCache openWindow =
-                new WhatsappWindowCache(assessoriaId, phone, Instant.now());
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(assessoriaId, phone))
-                .thenReturn(Optional.of(openWindow));
+        WhatsappWindowCache openWindow = new WhatsappWindowCache(phone, Instant.now());
+        when(windowRepo.findByE164(phone)).thenReturn(Optional.of(openWindow));
 
-        service.sendFreeform(assessoriaId, accountId, phone, "Olá", idempotencyKey, autorId);
+        service.sendFreeform(accountId, phone, "Olá", idempotencyKey, autorId);
 
         verify(envioRepo).save(any(WhatsappEnvio.class));
         verify(jobRepo).save(any(Job.class));
@@ -384,7 +366,7 @@ class WhatsappServiceTest {
     void handleInbound_idempotent_when_wamid_exists() {
         when(inboundRepo.existsByWamid("wamid-dup")).thenReturn(true);
 
-        service.handleInbound(assessoriaId, accountId, phone, "wamid-dup", "TEXT", "Oi");
+        service.handleInbound(accountId, phone, "wamid-dup", "TEXT", "Oi");
 
         verify(inboundRepo, never()).save(any());
         verify(windowRepo, never()).save(any());
@@ -393,12 +375,11 @@ class WhatsappServiceTest {
     @Test
     void handleInbound_saves_evento_and_updates_window() {
         when(inboundRepo.existsByWamid("wamid-new")).thenReturn(false);
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(assessoriaId, phone))
-                .thenReturn(Optional.empty());
+        when(windowRepo.findByE164(phone)).thenReturn(Optional.empty());
         when(windowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inboundRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.handleInbound(assessoriaId, accountId, phone, "wamid-new", "TEXT", "Olá");
+        service.handleInbound(accountId, phone, "wamid-new", "TEXT", "Olá");
 
         verify(inboundRepo).save(any(WhatsappEventoInbound.class));
         verify(windowRepo).save(any(WhatsappWindowCache.class));
@@ -407,14 +388,13 @@ class WhatsappServiceTest {
     @Test
     void handleInbound_registers_optout_on_stop_keyword() {
         when(inboundRepo.existsByWamid(any())).thenReturn(false);
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(any(), any())).thenReturn(Optional.empty());
+        when(windowRepo.findByE164(any())).thenReturn(Optional.empty());
         when(windowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inboundRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, phone))
-                .thenReturn(false);
+        when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(false);
         when(optoutRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.handleInbound(assessoriaId, accountId, phone, "wamid-stop", "TEXT", "STOP");
+        service.handleInbound(accountId, phone, "wamid-stop", "TEXT", "STOP");
 
         verify(optoutRepo).save(any(WhatsappOptout.class));
     }
@@ -422,15 +402,14 @@ class WhatsappServiceTest {
     @Test
     void handleInbound_registers_optout_on_parar_keyword() {
         when(inboundRepo.existsByWamid(any())).thenReturn(false);
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(any(), any())).thenReturn(Optional.empty());
+        when(windowRepo.findByE164(any())).thenReturn(Optional.empty());
         when(windowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inboundRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, phone))
-                .thenReturn(false);
+        when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(false);
         when(optoutRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.handleInbound(
-                assessoriaId, accountId, phone, "wamid-parar", "TEXT", "quero parar de receber");
+                accountId, phone, "wamid-parar", "TEXT", "quero parar de receber");
 
         verify(optoutRepo).save(any(WhatsappOptout.class));
     }
@@ -438,11 +417,11 @@ class WhatsappServiceTest {
     @Test
     void handleInbound_no_optout_for_normal_message() {
         when(inboundRepo.existsByWamid(any())).thenReturn(false);
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(any(), any())).thenReturn(Optional.empty());
+        when(windowRepo.findByE164(any())).thenReturn(Optional.empty());
         when(windowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inboundRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.handleInbound(assessoriaId, accountId, phone, "wamid-ok", "TEXT", "Tudo bem?");
+        service.handleInbound(accountId, phone, "wamid-ok", "TEXT", "Tudo bem?");
 
         verify(optoutRepo, never()).save(any());
     }
@@ -450,13 +429,12 @@ class WhatsappServiceTest {
     @Test
     void handleInbound_optout_idempotent_when_already_opted_out() {
         when(inboundRepo.existsByWamid(any())).thenReturn(false);
-        when(windowRepo.findByIdAssessoriaIdAndIdE164(any(), any())).thenReturn(Optional.empty());
+        when(windowRepo.findByE164(any())).thenReturn(Optional.empty());
         when(windowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(inboundRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(optoutRepo.existsByAssessoriaIdAndE164IgnoreCase(assessoriaId, phone))
-                .thenReturn(true);
+        when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(true);
 
-        service.handleInbound(assessoriaId, accountId, phone, "wamid-stop2", "TEXT", "stop");
+        service.handleInbound(accountId, phone, "wamid-stop2", "TEXT", "stop");
 
         verify(optoutRepo, never()).save(any());
     }
@@ -468,8 +446,6 @@ class WhatsappServiceTest {
     }
 
     private WhatsappEnvio buildEnvioWithPayload(String tipo, String payload) {
-        // Use reflection-friendly approach: build via normal constructor, set payload via field
-        return new WhatsappEnvio(
-                assessoriaId, accountId, templateId, phone, tipo, payload, idempotencyKey, autorId);
+        return new WhatsappEnvio(accountId, templateId, phone, tipo, payload, idempotencyKey, autorId);
     }
 }

@@ -56,13 +56,12 @@ public class EmailTemplateService {
 
     @Transactional(readOnly = true)
     public List<EmailTemplate> listar(AuthPrincipal principal) {
-        return repo.findByAssessoriaId(principal.assessoriaId());
+        return repo.findAllActive();
     }
 
     @Transactional(readOnly = true)
     public EmailTemplate buscar(AuthPrincipal principal, UUID id) {
-        return repo.findByIdAndAssessoriaId(id, principal.assessoriaId())
-                .orElseThrow(() -> BusinessException.notFound("EMAIL_TEMPLATE"));
+        return repo.findById(id).orElseThrow(() -> BusinessException.notFound("EMAIL_TEMPLATE"));
     }
 
     @Transactional
@@ -74,7 +73,7 @@ public class EmailTemplateService {
             String corpoTexto,
             String[] variaveis) {
         String sanitized = HTML_POLICY.sanitize(corpoHtml);
-        EmailTemplate t = new EmailTemplate(principal.assessoriaId(), nome, assunto, sanitized);
+        EmailTemplate t = new EmailTemplate(nome, assunto, sanitized);
         t.setCorpoTexto(corpoTexto);
         t.setVariaveisDeclararadas(variaveis != null ? variaveis : new String[0]);
         return repo.save(t);
@@ -111,14 +110,12 @@ public class EmailTemplateService {
      * (AC-4).
      */
     public String renderizar(
-            UUID assessoriaId,
             EmailTemplate template,
             Map<String, Object> vars,
             String unsubscribeUrl) {
         String corpoRendered = render(template.getCorpoHtml(), vars);
 
-        EmailLayout layout =
-                layoutRepo.findByAssessoriaId(assessoriaId).orElse(new EmailLayout(assessoriaId));
+        EmailLayout layout = layoutRepo.findFirst().orElse(new EmailLayout());
 
         Map<String, Object> layoutVars =
                 Map.of("unsubscribe_url", unsubscribeUrl != null ? unsubscribeUrl : "#");
@@ -129,8 +126,8 @@ public class EmailTemplateService {
     }
 
     /** Preview com unsubscribe_url mock. */
-    public String preview(UUID assessoriaId, EmailTemplate template, Map<String, Object> vars) {
-        return renderizar(assessoriaId, template, vars, "https://example.com/unsubscribe/preview");
+    public String preview(EmailTemplate template, Map<String, Object> vars) {
+        return renderizar(template, vars, "https://example.com/unsubscribe/preview");
     }
 
     private String render(String template, Map<String, Object> vars) {

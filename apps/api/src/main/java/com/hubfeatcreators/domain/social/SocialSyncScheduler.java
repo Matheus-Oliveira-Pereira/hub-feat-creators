@@ -30,7 +30,6 @@ public class SocialSyncScheduler {
         log.info("SocialSyncScheduler: enqueuing {} accounts", accounts.size());
         for (SocialAccount account : accounts) {
             jobService.enqueue(
-                    account.getAssessoriaId(),
                     "SOCIAL_SYNC",
                     Map.of("accountId", account.getId().toString()),
                     UUID.nameUUIDFromBytes(

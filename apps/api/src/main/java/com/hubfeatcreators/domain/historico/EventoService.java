@@ -31,19 +31,14 @@ public class EventoService {
 
     @Transactional
     public Evento registrar(
-            UUID assessoriaId,
             UUID autorId,
             EventoTipo tipo,
             Map<String, Object> payload,
             EntidadeRef... entidades) {
-        Evento evento = Evento.of(assessoriaId, tipo, autorId, payload, entidades);
+        Evento evento = Evento.of(tipo, autorId, payload, entidades);
         repo.save(evento);
         meterRegistry.counter("evento_publicado_total", "tipo", tipo.name()).increment();
-        log.debug(
-                "evento.registrado id={} tipo={} assessoriaId={}",
-                evento.getId(),
-                tipo,
-                assessoriaId);
+        log.debug("evento.registrado id={} tipo={}", evento.getId(), tipo);
         return evento;
     }
 
@@ -57,37 +52,19 @@ public class EventoService {
             int size) {
         int lim = Math.min(Math.max(1, size), MAX_SIZE);
         String entId = entidadeId != null ? entidadeId.toString() : null;
-        // Quando múltiplos tipos fornecidos, roda queries separadas e mescla — MVP usa apenas o
-        // primeiro tipo (ou null). Filtro por lista completa via IN requer native query variadic
-        // não
-        // suportado facilmente com JPA named params; para MVP aceita 1 tipo ou nenhum.
         String tipoFiltro = (tipos != null && !tipos.isEmpty()) ? tipos.get(0) : null;
 
         DecodedCursor dc = decodeCursor(cursor);
 
         if (canSeeAll(principal)) {
             return dc == null
-                    ? repo.findOwnerFirst(
-                            principal.assessoriaId(), entidadeTipo, entId, tipoFiltro, lim)
-                    : repo.findOwner(
-                            principal.assessoriaId(),
-                            entidadeTipo,
-                            entId,
-                            tipoFiltro,
-                            dc.ts(),
-                            dc.id(),
-                            lim);
+                    ? repo.findOwnerFirst(entidadeTipo, entId, tipoFiltro, lim)
+                    : repo.findOwner(entidadeTipo, entId, tipoFiltro, dc.ts(), dc.id(), lim);
         }
         return dc == null
                 ? repo.findAssessorFirst(
-                        principal.assessoriaId(),
-                        principal.usuarioId(),
-                        entidadeTipo,
-                        entId,
-                        tipoFiltro,
-                        lim)
+                        principal.usuarioId(), entidadeTipo, entId, tipoFiltro, lim)
                 : repo.findAssessor(
-                        principal.assessoriaId(),
                         principal.usuarioId(),
                         entidadeTipo,
                         entId,

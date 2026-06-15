@@ -339,7 +339,6 @@ export type EntidadeTipo = 'PROSPECCAO' | 'INFLUENCIADOR' | 'MARCA' | 'CONTATO';
 
 export interface Tarefa {
   id: string;
-  assessoriaId: string;
   titulo: string;
   descricao: string | null;
   prazo: string;
@@ -950,7 +949,6 @@ export interface InviteInfo {
 }
 
 export interface AssessoriaBranding {
-  assessoriaId: string;
   logoUrl: string | null;
   corPrimaria: string | null;
 }
@@ -1047,8 +1045,8 @@ export const portalAuth = {
         return r.json() as Promise<InviteInfo>;
       }),
 
-  branding: (slug: string) =>
-    fetch(`${API_URL}/api/v1/portal/branding/${encodeURIComponent(slug)}`)
+  branding: () =>
+    fetch(`${API_URL}/api/v1/portal/branding`)
       .then(async (r) => {
         if (!r.ok) throw await r.json().catch(() => ({}));
         return r.json() as Promise<AssessoriaBranding>;

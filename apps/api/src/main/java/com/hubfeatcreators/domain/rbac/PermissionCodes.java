@@ -15,15 +15,12 @@ public final class PermissionCodes {
 
     private PermissionCodes() {}
 
-    // Plataforma (ADM)
-    public static final String ADMN =
-            "ADMN"; // administrador de plataforma — implícito para tipo=ADM
-
     // Especiais
     public static final String OWNR = "OWNR"; // bypass total
     public static final String INVT = "INVT"; // convidar usuário
     public static final String EXPT = "EXPT"; // exportar CSV/relatórios
     public static final String BLLG = "BLLG"; // browse audit log
+    public static final String FLAG = "FLAG"; // gerenciar feature flags
 
     // Prospecção
     public static final String B_PRO = "BPRO";
@@ -104,7 +101,7 @@ public final class PermissionCodes {
                             D_MAR, B_INF, C_INF, E_INF, D_INF, B_CON, C_CON, E_CON, D_CON, B_USU,
                             C_USU, E_USU, D_USU, B_PRF, C_PRF, E_PRF, D_PRF, B_TAR, C_TAR, E_TAR,
                             D_TAR, B_EML, C_EML, E_EML, D_EML, B_WAP, C_WAP, E_WAP, D_WAP, B_REL,
-                            B_NOT, B_HIS, B_IMP, C_IMP, MTCH_R, MTCH_W));
+                            B_NOT, B_HIS, B_IMP, C_IMP, MTCH_R, MTCH_W, FLAG));
 
     /** Default roles dos perfis seed (idêntico ao backfill da V3). */
     public static final Set<String> OWNER_DEFAULT = Set.copyOf(ALL);

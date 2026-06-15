@@ -27,7 +27,6 @@ public class NotificacaoFanout {
     public void onTarefaVencendo(TarefaVencendoEvent e) {
         try {
             notificacaoService.criar(
-                    e.assessoriaId(),
                     e.usuarioId(),
                     NotificacaoTipo.TAREFA_VENCENDO,
                     NotificacaoPrioridade.HIGH,
@@ -50,7 +49,6 @@ public class NotificacaoFanout {
     public void onTarefaAtrasada(TarefaAtrasadaEvent e) {
         try {
             notificacaoService.criar(
-                    e.assessoriaId(),
                     e.usuarioId(),
                     NotificacaoTipo.TAREFA_ATRASADA,
                     NotificacaoPrioridade.HIGH,
@@ -73,7 +71,6 @@ public class NotificacaoFanout {
     public void onEmailAuthFalhou(EmailAuthFalhouEvent e) {
         try {
             notificacaoService.criar(
-                    e.assessoriaId(),
                     null, // broadcast para owners — tratado no service com lookup futuro
                     NotificacaoTipo.EMAIL_AUTH_FALHOU,
                     NotificacaoPrioridade.HIGH,
@@ -96,7 +93,6 @@ public class NotificacaoFanout {
     public void onProspeccaoMudouStatus(ProspeccaoMudouStatusEvent e) {
         try {
             notificacaoService.criar(
-                    e.assessoriaId(),
                     e.responsavelId(),
                     NotificacaoTipo.PROSPECCAO_MUDOU_STATUS,
                     NotificacaoPrioridade.NORMAL,

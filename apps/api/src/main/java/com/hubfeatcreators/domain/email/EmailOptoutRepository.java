@@ -5,7 +5,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EmailOptoutRepository extends JpaRepository<EmailOptout, UUID> {
-    boolean existsByAssessoriaIdAndEmailIgnoreCase(UUID assessoriaId, String email);
 
-    Optional<EmailOptout> findByAssessoriaIdAndEmailIgnoreCase(UUID assessoriaId, String email);
+    boolean existsByEmailIgnoreCase(String email);
+
+    Optional<EmailOptout> findByEmailIgnoreCase(String email);
 }
