@@ -76,8 +76,8 @@ app:
   web:
     base-url: ${WEB_BASE_URL:http://localhost:3000}
   admin:
-    email: ${ADMIN_EMAIL:admin@hub.local}
-    password: ${ADMIN_PASSWORD:changeme-set-in-prod}
+    email: ${ADMIN_EMAIL:admin@feat.com.br}
+    password: ${ADMIN_PASSWORD:1234}
   features:
     admin-bootstrap-enabled: ${FEATURE_ADMIN_BOOTSTRAP_ENABLED:true}
     compliance-strict: ${FEATURE_COMPLIANCE_STRICT:true}
