@@ -20,4 +20,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     @Query("SELECT u FROM Usuario u WHERE u.deletedAt IS NULL ORDER BY u.createdAt DESC")
     Page<Usuario> findAllActivePaged(Pageable pageable);
+
+    boolean existsByRoleAndDeletedAtIsNull(Usuario.Role role);
 }

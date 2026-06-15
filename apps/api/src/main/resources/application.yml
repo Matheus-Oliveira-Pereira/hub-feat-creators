@@ -75,7 +75,11 @@ app:
     mfa-key: ${MFA_KEY:dev-only-not-for-prod-mfa-key-32bytes}
   web:
     base-url: ${WEB_BASE_URL:http://localhost:3000}
+  admin:
+    email: ${ADMIN_EMAIL:admin@hub.local}
+    password: ${ADMIN_PASSWORD:changeme-set-in-prod}
   features:
+    admin-bootstrap-enabled: ${FEATURE_ADMIN_BOOTSTRAP_ENABLED:true}
     compliance-strict: ${FEATURE_COMPLIANCE_STRICT:true}
     signup-enabled: ${FEATURE_SIGNUP_ENABLED:true}
     whatsapp-enabled: ${FEATURE_WHATSAPP_ENABLED:false}

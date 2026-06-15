@@ -382,6 +382,47 @@ public class AppProperties {
         }
 
         // admin module superseded by single-tenant (ADR-018 / PRD-018)
+
+        private boolean adminBootstrapEnabled = true;
+
+        public boolean isAdminBootstrapEnabled() {
+            return adminBootstrapEnabled;
+        }
+
+        public void setAdminBootstrapEnabled(boolean adminBootstrapEnabled) {
+            this.adminBootstrapEnabled = adminBootstrapEnabled;
+        }
+    }
+
+    public static class Admin {
+        private String email = "admin@hub.local";
+        private String password = "changeme-set-in-prod";
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+    }
+
+    private Admin admin = new Admin();
+
+    public Admin getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
     }
 
     public Features getFeatures() {
