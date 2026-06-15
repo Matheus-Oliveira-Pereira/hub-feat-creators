@@ -1,5 +1,7 @@
 # PRD-004: E-mail Outbound multi-conta — MVP
 
+> **PARTIALLY SUPERSEDED by [[19-email-single-account]] em 2026-06-15.** Infra de multi-conta SMTP removida (PRD-018 single-tenant). **Permanecem válidos:** templates, tracking de abertura/clique, opt-out, fila assíncrona, anexos, `List-Unsubscribe`. **Removidos:** CRUD de múltiplas contas SMTP, seleção de conta por envio, pool/circuit-breaker por conta.
+
 ## Context
 
 Prospecção (PRD-002) só tem valor se a assessora **conversa com a marca**. Hoje, comunicação acontece em e-mail pessoal externo, fora do sistema → histórico fragmentado, sem tracking, sem template, sem padronização visual.

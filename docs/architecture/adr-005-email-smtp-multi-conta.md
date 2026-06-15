@@ -1,7 +1,9 @@
 # ADR-005: E-mail via SMTP relay externo multi-conta (Jakarta Mail)
 
+> **SUPERSEDED by [[adr-019-single-system-email]] em 2026-06-15.** Sistema migrou para conta SMTP única de sistema (PRD-018 single-tenant eliminou a necessidade de multi-conta). Este ADR é mantido como registro histórico — pode servir de referência se v2 reintroduzir multi-tenant ou multi-remetente.
+
 ## Status
-Accepted — 2026-04-29
+Superseded by [[adr-019-single-system-email]] — 2026-06-15 (originalmente Accepted — 2026-04-29)
 
 ## Context
 Sistema precisa enviar e-mails de prospecção. Versão inicial do CLAUDE.md previa provedores transacionais (Resend/SES/Postmark). Usuário decidiu: implementação própria em Java permitindo cadastro de múltiplas contas SMTP pelo cliente final (assessoria usa o e-mail dela, não o nosso).
