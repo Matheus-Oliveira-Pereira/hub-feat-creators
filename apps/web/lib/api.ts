@@ -56,7 +56,7 @@ export const api = {
 
 // Auth
 export const auth = {
-  signup: (data: { assessoriaNome: string; slug: string; email: string; senha: string }) =>
+  signup: (data: { email: string; senha: string }) =>
     api.post<{ email: string; emailVerificado: boolean }>('/api/v1/auth/signup', data),
   login: (data: { email: string; senha: string; mfaCode?: string }) =>
     api.post<{ accessToken: string; refreshToken: string }>('/api/v1/auth/login', data),

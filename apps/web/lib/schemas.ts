@@ -12,16 +12,6 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const signupSchema = z.object({
-  assessoriaNome: z
-    .string()
-    .trim()
-    .min(2, 'Nome muito curto')
-    .max(120, 'Nome muito longo'),
-  slug: z
-    .string()
-    .min(3, 'Mínimo 3 caracteres')
-    .max(50, 'Máximo 50 caracteres')
-    .regex(/^[a-z0-9-]+$/, 'Apenas letras minúsculas, números e hífens'),
   email: z.string().trim().email('E-mail inválido'),
   senha: z.string().min(8, 'Mínimo 8 caracteres'),
 });
