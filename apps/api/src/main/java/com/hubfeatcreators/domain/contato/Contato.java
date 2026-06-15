@@ -4,6 +4,7 @@ import com.hubfeatcreators.domain.compliance.BaseLegal;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+
 @Entity
 @Table(name = "contatos")
 public class Contato {

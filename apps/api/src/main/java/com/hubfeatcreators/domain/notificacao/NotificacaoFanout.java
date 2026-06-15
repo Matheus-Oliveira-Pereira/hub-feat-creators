@@ -71,18 +71,20 @@ public class NotificacaoFanout {
     public void onEmailAuthFalhou(EmailAuthFalhouEvent e) {
         try {
             notificacaoService.criar(
-                    null, // broadcast para owners — tratado no service com lookup futuro
+                    null, // broadcast para owners — lookup de owner: Phase 2
                     NotificacaoTipo.EMAIL_AUTH_FALHOU,
                     NotificacaoPrioridade.HIGH,
                     "Falha de autenticação SMTP",
-                    "Conta \"" + e.fromAddress() + "\" falhou autenticação SMTP.",
-                    Map.of("accountId", e.accountId().toString(), "fromAddress", e.fromAddress()),
-                    "EMAIL_ACCOUNT",
-                    e.accountId());
+                    "Conta \""
+                            + e.fromAddress()
+                            + "\" falhou autenticação SMTP 3x. Verifique as credenciais.",
+                    Map.of("fromAddress", e.fromAddress()),
+                    "EMAIL_CONFIG",
+                    null);
         } catch (Exception ex) {
             log.error(
-                    "fanout.email_auth_falhou.error accountId={} msg={}",
-                    e.accountId(),
+                    "fanout.email_auth_falhou.error fromAddress={} msg={}",
+                    e.fromAddress(),
                     ex.getMessage(),
                     ex);
         }

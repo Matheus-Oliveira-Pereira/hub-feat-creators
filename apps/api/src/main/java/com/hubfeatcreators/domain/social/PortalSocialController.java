@@ -40,9 +40,7 @@ public class PortalSocialController {
     @GetMapping
     public List<SocialSnapshotController.SocialAccountDto> listMineAccounts(
             @AuthenticationPrincipal CreatorPrincipal creator) {
-        return socialService
-                .listByInfluenciador(creator.influenciadorId())
-                .stream()
+        return socialService.listByInfluenciador(creator.influenciadorId()).stream()
                 .map(SocialSnapshotController.SocialAccountDto::from)
                 .toList();
     }

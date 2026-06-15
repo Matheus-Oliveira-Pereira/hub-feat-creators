@@ -96,12 +96,7 @@ class WhatsappServiceTest {
 
         WhatsappEnvio result =
                 service.sendTemplate(
-                        accountId,
-                        templateId,
-                        phone,
-                        List.of(),
-                        idempotencyKey,
-                        autorId);
+                        accountId, templateId, phone, List.of(), idempotencyKey, autorId);
 
         assertThat(result).isSameAs(existing);
         verify(envioRepo, never()).save(any());
@@ -130,8 +125,7 @@ class WhatsappServiceTest {
     @Test
     void sendTemplate_throws_when_template_not_approved() {
         WhatsappTemplate tmpl =
-                new WhatsappTemplate(
-                        accountId, "welcome", "pt_BR", "MARKETING", "body", null);
+                new WhatsappTemplate(accountId, "welcome", "pt_BR", "MARKETING", "body", null);
         // status default = PENDING
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
         when(templateRepo.findById(templateId)).thenReturn(Optional.of(tmpl));
@@ -155,8 +149,7 @@ class WhatsappServiceTest {
     @Test
     void sendTemplate_enqueues_job_for_approved_template() {
         WhatsappTemplate tmpl =
-                new WhatsappTemplate(
-                        accountId, "welcome", "pt_BR", "MARKETING", "body", null);
+                new WhatsappTemplate(accountId, "welcome", "pt_BR", "MARKETING", "body", null);
         tmpl.setStatus("APPROVED");
         when(envioRepo.findByIdempotencyKey(any())).thenReturn(Optional.empty());
         when(templateRepo.findById(templateId)).thenReturn(Optional.of(tmpl));
@@ -191,11 +184,7 @@ class WhatsappServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        accountId,
-                                        phone,
-                                        "Olá",
-                                        idempotencyKey,
-                                        autorId))
+                                        accountId, phone, "Olá", idempotencyKey, autorId))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(
                         e -> assertThat(((BusinessException) e).getCode()).isEqualTo("SEM_OPTIN"));
@@ -209,11 +198,7 @@ class WhatsappServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        accountId,
-                                        phone,
-                                        "Olá",
-                                        idempotencyKey,
-                                        autorId))
+                                        accountId, phone, "Olá", idempotencyKey, autorId))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(
                         e ->
@@ -231,11 +216,7 @@ class WhatsappServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.sendFreeform(
-                                        accountId,
-                                        phone,
-                                        "Olá",
-                                        idempotencyKey,
-                                        autorId))
+                                        accountId, phone, "Olá", idempotencyKey, autorId))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(
                         e ->
@@ -408,8 +389,7 @@ class WhatsappServiceTest {
         when(optoutRepo.existsByE164IgnoreCase(phone)).thenReturn(false);
         when(optoutRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.handleInbound(
-                accountId, phone, "wamid-parar", "TEXT", "quero parar de receber");
+        service.handleInbound(accountId, phone, "wamid-parar", "TEXT", "quero parar de receber");
 
         verify(optoutRepo).save(any(WhatsappOptout.class));
     }
@@ -446,6 +426,7 @@ class WhatsappServiceTest {
     }
 
     private WhatsappEnvio buildEnvioWithPayload(String tipo, String payload) {
-        return new WhatsappEnvio(accountId, templateId, phone, tipo, payload, idempotencyKey, autorId);
+        return new WhatsappEnvio(
+                accountId, templateId, phone, tipo, payload, idempotencyKey, autorId);
     }
 }

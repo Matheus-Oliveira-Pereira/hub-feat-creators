@@ -53,10 +53,7 @@ public class Evento {
     }
 
     public static Evento of(
-            EventoTipo tipo,
-            UUID autorId,
-            Map<String, Object> payload,
-            EntidadeRef... entidades) {
+            EventoTipo tipo, UUID autorId, Map<String, Object> payload, EntidadeRef... entidades) {
         List<Map<String, String>> refs = new ArrayList<>();
         for (EntidadeRef ref : entidades) {
             Map<String, String> m = new HashMap<>();

@@ -58,10 +58,7 @@ public class EmailTrackingController {
                                             .isPresent();
                             if (!alreadyOpened) {
                                 eventoRepo.save(
-                                        new EmailEvento(
-                                                envioId,
-                                                EmailEventoTipo.ABERTO,
-                                                Map.of()));
+                                        new EmailEvento(envioId, EmailEventoTipo.ABERTO, Map.of()));
                                 log.info("email.open envioId={}", envioId);
                             }
                         });
@@ -85,9 +82,7 @@ public class EmailTrackingController {
                             if (!envio.isTrackingEnabled()) return;
                             eventoRepo.save(
                                     new EmailEvento(
-                                            envioId,
-                                            EmailEventoTipo.CLICADO,
-                                            Map.of("url", url)));
+                                            envioId, EmailEventoTipo.CLICADO, Map.of("url", url)));
                             log.info("email.click envioId={}", envioId);
                         });
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();

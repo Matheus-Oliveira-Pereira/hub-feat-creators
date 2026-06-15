@@ -70,11 +70,7 @@ public class Prospeccao {
 
     protected Prospeccao() {}
 
-    public Prospeccao(
-            UUID marcaId,
-            UUID assessorResponsavelId,
-            String titulo,
-            UUID createdBy) {
+    public Prospeccao(UUID marcaId, UUID assessorResponsavelId, String titulo, UUID createdBy) {
         this.marcaId = marcaId;
         this.assessorResponsavelId = assessorResponsavelId;
         this.titulo = titulo;

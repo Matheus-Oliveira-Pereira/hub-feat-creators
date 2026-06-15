@@ -34,12 +34,8 @@ public class DigestScheduler {
 
         try {
             var idempotencyKey =
-                    java.util.UUID.nameUUIDFromBytes(
-                            ("EMAIL_DIGEST:" + dataHoje).getBytes());
-            jobService.enqueue(
-                    "EMAIL_DIGEST",
-                    Map.of("data", dataHoje),
-                    idempotencyKey);
+                    java.util.UUID.nameUUIDFromBytes(("EMAIL_DIGEST:" + dataHoje).getBytes());
+            jobService.enqueue("EMAIL_DIGEST", Map.of("data", dataHoje), idempotencyKey);
             Counter.builder("digest_enfileirado_total").register(meterRegistry).increment();
         } catch (Exception e) {
             log.error("digest.scheduler.error msg={}", e.getMessage(), e);

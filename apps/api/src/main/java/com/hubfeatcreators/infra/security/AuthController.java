@@ -29,9 +29,7 @@ public class AuthController {
 
     // ── DTOs ──────────────────────────────────────────────────────────────
 
-    record SignupRequest(
-            @NotBlank @Email String email,
-            @NotBlank @Size(min = 8) String senha) {}
+    record SignupRequest(@NotBlank @Email String email, @NotBlank @Size(min = 8) String senha) {}
 
     record LoginRequest(@NotBlank @Email String email, @NotBlank String senha, String mfaCode) {}
 

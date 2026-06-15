@@ -122,11 +122,7 @@ public class WhatsappWebhookController {
                         if (wamid == null || from == null) continue;
                         try {
                             whatsappService.handleInbound(
-                                    account.getId(),
-                                    from,
-                                    wamid,
-                                    tipo,
-                                    msg.toString());
+                                    account.getId(), from, wamid, tipo, msg.toString());
                         } catch (Exception e) {
                             log.warn("webhook.inbound.failed wamid={}: {}", wamid, e.getMessage());
                         }

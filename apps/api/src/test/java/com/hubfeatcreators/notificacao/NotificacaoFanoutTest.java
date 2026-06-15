@@ -45,11 +45,7 @@ class NotificacaoFanoutTest {
     void onProspeccaoMudouStatus_chama_service_com_tipo_correto() {
         var event =
                 new ProspeccaoMudouStatusEvent(
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
-                        "Prosp Y",
-                        "NOVA",
-                        "CONTATADA");
+                        UUID.randomUUID(), UUID.randomUUID(), "Prosp Y", "NOVA", "CONTATADA");
 
         fanout.onProspeccaoMudouStatus(event);
 
@@ -68,8 +64,7 @@ class NotificacaoFanoutTest {
     @Test
     void fanout_nao_propaga_excecao_do_service() {
         var event = new TarefaVencendoEvent(UUID.randomUUID(), UUID.randomUUID(), "Titulo");
-        when(notificacaoService.criar(
-                        any(), any(), any(), any(), any(), any(), any(), any()))
+        when(notificacaoService.criar(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("DB down"));
 
         // deve capturar silenciosamente

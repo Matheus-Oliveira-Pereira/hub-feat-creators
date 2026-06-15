@@ -238,10 +238,7 @@ public class ProspeccaoService {
 
         eventoRepo.save(
                 new ProspeccaoEvento(
-                        saved.getId(),
-                        EventoTipo.STATUS_CHANGE,
-                        payload,
-                        principal.usuarioId()));
+                        saved.getId(), EventoTipo.STATUS_CHANGE, payload, principal.usuarioId()));
 
         eventPublisher.publishEvent(
                 new ProspeccaoMudouStatusEvent(

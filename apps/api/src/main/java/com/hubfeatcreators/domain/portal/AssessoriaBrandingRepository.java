@@ -1,6 +1,5 @@
 package com.hubfeatcreators.domain.portal;
 
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

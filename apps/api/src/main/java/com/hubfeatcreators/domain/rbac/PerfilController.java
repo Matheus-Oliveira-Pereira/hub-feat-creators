@@ -69,9 +69,7 @@ public class PerfilController {
 
     @PutMapping("/{id}")
     @RequirePermission(PermissionCodes.E_PRF)
-    public PerfilResponse atualizar(
-            @PathVariable UUID id,
-            @Valid @RequestBody PerfilRequest req) {
+    public PerfilResponse atualizar(@PathVariable UUID id, @Valid @RequestBody PerfilRequest req) {
         Perfil p = service.atualizar(id, req.nome(), req.descricao(), req.roles());
         return toResponse(p, repo.countUsuariosUsando(p.getId()));
     }

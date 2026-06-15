@@ -300,10 +300,7 @@ class ImportServiceTest {
     private ImportJob makeJob(String status) {
         ImportJob job =
                 new ImportJob(
-                        principal.usuarioId(),
-                        "INFLUENCIADOR",
-                        tmpDir + "/test.csv",
-                        "test.csv");
+                        principal.usuarioId(), "INFLUENCIADOR", tmpDir + "/test.csv", "test.csv");
         job.setStatus(status);
         return job;
     }

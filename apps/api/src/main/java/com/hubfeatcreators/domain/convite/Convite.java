@@ -4,6 +4,7 @@ import com.hubfeatcreators.domain.usuario.Usuario;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+
 @Entity
 @Table(name = "convites")
 public class Convite {

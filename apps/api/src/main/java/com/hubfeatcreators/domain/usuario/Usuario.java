@@ -74,51 +74,99 @@ public class Usuario {
         return status == Status.ATIVO && deletedAt == null;
     }
 
-    public UUID getId() { return id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public String getEmail() { return email; }
+    public String getEmail() {
+        return email;
+    }
 
-    public void setEmail(String email) { this.email = email; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public String getSenhaHash() { return senhaHash; }
+    public String getSenhaHash() {
+        return senhaHash;
+    }
 
-    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
+    }
 
-    public Role getRole() { return role; }
+    public Role getRole() {
+        return role;
+    }
 
-    public void setRole(Role role) { this.role = role; }
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
-    public UUID getProfileId() { return profileId; }
+    public UUID getProfileId() {
+        return profileId;
+    }
 
-    public void setProfileId(UUID profileId) { this.profileId = profileId; }
+    public void setProfileId(UUID profileId) {
+        this.profileId = profileId;
+    }
 
-    public String getMfaSecretEnc() { return mfaSecretEnc; }
+    public String getMfaSecretEnc() {
+        return mfaSecretEnc;
+    }
 
-    public void setMfaSecretEnc(String mfaSecretEnc) { this.mfaSecretEnc = mfaSecretEnc; }
+    public void setMfaSecretEnc(String mfaSecretEnc) {
+        this.mfaSecretEnc = mfaSecretEnc;
+    }
 
-    public boolean isMfaAtivo() { return mfaAtivo; }
+    public boolean isMfaAtivo() {
+        return mfaAtivo;
+    }
 
-    public void setMfaAtivo(boolean mfaAtivo) { this.mfaAtivo = mfaAtivo; }
+    public void setMfaAtivo(boolean mfaAtivo) {
+        this.mfaAtivo = mfaAtivo;
+    }
 
-    public Instant getEmailVerificadoEm() { return emailVerificadoEm; }
+    public Instant getEmailVerificadoEm() {
+        return emailVerificadoEm;
+    }
 
-    public void setEmailVerificadoEm(Instant emailVerificadoEm) { this.emailVerificadoEm = emailVerificadoEm; }
+    public void setEmailVerificadoEm(Instant emailVerificadoEm) {
+        this.emailVerificadoEm = emailVerificadoEm;
+    }
 
-    public Status getStatus() { return status; }
+    public Status getStatus() {
+        return status;
+    }
 
-    public void setStatus(Status status) { this.status = status; }
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
-    public Instant getUltimoLoginEm() { return ultimoLoginEm; }
+    public Instant getUltimoLoginEm() {
+        return ultimoLoginEm;
+    }
 
-    public void setUltimoLoginEm(Instant ultimoLoginEm) { this.ultimoLoginEm = ultimoLoginEm; }
+    public void setUltimoLoginEm(Instant ultimoLoginEm) {
+        this.ultimoLoginEm = ultimoLoginEm;
+    }
 
-    public Instant getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 
-    public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 
-    public Instant getDeletedAt() { return deletedAt; }
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
 
-    public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

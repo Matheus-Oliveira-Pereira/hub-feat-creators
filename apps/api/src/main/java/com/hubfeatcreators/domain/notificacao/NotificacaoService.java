@@ -99,8 +99,7 @@ public class NotificacaoService {
             Instant threshold = Instant.now().minusSeconds(THROTTLE_MINUTOS * 60L);
             if (dedupeOpt.get().getLastEmitted().isAfter(threshold)) {
                 Page<Notificacao> pending =
-                        repo.findPendingForDedupe(
-                                usuarioId, tipo, alvoId, PageRequest.of(0, 1));
+                        repo.findPendingForDedupe(usuarioId, tipo, alvoId, PageRequest.of(0, 1));
                 if (!pending.isEmpty()) {
                     Notificacao existente = pending.getContent().get(0);
                     existente.setAgrupadas(existente.getAgrupadas() + 1);
@@ -118,14 +117,7 @@ public class NotificacaoService {
 
         Notificacao n =
                 new Notificacao(
-                        usuarioId,
-                        tipo,
-                        prioridade,
-                        titulo,
-                        mensagem,
-                        payload,
-                        alvoTipo,
-                        alvoId);
+                        usuarioId, tipo, prioridade, titulo, mensagem, payload, alvoTipo, alvoId);
         repo.save(n);
 
         // Atualizar dedupe
@@ -155,11 +147,7 @@ public class NotificacaoService {
 
     @Transactional(readOnly = true)
     public Page<Notificacao> listar(
-            UUID usuarioId,
-            NotificacaoTipo tipo,
-            boolean apenasNaoLidas,
-            int page,
-            int size) {
+            UUID usuarioId, NotificacaoTipo tipo, boolean apenasNaoLidas, int page, int size) {
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE));
         return repo.findFiltered(usuarioId, tipo, apenasNaoLidas, pageable);
     }

@@ -37,9 +37,8 @@ import {
   ProspeccaoStatus,
   MotivoPerda,
   PageResponse,
-  EmailAccount,
-  EmailAccountPayload,
-  EmailAccountUpdatePayload,
+  SystemEmailConfig,
+  SystemEmailConfigPayload,
   EmailTemplate,
   EmailTemplatePayload,
   EmailLayout,
@@ -106,8 +105,7 @@ export const qk = {
     preferencias: ['tarefas', 'preferencias'] as const,
   },
   email: {
-    accounts: ['email', 'accounts'] as const,
-    account: (id: string) => ['email', 'accounts', id] as const,
+    config: ['email', 'config'] as const,
     templates: ['email', 'templates'] as const,
     template: (id: string) => ['email', 'templates', id] as const,
     layout: ['email', 'layout'] as const,
@@ -635,47 +633,23 @@ export function useUpdatePreferencias() {
 
 // ─── Email ─────────────────────────────────────────────────────────────────
 
-export function useEmailAccounts() {
-  return useQuery({ queryKey: qk.email.accounts, queryFn: () => email.accounts.list() });
+export function useSystemEmailConfig() {
+  return useQuery({ queryKey: qk.email.config, queryFn: () => email.config.get() });
 }
 
-export function useEmailAccount(id: string) {
-  return useQuery({ queryKey: qk.email.account(id), queryFn: () => email.accounts.get(id) });
-}
-
-export function useCreateEmailAccount() {
+export function useUpdateSystemEmailConfig() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: EmailAccountPayload) => email.accounts.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.accounts }),
+    mutationFn: (data: SystemEmailConfigPayload) => email.config.update(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.config }),
   });
 }
 
-export function useUpdateEmailAccount() {
+export function useTestSystemEmail() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: EmailAccountUpdatePayload }) =>
-      email.accounts.update(id, data),
-    onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: qk.email.accounts });
-      qc.invalidateQueries({ queryKey: qk.email.account(id) });
-    },
-  });
-}
-
-export function useDeleteEmailAccount() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => email.accounts.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.accounts }),
-  });
-}
-
-export function useTestEmailAccount() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => email.accounts.test(id),
-    onSuccess: (_data, id) => qc.invalidateQueries({ queryKey: qk.email.account(id) }),
+    mutationFn: () => email.config.test(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.email.config }),
   });
 }
 

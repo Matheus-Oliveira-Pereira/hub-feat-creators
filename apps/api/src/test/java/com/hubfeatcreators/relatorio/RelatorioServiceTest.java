@@ -132,11 +132,7 @@ class RelatorioServiceTest {
     @Test
     void funil_noData_currentGt0_delta100() {
         when(jdbc.queryForList(
-                        anyString(),
-                        any(Instant.class),
-                        any(Instant.class),
-                        isNull(),
-                        isNull()))
+                        anyString(), any(Instant.class), any(Instant.class), isNull(), isNull()))
                 .thenReturn(
                         List.of(
                                 Map.of(
@@ -201,11 +197,7 @@ class RelatorioServiceTest {
     @Test
     void sla_empty_returnsEmptyList() {
         when(jdbc.queryForList(
-                        anyString(),
-                        any(Instant.class),
-                        any(Instant.class),
-                        isNull(),
-                        isNull()))
+                        anyString(), any(Instant.class), any(Instant.class), isNull(), isNull()))
                 .thenReturn(List.of());
         TarefaSlaResult result = service.tarefaSla(from, to, null);
         assertThat(result.assessores()).isEmpty();
@@ -215,11 +207,7 @@ class RelatorioServiceTest {
     void sla_withRow_computesPct() {
         UUID rid = UUID.randomUUID();
         when(jdbc.queryForList(
-                        anyString(),
-                        any(Instant.class),
-                        any(Instant.class),
-                        isNull(),
-                        isNull()))
+                        anyString(), any(Instant.class), any(Instant.class), isNull(), isNull()))
                 .thenReturn(
                         List.of(
                                 Map.of(
@@ -312,11 +300,7 @@ class RelatorioServiceTest {
 
     private void stubFunilQuery(List<Map<String, Object>> rows) {
         when(jdbc.queryForList(
-                        anyString(),
-                        any(Instant.class),
-                        any(Instant.class),
-                        isNull(),
-                        isNull()))
+                        anyString(), any(Instant.class), any(Instant.class), isNull(), isNull()))
                 .thenReturn(rows);
     }
 }

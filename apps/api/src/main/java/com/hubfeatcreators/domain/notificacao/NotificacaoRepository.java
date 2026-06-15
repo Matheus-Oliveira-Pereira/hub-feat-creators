@@ -20,10 +20,7 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
         ORDER BY n.createdAt DESC
         """)
     Page<Notificacao> findFiltered(
-            UUID usuarioId,
-            NotificacaoTipo tipo,
-            boolean apenasNaoLidas,
-            Pageable pageable);
+            UUID usuarioId, NotificacaoTipo tipo, boolean apenasNaoLidas, Pageable pageable);
 
     long countByUsuarioIdAndLidaEmIsNull(UUID usuarioId);
 
@@ -48,8 +45,5 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
         ORDER BY n.createdAt DESC
         """)
     Page<Notificacao> findPendingForDedupe(
-            UUID usuarioId,
-            NotificacaoTipo tipo,
-            UUID alvoId,
-            Pageable pageable);
+            UUID usuarioId, NotificacaoTipo tipo, UUID alvoId, Pageable pageable);
 }

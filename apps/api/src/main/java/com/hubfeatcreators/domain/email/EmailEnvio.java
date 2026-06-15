@@ -13,9 +13,6 @@ public class EmailEnvio {
 
     @Id private UUID id = UUID.randomUUID();
 
-    @Column(name = "account_id", nullable = false)
-    private UUID accountId;
-
     @Column(name = "template_id")
     private UUID templateId;
 
@@ -66,7 +63,6 @@ public class EmailEnvio {
     protected EmailEnvio() {}
 
     public EmailEnvio(
-            UUID accountId,
             UUID templateId,
             String destinatarioEmail,
             String destinatarioNome,
@@ -76,7 +72,6 @@ public class EmailEnvio {
             UUID idempotencyKey,
             boolean trackingEnabled,
             UUID autorId) {
-        this.accountId = accountId;
         this.templateId = templateId;
         this.destinatarioEmail = destinatarioEmail;
         this.destinatarioNome = destinatarioNome;
@@ -90,10 +85,6 @@ public class EmailEnvio {
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getAccountId() {
-        return accountId;
     }
 
     public UUID getTemplateId() {

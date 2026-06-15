@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EmailSendService {
 
     private final EmailEnvioRepository envioRepo;
-    private final EmailAccountRepository accountRepo;
+    private final SystemEmailConfigService systemConfigService;
     private final EmailTemplateService templateService;
     private final EmailOptoutRepository optoutRepo;
     private final JobService jobService;
@@ -26,13 +26,13 @@ public class EmailSendService {
 
     public EmailSendService(
             EmailEnvioRepository envioRepo,
-            EmailAccountRepository accountRepo,
+            SystemEmailConfigService systemConfigService,
             EmailTemplateService templateService,
             EmailOptoutRepository optoutRepo,
             JobService jobService,
             AppProperties appProperties) {
         this.envioRepo = envioRepo;
-        this.accountRepo = accountRepo;
+        this.systemConfigService = systemConfigService;
         this.templateService = templateService;
         this.optoutRepo = optoutRepo;
         this.jobService = jobService;
@@ -41,12 +41,11 @@ public class EmailSendService {
 
     /**
      * Enqueues an email for sending. Returns existing envio if idempotency_key already used.
-     * Validates: account active, daily quota, opt-out.
+     * Validates: system account configured + active, daily quota, opt-out.
      */
     @Transactional
     public EmailEnvio enviar(
             AuthPrincipal principal,
-            UUID accountId,
             UUID templateId,
             String destinatarioEmail,
             String destinatarioNome,
@@ -58,14 +57,18 @@ public class EmailSendService {
         Optional<EmailEnvio> existing = envioRepo.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) return existing.get();
 
-        EmailAccount account =
-                accountRepo
-                        .findById(accountId)
-                        .orElseThrow(() -> BusinessException.notFound("EMAIL_ACCOUNT"));
+        SystemEmailConfig cfg =
+                systemConfigService
+                        .getEffectiveConfig()
+                        .orElseThrow(
+                                () ->
+                                        BusinessException.unprocessable(
+                                                "EMAIL_NOT_CONFIGURED",
+                                                "Conta de e-mail do sistema não configurada."));
 
-        if (account.getStatus() != EmailAccountStatus.ATIVA) {
+        if ("FALHA_AUTH".equals(cfg.getStatus())) {
             throw BusinessException.unprocessable(
-                    "EMAIL_ACCOUNT_INACTIVE", "Conta de e-mail inativa");
+                    "EMAIL_ACCOUNT_INACTIVE", "Conta de e-mail com falha de autenticação.");
         }
 
         Instant inicioDia =
@@ -74,8 +77,8 @@ public class EmailSendService {
                         .toLocalDate()
                         .atStartOfDay(ZoneOffset.UTC)
                         .toInstant();
-        long enviosDia = accountRepo.countEnviosDia(accountId, inicioDia);
-        if (enviosDia >= account.getDailyQuota()) {
+        long enviosDia = envioRepo.countEnviosDia(inicioDia);
+        if (enviosDia >= cfg.getDailyQuota()) {
             throw BusinessException.unprocessable(
                     "EMAIL_QUOTA_EXCEEDED", "Cota diária de envios atingida");
         }
@@ -90,7 +93,6 @@ public class EmailSendService {
 
         EmailEnvio envio =
                 new EmailEnvio(
-                        accountId,
                         templateId,
                         destinatarioEmail,
                         destinatarioNome,
@@ -103,10 +105,7 @@ public class EmailSendService {
         envio = envioRepo.save(envio);
 
         UUID envioId = envio.getId();
-        jobService.enqueue(
-                "EMAIL_SEND",
-                Map.of("envioId", envioId.toString()),
-                idempotencyKey);
+        jobService.enqueue("EMAIL_SEND", Map.of("envioId", envioId.toString()), idempotencyKey);
 
         return envio;
     }
@@ -118,14 +117,12 @@ public class EmailSendService {
 
     @Transactional(readOnly = true)
     public EmailEnvio buscar(AuthPrincipal principal, UUID id) {
-        return envioRepo
-                .findById(id)
-                .orElseThrow(() -> BusinessException.notFound("EMAIL_ENVIO"));
+        return envioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("EMAIL_ENVIO"));
     }
 
     private String buildUnsubscribeUrl(String email) {
-        String token = EmailUnsubscribeTokens.generate(
-                appProperties.getSecrets().getEmailKey(), email);
+        String token =
+                EmailUnsubscribeTokens.generate(appProperties.getSecrets().getEmailKey(), email);
         return "/api/v1/email/unsubscribe?token=" + token;
     }
 }

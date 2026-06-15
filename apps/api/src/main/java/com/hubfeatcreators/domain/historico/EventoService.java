@@ -31,10 +31,7 @@ public class EventoService {
 
     @Transactional
     public Evento registrar(
-            UUID autorId,
-            EventoTipo tipo,
-            Map<String, Object> payload,
-            EntidadeRef... entidades) {
+            UUID autorId, EventoTipo tipo, Map<String, Object> payload, EntidadeRef... entidades) {
         Evento evento = Evento.of(tipo, autorId, payload, entidades);
         repo.save(evento);
         meterRegistry.counter("evento_publicado_total", "tipo", tipo.name()).increment();

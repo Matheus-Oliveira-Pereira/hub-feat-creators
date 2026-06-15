@@ -55,19 +55,14 @@ public class ConviteService {
     public Convite convidar(
             AuthPrincipal principal, String email, Convite.Role role, UUID perfilId) {
         if (usuarioRepo.findActiveByEmail(email).isPresent()) {
-            throw BusinessException.conflict(
-                    "EMAIL_IN_USE", "Este e-mail já é membro do sistema.");
+            throw BusinessException.conflict("EMAIL_IN_USE", "Este e-mail já é membro do sistema.");
         }
 
         Perfil perfil = resolveProfile(role, perfilId);
 
         String rawToken = UUID.randomUUID().toString();
         Convite convite =
-                new Convite(
-                        email,
-                        rawToken,
-                        role,
-                        Instant.now().plus(7, ChronoUnit.DAYS));
+                new Convite(email, rawToken, role, Instant.now().plus(7, ChronoUnit.DAYS));
 
         convite.setPerfilId(perfil != null ? perfil.getId() : null);
 
@@ -115,11 +110,7 @@ public class ConviteService {
         }
 
         Usuario.Role coarseRole = Usuario.Role.valueOf(convite.getRole().name());
-        Usuario novo =
-                new Usuario(
-                        convite.getEmail(),
-                        passwordEncoder.encode(senha),
-                        coarseRole);
+        Usuario novo = new Usuario(convite.getEmail(), passwordEncoder.encode(senha), coarseRole);
         novo.setEmailVerificadoEm(Instant.now()); // invite = email already verified
 
         UUID profileId = convite.getPerfilId();

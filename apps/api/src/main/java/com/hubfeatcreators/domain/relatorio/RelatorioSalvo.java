@@ -35,10 +35,7 @@ public class RelatorioSalvo {
     protected RelatorioSalvo() {}
 
     public RelatorioSalvo(
-            UUID usuarioId,
-            String nome,
-            String relatorioTipo,
-            Map<String, Object> filtros) {
+            UUID usuarioId, String nome, String relatorioTipo, Map<String, Object> filtros) {
         this.usuarioId = usuarioId;
         this.nome = nome;
         this.relatorioTipo = relatorioTipo;

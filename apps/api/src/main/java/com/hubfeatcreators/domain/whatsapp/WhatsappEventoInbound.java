@@ -39,11 +39,7 @@ public class WhatsappEventoInbound {
     protected WhatsappEventoInbound() {}
 
     public WhatsappEventoInbound(
-            UUID accountId,
-            String fromE164,
-            String wamid,
-            String tipo,
-            String payload) {
+            UUID accountId, String fromE164, String wamid, String tipo, String payload) {
         this.accountId = accountId;
         this.fromE164 = fromE164;
         this.wamid = wamid;

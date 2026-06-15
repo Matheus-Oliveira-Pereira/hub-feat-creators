@@ -34,10 +34,7 @@ public class ProspeccaoEvento {
     protected ProspeccaoEvento() {}
 
     public ProspeccaoEvento(
-            UUID prospeccaoId,
-            EventoTipo tipo,
-            Map<String, Object> payload,
-            UUID autorId) {
+            UUID prospeccaoId, EventoTipo tipo, Map<String, Object> payload, UUID autorId) {
         this.prospeccaoId = prospeccaoId;
         this.tipo = tipo;
         this.payload = payload != null ? payload : new HashMap<>();

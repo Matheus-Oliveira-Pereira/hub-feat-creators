@@ -57,14 +57,7 @@ class BriefingServiceTest {
 
         Briefing result =
                 service.upsertByProspeccao(
-                        prospeccaoId,
-                        "TECH",
-                        "CONVERSAO",
-                        null,
-                        "VIDEO",
-                        null,
-                        null,
-                        "novo texto");
+                        prospeccaoId, "TECH", "CONVERSAO", null, "VIDEO", null, null, "novo texto");
 
         assertThat(result.getVertical()).isEqualTo("TECH");
         assertThat(result.getTexto()).isEqualTo("novo texto");

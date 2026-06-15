@@ -92,11 +92,7 @@ public class InfluenciadorService {
         inf = repo.save(inf);
 
         auditLogService.log(
-                principal.usuarioId(),
-                "influenciador",
-                id,
-                AuditLog.Acao.UPDATE,
-                toMap(inf));
+                principal.usuarioId(), "influenciador", id, AuditLog.Acao.UPDATE, toMap(inf));
 
         return inf;
     }

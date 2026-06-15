@@ -110,9 +110,7 @@ public class EmailTemplateService {
      * (AC-4).
      */
     public String renderizar(
-            EmailTemplate template,
-            Map<String, Object> vars,
-            String unsubscribeUrl) {
+            EmailTemplate template, Map<String, Object> vars, String unsubscribeUrl) {
         String corpoRendered = render(template.getCorpoHtml(), vars);
 
         EmailLayout layout = layoutRepo.findFirst().orElse(new EmailLayout());

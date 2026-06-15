@@ -437,14 +437,12 @@ export const tarefas = {
 
 // ─── Email ────────────────────────────────────────────────────────────────────
 
-export type EmailAccountStatus = 'ATIVA' | 'PAUSADA' | 'FALHA_AUTH';
 export type TlsMode = 'STARTTLS' | 'SSL';
+export type SystemEmailStatus = 'ATIVA' | 'FALHA_AUTH' | 'NAO_CONFIGURADO';
 export type EmailEnvioStatus = 'ENFILEIRADO' | 'ENVIADO' | 'FALHOU' | 'BOUNCED';
 export type EmailEventoTipo = 'ABERTO' | 'CLICADO' | 'BOUNCE' | 'COMPLAINT' | 'UNSUBSCRIBE';
 
-export interface EmailAccount {
-  id: string;
-  nome: string;
+export interface SystemEmailConfig {
   host: string;
   port: number;
   username: string;
@@ -452,25 +450,12 @@ export interface EmailAccount {
   fromName: string;
   tlsMode: TlsMode;
   dailyQuota: number;
-  status: EmailAccountStatus;
-  falhasAuthCount: number;
-  updatedAt: string;
+  status: SystemEmailStatus;
+  passwordSet: boolean;
+  updatedAt: string | null;
 }
 
-export interface EmailAccountPayload {
-  nome: string;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  fromAddress: string;
-  fromName: string;
-  tlsMode?: TlsMode;
-  dailyQuota?: number;
-}
-
-export interface EmailAccountUpdatePayload {
-  nome?: string;
+export interface SystemEmailConfigPayload {
   host?: string;
   port?: number;
   username?: string;
@@ -509,7 +494,6 @@ export interface EmailLayout {
 
 export interface EmailEnvio {
   id: string;
-  accountId: string;
   templateId: string;
   destinatarioEmail: string;
   destinatarioNome?: string | null;
@@ -522,7 +506,6 @@ export interface EmailEnvio {
 }
 
 export interface EmailEnvioPayload {
-  accountId: string;
   templateId: string;
   destinatarioEmail: string;
   destinatarioNome?: string;
@@ -628,14 +611,11 @@ export const whatsapp = {
 };
 
 export const email = {
-  accounts: {
-    list: () => api.get<EmailAccount[]>('/api/v1/email/accounts'),
-    get: (id: string) => api.get<EmailAccount>(`/api/v1/email/accounts/${id}`),
-    create: (data: EmailAccountPayload) => api.post<EmailAccount>('/api/v1/email/accounts', data),
-    update: (id: string, data: EmailAccountUpdatePayload) =>
-      api.patch<EmailAccount>(`/api/v1/email/accounts/${id}`, data),
-    delete: (id: string) => api.delete(`/api/v1/email/accounts/${id}`),
-    test: (id: string) => api.post<void>(`/api/v1/email/accounts/${id}/test`, {}),
+  config: {
+    get: () => api.get<SystemEmailConfig>('/api/v1/configuracoes/email'),
+    update: (data: SystemEmailConfigPayload) =>
+      api.patch<SystemEmailConfig>('/api/v1/configuracoes/email', data),
+    test: () => api.post<void>('/api/v1/configuracoes/email/test', {}),
   },
   templates: {
     list: () => api.get<EmailTemplate[]>('/api/v1/email/templates'),

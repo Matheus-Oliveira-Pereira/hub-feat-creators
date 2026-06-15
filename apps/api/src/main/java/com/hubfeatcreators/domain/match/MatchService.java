@@ -104,8 +104,7 @@ public class MatchService {
             if (features == null) continue;
 
             double cosineSim = ((Number) candidate.get("cosine_sim")).doubleValue();
-            int historicalDeals =
-                    sugestaoRepo.countByInfluenciadorId(influenciadorId);
+            int historicalDeals = sugestaoRepo.countByInfluenciadorId(influenciadorId);
             double health = scorer.channelHealthScore(features);
 
             MatchScorer.ScoreInput input =

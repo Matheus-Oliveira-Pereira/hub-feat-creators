@@ -26,8 +26,7 @@ public class SocialSnapshotController {
     @GetMapping("/snapshots")
     @RequirePermission("BINF")
     public List<SocialSnapshotDto> listSnapshots(
-            @RequestParam UUID accountId,
-            @RequestParam(defaultValue = "30") int limit) {
+            @RequestParam UUID accountId, @RequestParam(defaultValue = "30") int limit) {
         return socialService.listSnapshots(accountId, limit).stream()
                 .map(SocialSnapshotDto::from)
                 .toList();

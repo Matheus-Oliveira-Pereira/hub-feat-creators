@@ -41,8 +41,7 @@ public class CreatorFeatureBuilder {
     }
 
     public CreatorProfileFeature buildAndSave(UUID influenciadorId) {
-        List<SocialAccount> accounts =
-                accountRepo.findByInfluenciadorId(influenciadorId);
+        List<SocialAccount> accounts = accountRepo.findByInfluenciadorId(influenciadorId);
 
         BigDecimal avgEngagement = computeEngagement(accounts);
         BigDecimal freqPost = computeFreqPost(accounts);

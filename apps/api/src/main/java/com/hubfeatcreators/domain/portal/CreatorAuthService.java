@@ -70,8 +70,7 @@ public class CreatorAuthService {
             throw BusinessException.unauthorized("Credenciais inválidas.");
         }
 
-        String token =
-                jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
+        String token = jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 
@@ -99,15 +98,10 @@ public class CreatorAuthService {
 
         CreatorInvite invite =
                 new CreatorInvite(
-                        influenciadorId,
-                        targetEmail,
-                        tokenHash,
-                        expiresAt,
-                        principal.usuarioId());
+                        influenciadorId, targetEmail, tokenHash, expiresAt, principal.usuarioId());
         inviteRepo.save(invite);
 
-        String portalUrl =
-                props.getWeb().getBaseUrl() + "/portal/convite?token=" + rawToken;
+        String portalUrl = props.getWeb().getBaseUrl() + "/portal/convite?token=" + rawToken;
 
         mailService.sendInvite(targetEmail, "HUB Feat Creators", portalUrl);
 
@@ -134,17 +128,13 @@ public class CreatorAuthService {
 
         String senhaHash = passwordEncoder.encode(senha);
         CreatorUser user =
-                new CreatorUser(
-                        invite.getInfluenciadorId(),
-                        invite.getEmail(),
-                        senhaHash);
+                new CreatorUser(invite.getInfluenciadorId(), invite.getEmail(), senhaHash);
         creatorUserRepo.save(user);
 
         invite.setAceitoEm(Instant.now());
         inviteRepo.save(invite);
 
-        String token =
-                jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
+        String token = jwtService.generateCreatorToken(user.getId(), user.getInfluenciadorId());
         return new TokenResponse(token, user.getId(), user.getEmail(), user.getInfluenciadorId());
     }
 

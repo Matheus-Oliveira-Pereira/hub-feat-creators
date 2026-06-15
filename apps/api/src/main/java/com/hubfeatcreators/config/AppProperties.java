@@ -94,6 +94,91 @@ public class AppProperties {
         }
     }
 
+    public static class Smtp {
+        private String host = "";
+        private int port = 587;
+        private String username = "";
+        private String password = "";
+        private String fromAddress = "";
+        private String fromName = "feat. creators";
+        private String tlsMode = "STARTTLS";
+        private int dailyQuota = 500;
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getFromAddress() {
+            return fromAddress;
+        }
+
+        public void setFromAddress(String fromAddress) {
+            this.fromAddress = fromAddress;
+        }
+
+        public String getFromName() {
+            return fromName;
+        }
+
+        public void setFromName(String fromName) {
+            this.fromName = fromName;
+        }
+
+        public String getTlsMode() {
+            return tlsMode;
+        }
+
+        public void setTlsMode(String tlsMode) {
+            this.tlsMode = tlsMode;
+        }
+
+        public int getDailyQuota() {
+            return dailyQuota;
+        }
+
+        public void setDailyQuota(int dailyQuota) {
+            this.dailyQuota = dailyQuota;
+        }
+    }
+
+    private Smtp smtp = new Smtp();
+
+    public Smtp getSmtp() {
+        return smtp;
+    }
+
+    public void setSmtp(Smtp smtp) {
+        this.smtp = smtp;
+    }
+
     private Whatsapp whatsapp = new Whatsapp();
 
     public Whatsapp getWhatsapp() {

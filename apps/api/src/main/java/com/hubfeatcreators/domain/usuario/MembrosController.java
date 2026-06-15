@@ -43,9 +43,7 @@ public class MembrosController {
     @GetMapping
     @RequirePermission(PermissionCodes.B_USU)
     public List<MembroResponse> listar(@AuthenticationPrincipal AuthPrincipal principal) {
-        return usuarioRepo.findAllActive().stream()
-                .map(this::toResponse)
-                .toList();
+        return usuarioRepo.findAllActive().stream().map(this::toResponse).toList();
     }
 
     @PatchMapping("/{id}/status")
@@ -109,9 +107,7 @@ public class MembrosController {
     // ── helpers ──────────────────────────────────────────────────────────
 
     private Usuario findMembro(UUID id) {
-        return usuarioRepo
-                .findById(id)
-                .orElseThrow(() -> BusinessException.notFound("USUARIO"));
+        return usuarioRepo.findById(id).orElseThrow(() -> BusinessException.notFound("USUARIO"));
     }
 
     private MembroResponse toResponse(Usuario u) {

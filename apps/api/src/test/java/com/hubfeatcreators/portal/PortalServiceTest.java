@@ -43,10 +43,7 @@ class PortalServiceTest {
     private Tarefa makeTarefa(boolean visivel) {
         Tarefa t =
                 new Tarefa(
-                        "Test task",
-                        Instant.now().plusSeconds(3600),
-                        creatorUserId,
-                        creatorUserId);
+                        "Test task", Instant.now().plusSeconds(3600), creatorUserId, creatorUserId);
         t.setEntidadeTipo(EntidadeTipo.INFLUENCIADOR);
         t.setEntidadeId(influenciadorId);
         t.setVisivelParaCreator(visivel);
@@ -113,10 +110,8 @@ class PortalServiceTest {
     void listarComentarios_filtraInternos() {
         Tarefa t = makeTarefa(true);
         when(tarefaRepo.findById(tarefaId)).thenReturn(Optional.of(t));
-        TarefaComentario externo =
-                TarefaComentario.fromCreator(tarefaId, creatorUserId, "oi");
-        TarefaComentario interno =
-                new TarefaComentario(tarefaId, creatorUserId, "interno");
+        TarefaComentario externo = TarefaComentario.fromCreator(tarefaId, creatorUserId, "oi");
+        TarefaComentario interno = new TarefaComentario(tarefaId, creatorUserId, "interno");
         when(comentarioRepo.findByTarefaIdOrderByCreatedAtAsc(tarefaId))
                 .thenReturn(List.of(externo, interno));
 
@@ -146,12 +141,7 @@ class PortalServiceTest {
     void revisarEntregavel_updatesStatus() {
         CreatorEntregavel entregavel =
                 new CreatorEntregavel(
-                        tarefaId,
-                        creatorUserId,
-                        "path",
-                        "doc.pdf",
-                        "application/pdf",
-                        1024L);
+                        tarefaId, creatorUserId, "path", "doc.pdf", "application/pdf", 1024L);
         when(entregavelRepo.findById(entregavel.getId())).thenReturn(Optional.of(entregavel));
         when(entregavelRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

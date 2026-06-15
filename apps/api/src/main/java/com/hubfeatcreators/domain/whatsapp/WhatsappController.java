@@ -214,10 +214,6 @@ public class WhatsappController {
         UUID key = req.idempotencyKey() != null ? req.idempotencyKey() : UUID.randomUUID();
         return toEnvioResp(
                 whatsappService.sendFreeform(
-                        req.accountId(),
-                        req.destinatarioE164(),
-                        req.text(),
-                        key,
-                        p.usuarioId()));
+                        req.accountId(), req.destinatarioE164(), req.text(), key, p.usuarioId()));
     }
 }

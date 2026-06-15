@@ -53,7 +53,8 @@ public class WhatsappAccountService {
     }
 
     @Transactional
-    public WhatsappAccount update(UUID id, String displayName, String accessToken, String appSecret) {
+    public WhatsappAccount update(
+            UUID id, String displayName, String accessToken, String appSecret) {
         WhatsappAccount account = requireAccount(id);
 
         if (accessToken != null && !accessToken.isBlank()) {
@@ -87,7 +88,6 @@ public class WhatsappAccountService {
     }
 
     public WhatsappAccount requireAccount(UUID id) {
-        return repo.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(BusinessException::notFound);
+        return repo.findByIdAndDeletedAtIsNull(id).orElseThrow(BusinessException::notFound);
     }
 }

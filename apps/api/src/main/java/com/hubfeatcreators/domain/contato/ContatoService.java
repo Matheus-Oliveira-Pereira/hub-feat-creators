@@ -66,11 +66,7 @@ public class ContatoService {
         contato.setUpdatedAt(Instant.now());
         contato = repo.save(contato);
         auditLogService.log(
-                principal.usuarioId(),
-                "contato",
-                id,
-                AuditLog.Acao.UPDATE,
-                toMap(contato));
+                principal.usuarioId(), "contato", id, AuditLog.Acao.UPDATE, toMap(contato));
         return contato;
     }
 

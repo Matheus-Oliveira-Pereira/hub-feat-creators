@@ -28,16 +28,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Processes EMAIL_SEND jobs: builds MIME message per account config, sends via SMTP. */
+/** Processes EMAIL_SEND jobs: builds MIME message from system config, sends via SMTP. */
 @Component("EMAIL_SEND")
 public class EmailSendJobHandler implements JobHandler {
 
     private static final Logger log = LoggerFactory.getLogger(EmailSendJobHandler.class);
 
     private final EmailEnvioRepository envioRepo;
-    private final EmailAccountRepository accountRepo;
-    private final EmailAccountService accountService;
-    private final EmailCipherService cipher;
+    private final SystemEmailConfigService systemConfigService;
     private final MeterRegistry meterRegistry;
     private final ApplicationEventPublisher eventPublisher;
     private final EventoService eventoService;
@@ -45,17 +43,13 @@ public class EmailSendJobHandler implements JobHandler {
 
     public EmailSendJobHandler(
             EmailEnvioRepository envioRepo,
-            EmailAccountRepository accountRepo,
-            EmailAccountService accountService,
-            EmailCipherService cipher,
+            SystemEmailConfigService systemConfigService,
             MeterRegistry meterRegistry,
             ApplicationEventPublisher eventPublisher,
             EventoService eventoService,
             AppProperties appProperties) {
         this.envioRepo = envioRepo;
-        this.accountRepo = accountRepo;
-        this.accountService = accountService;
-        this.cipher = cipher;
+        this.systemConfigService = systemConfigService;
         this.meterRegistry = meterRegistry;
         this.eventPublisher = eventPublisher;
         this.eventoService = eventoService;
@@ -81,21 +75,17 @@ public class EmailSendJobHandler implements JobHandler {
             return;
         }
 
-        EmailAccount account =
-                accountRepo
-                        .findById(envio.getAccountId())
+        SystemEmailConfig cfg =
+                systemConfigService
+                        .getEffectiveConfig()
                         .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "EmailAccount not found: " + envio.getAccountId()));
+                                () -> new IllegalStateException("System email not configured"));
 
+        String password = systemConfigService.getEffectivePassword();
         envio.setTentativas(envio.getTentativas() + 1);
 
         try {
-            String password =
-                    cipher.decrypt(account.getPasswordEncrypted(), account.getPasswordNonce());
-            String smtpMessageId = sendViaSmtp(envio, account, password);
-
+            String smtpMessageId = sendViaSmtp(envio, cfg, password);
             envio.setStatus(EmailEnvioStatus.ENVIADO);
             envio.setSmtpMessageId(smtpMessageId);
             envio.setEnviadoEm(Instant.now());
@@ -114,7 +104,7 @@ public class EmailSendJobHandler implements JobHandler {
                     new EntidadeRef("EMAIL_ENVIO", envioId));
 
         } catch (AuthenticationFailedException e) {
-            accountService.registrarFalhaAuthById(account.getId());
+            systemConfigService.registrarFalhaAuth();
             envio.setStatus(EmailEnvioStatus.FALHOU);
             envio.setFalhaMotivo("SMTP_AUTH_FAILED: " + e.getMessage());
             envioRepo.save(envio);
@@ -122,9 +112,8 @@ public class EmailSendJobHandler implements JobHandler {
                     .tag("reason", "auth")
                     .register(meterRegistry)
                     .increment();
-            log.error("email.send.auth_fail envioId={} accountId={}", envioId, account.getId());
-            eventPublisher.publishEvent(
-                    new EmailAuthFalhouEvent(account.getId(), account.getFromAddress()));
+            log.error("email.send.auth_fail envioId={}", envioId);
+            eventPublisher.publishEvent(new EmailAuthFalhouEvent(cfg.getFromAddress()));
             throw e;
 
         } catch (Exception e) {
@@ -140,13 +129,13 @@ public class EmailSendJobHandler implements JobHandler {
         }
     }
 
-    private String sendViaSmtp(EmailEnvio envio, EmailAccount account, String password)
+    private String sendViaSmtp(EmailEnvio envio, SystemEmailConfig cfg, String password)
             throws Exception {
-        Properties props = buildSmtpProps(account);
+        Properties props = buildSmtpProps(cfg);
         Session session = Session.getInstance(props);
 
         MimeMessage msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(account.getFromAddress(), account.getFromName(), "UTF-8"));
+        msg.setFrom(new InternetAddress(cfg.getFromAddress(), cfg.getFromName(), "UTF-8"));
 
         String toAddr =
                 envio.getDestinatarioNome() != null
@@ -169,22 +158,21 @@ public class EmailSendJobHandler implements JobHandler {
         msg.saveChanges();
 
         try (Transport transport = session.getTransport("smtp")) {
-            transport.connect(
-                    account.getHost(), account.getPort(), account.getUsername(), password);
+            transport.connect(cfg.getHost(), cfg.getPort(), cfg.getUsername(), password);
             transport.sendMessage(msg, msg.getAllRecipients());
         }
 
         return msg.getMessageID();
     }
 
-    private Properties buildSmtpProps(EmailAccount account) {
+    private Properties buildSmtpProps(SystemEmailConfig cfg) {
         Properties props = new Properties();
-        props.put("mail.smtp.host", account.getHost());
-        props.put("mail.smtp.port", String.valueOf(account.getPort()));
+        props.put("mail.smtp.host", cfg.getHost());
+        props.put("mail.smtp.port", String.valueOf(cfg.getPort()));
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.timeout", "30000");
         props.put("mail.smtp.connectiontimeout", "15000");
-        if (account.getTlsMode() == TlsMode.SSL) {
+        if ("SSL".equalsIgnoreCase(cfg.getTlsMode())) {
             props.put("mail.smtp.ssl.enable", "true");
         } else {
             props.put("mail.smtp.starttls.enable", "true");
@@ -196,8 +184,7 @@ public class EmailSendJobHandler implements JobHandler {
     private String buildUnsubscribeHeader(EmailEnvio envio) {
         String token =
                 EmailUnsubscribeTokens.generate(
-                        appProperties.getSecrets().getEmailKey(),
-                        envio.getDestinatarioEmail());
+                        appProperties.getSecrets().getEmailKey(), envio.getDestinatarioEmail());
         return "/api/v1/email/unsubscribe?token=" + token;
     }
 }

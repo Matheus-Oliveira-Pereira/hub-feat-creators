@@ -34,12 +34,8 @@ public class NotificacaoDigestScheduler {
 
         try {
             var idempotencyKey =
-                    java.util.UUID.nameUUIDFromBytes(
-                            ("NOTIFICACAO_DIGEST:" + dataHoje).getBytes());
-            jobService.enqueue(
-                    "NOTIFICACAO_DIGEST",
-                    Map.of("data", dataHoje),
-                    idempotencyKey);
+                    java.util.UUID.nameUUIDFromBytes(("NOTIFICACAO_DIGEST:" + dataHoje).getBytes());
+            jobService.enqueue("NOTIFICACAO_DIGEST", Map.of("data", dataHoje), idempotencyKey);
             Counter.builder("notificacao_digest_enfileirado_total")
                     .register(meterRegistry)
                     .increment();

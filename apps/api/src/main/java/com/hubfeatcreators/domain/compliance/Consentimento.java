@@ -35,10 +35,7 @@ public class Consentimento {
     public Consentimento() {}
 
     public Consentimento(
-            String titularTipo,
-            UUID titularId,
-            String finalidade,
-            Map<String, Object> prova) {
+            String titularTipo, UUID titularId, String finalidade, Map<String, Object> prova) {
         this.titularTipo = titularTipo;
         this.titularId = titularId;
         this.finalidade = finalidade;

@@ -37,11 +37,7 @@ public class MarcaService {
         applyRequest(marca, req);
         marca = repo.save(marca);
         auditLogService.log(
-                principal.usuarioId(),
-                "marca",
-                marca.getId(),
-                AuditLog.Acao.CREATE,
-                toMap(marca));
+                principal.usuarioId(), "marca", marca.getId(), AuditLog.Acao.CREATE, toMap(marca));
         eventoService.registrar(
                 principal.usuarioId(),
                 EventoTipo.MARCA_CRIADA,
@@ -70,12 +66,7 @@ public class MarcaService {
         applyRequest(marca, req);
         marca.setUpdatedAt(Instant.now());
         marca = repo.save(marca);
-        auditLogService.log(
-                principal.usuarioId(),
-                "marca",
-                id,
-                AuditLog.Acao.UPDATE,
-                toMap(marca));
+        auditLogService.log(principal.usuarioId(), "marca", id, AuditLog.Acao.UPDATE, toMap(marca));
         return marca;
     }
 

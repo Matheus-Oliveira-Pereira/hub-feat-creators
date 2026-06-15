@@ -63,10 +63,7 @@ public class WhatsappService {
         checkOptout(destinatarioE164);
         accountService.requireAccount(accountId);
 
-        var template =
-                templateRepo
-                        .findById(templateId)
-                        .orElseThrow(BusinessException::notFound);
+        var template = templateRepo.findById(templateId).orElseThrow(BusinessException::notFound);
         if (!"APPROVED".equals(template.getStatus())) {
             throw BusinessException.unprocessable(
                     "TEMPLATE_NAO_APROVADO", "Template não aprovado pela Meta.");
@@ -201,15 +198,10 @@ public class WhatsappService {
     /** Records inbound message, updates 24h window, handles STOP keywords. */
     @Transactional
     public void handleInbound(
-            UUID accountId,
-            String fromE164,
-            String wamid,
-            String tipo,
-            String messagePayload) {
+            UUID accountId, String fromE164, String wamid, String tipo, String messagePayload) {
         if (inboundRepo.existsByWamid(wamid)) return;
 
-        var evento =
-                new WhatsappEventoInbound(accountId, fromE164, wamid, tipo, messagePayload);
+        var evento = new WhatsappEventoInbound(accountId, fromE164, wamid, tipo, messagePayload);
         evento.setProcessadoEm(Instant.now());
         inboundRepo.save(evento);
 
@@ -241,11 +233,7 @@ public class WhatsappService {
     }
 
     private void enqueueJob(WhatsappEnvio envio) {
-        var job =
-                new Job(
-                        "WHATSAPP_SEND",
-                        Map.of("envioId", envio.getId().toString()),
-                        null);
+        var job = new Job("WHATSAPP_SEND", Map.of("envioId", envio.getId().toString()), null);
         jobRepo.save(job);
     }
 

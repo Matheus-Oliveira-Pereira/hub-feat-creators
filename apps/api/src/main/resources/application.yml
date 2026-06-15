@@ -86,6 +86,15 @@ app:
     ai-match-enabled: ${FEATURE_AI_MATCH_ENABLED:false}
   import:
     upload-dir: ${IMPORT_UPLOAD_DIR:${java.io.tmpdir}/hub-imports}
+  smtp:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+    from-address: ${SMTP_FROM:}
+    from-name: ${SMTP_FROM_NAME:feat. creators}
+    tls-mode: ${SMTP_TLS:STARTTLS}
+    daily-quota: ${SMTP_QUOTA:500}
   whatsapp:
     verify-token: ${WHATSAPP_VERIFY_TOKEN:}
   ai-worker:

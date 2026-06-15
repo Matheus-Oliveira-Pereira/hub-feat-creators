@@ -91,11 +91,7 @@ public class AuthService {
         onboardingService.sendVerification(usuario);
 
         auditLogService.logAuth(
-                usuario.getId(),
-                AuditLog.Acao.SIGNUP,
-                Map.of("email", email),
-                ip(req),
-                ua(req));
+                usuario.getId(), AuditLog.Acao.SIGNUP, Map.of("email", email), ip(req), ua(req));
 
         return new SignupResult(usuario.getId(), email, false);
     }
@@ -158,12 +154,7 @@ public class AuthService {
         usuario.setUltimoLoginEm(Instant.now());
         usuarioRepo.save(usuario);
 
-        auditLogService.logAuth(
-                usuario.getId(),
-                AuditLog.Acao.LOGIN,
-                Map.of(),
-                ip(req),
-                ua(req));
+        auditLogService.logAuth(usuario.getId(), AuditLog.Acao.LOGIN, Map.of(), ip(req), ua(req));
 
         return issueTokenPair(usuario, req);
     }

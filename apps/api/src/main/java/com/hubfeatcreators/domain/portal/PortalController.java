@@ -56,10 +56,7 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @Valid @RequestBody ComentarioRequest req) {
         return portalService.comentar(
-                principal.influenciadorId(),
-                tarefaId,
-                principal.creatorUserId(),
-                req.texto());
+                principal.influenciadorId(), tarefaId, principal.creatorUserId(), req.texto());
     }
 
     // ─── Entregáveis ──────────────────────────────────────────────────────────
@@ -77,17 +74,13 @@ public class PortalController {
             @PathVariable UUID tarefaId,
             @RequestParam("file") MultipartFile file) {
         return portalService.enviarEntregavel(
-                principal.influenciadorId(),
-                tarefaId,
-                principal.creatorUserId(),
-                file);
+                principal.influenciadorId(), tarefaId, principal.creatorUserId(), file);
     }
 
     @GetMapping("/entregaveis/{entregavelId}/download")
     public ResponseEntity<InputStreamResource> download(
             @AuthenticationPrincipal CreatorPrincipal principal, @PathVariable UUID entregavelId) {
-        PortalService.DownloadResult dl =
-                portalService.downloadEntregavel(entregavelId);
+        PortalService.DownloadResult dl = portalService.downloadEntregavel(entregavelId);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,

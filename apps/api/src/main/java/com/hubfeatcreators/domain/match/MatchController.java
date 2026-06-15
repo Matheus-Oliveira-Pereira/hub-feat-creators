@@ -55,10 +55,7 @@ public class MatchController {
             @Valid @RequestBody FeedbackRequest req) {
         MatchFeedback fb =
                 matchService.addFeedback(
-                        req.sugestaoId(),
-                        principal.usuarioId(),
-                        req.sinal(),
-                        req.comentario());
+                        req.sugestaoId(), principal.usuarioId(), req.sinal(), req.comentario());
         return ResponseEntity.ok(FeedbackDto.from(fb));
     }
 

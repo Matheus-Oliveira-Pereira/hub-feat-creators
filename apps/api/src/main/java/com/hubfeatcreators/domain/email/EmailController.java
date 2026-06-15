@@ -22,64 +22,23 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/email")
 public class EmailController {
 
-    private final EmailAccountService accountService;
     private final EmailTemplateService templateService;
     private final EmailLayoutRepository layoutRepo;
     private final EmailSendService sendService;
     private final EmailEventoRepository eventoRepo;
 
     public EmailController(
-            EmailAccountService accountService,
             EmailTemplateService templateService,
             EmailLayoutRepository layoutRepo,
             EmailSendService sendService,
             EmailEventoRepository eventoRepo) {
-        this.accountService = accountService;
         this.templateService = templateService;
         this.layoutRepo = layoutRepo;
         this.sendService = sendService;
         this.eventoRepo = eventoRepo;
     }
 
-    // ─── Account DTOs ────────────────────────────────────────────────────────
-
-    public record AccountRequest(
-            @NotBlank String nome,
-            @NotBlank String host,
-            @NotNull Integer port,
-            @NotBlank String username,
-            @NotBlank String password,
-            @NotBlank String fromAddress,
-            @NotBlank String fromName,
-            TlsMode tlsMode,
-            Integer dailyQuota) {}
-
-    public record AccountUpdateRequest(
-            String nome,
-            String host,
-            Integer port,
-            String username,
-            String password,
-            String fromAddress,
-            String fromName,
-            TlsMode tlsMode,
-            Integer dailyQuota) {}
-
-    public record AccountResponse(
-            UUID id,
-            String nome,
-            String host,
-            int port,
-            String username,
-            String fromAddress,
-            String fromName,
-            TlsMode tlsMode,
-            int dailyQuota,
-            EmailAccountStatus status,
-            int falhasAuthCount,
-            Instant updatedAt) {}
-
-    // ─── Template DTOs ────────────────────────────────────────────────────────
+    // ─── Template DTOs ─────────────────────────────────────────────────────────
 
     public record TemplateRequest(
             @NotBlank String nome,
@@ -113,7 +72,6 @@ public class EmailController {
     // ─── Envio DTOs ───────────────────────────────────────────────────────────
 
     public record EnvioRequest(
-            @NotNull UUID accountId,
             @NotNull UUID templateId,
             @NotBlank String destinatarioEmail,
             String destinatarioNome,
@@ -124,7 +82,6 @@ public class EmailController {
 
     public record EnvioResponse(
             UUID id,
-            UUID accountId,
             UUID templateId,
             String destinatarioEmail,
             String destinatarioNome,
@@ -137,79 +94,6 @@ public class EmailController {
 
     public record EventoResponse(
             UUID id, EmailEventoTipo tipo, Map<String, Object> payload, Instant createdAt) {}
-
-    // ─── Accounts ─────────────────────────────────────────────────────────────
-
-    @GetMapping("/accounts")
-    @RequirePermission(PermissionCodes.B_EML)
-    public List<AccountResponse> listarAccounts(@AuthenticationPrincipal AuthPrincipal principal) {
-        return accountService.listar(principal).stream().map(this::toAccountResponse).toList();
-    }
-
-    @GetMapping("/accounts/{id}")
-    @RequirePermission(PermissionCodes.B_EML)
-    public AccountResponse buscarAccount(
-            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
-        return toAccountResponse(accountService.buscar(principal, id));
-    }
-
-    @PostMapping("/accounts")
-    @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.C_EML)
-    public AccountResponse criarAccount(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @Valid @RequestBody AccountRequest req) {
-        TlsMode tls = req.tlsMode() != null ? req.tlsMode() : TlsMode.STARTTLS;
-        int quota = req.dailyQuota() != null ? req.dailyQuota() : 500;
-        return toAccountResponse(
-                accountService.criar(
-                        principal,
-                        req.nome(),
-                        req.host(),
-                        req.port(),
-                        req.username(),
-                        req.password(),
-                        req.fromAddress(),
-                        req.fromName(),
-                        tls,
-                        quota));
-    }
-
-    @PatchMapping("/accounts/{id}")
-    @RequirePermission(PermissionCodes.E_EML)
-    public AccountResponse atualizarAccount(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID id,
-            @Valid @RequestBody AccountUpdateRequest req) {
-        return toAccountResponse(
-                accountService.atualizar(
-                        principal,
-                        id,
-                        req.nome(),
-                        req.host(),
-                        req.port(),
-                        req.username(),
-                        req.password(),
-                        req.fromAddress(),
-                        req.fromName(),
-                        req.tlsMode(),
-                        req.dailyQuota()));
-    }
-
-    @DeleteMapping("/accounts/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.D_EML)
-    public void deletarAccount(
-            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
-        accountService.deletar(principal, id);
-    }
-
-    @PostMapping("/accounts/{id}/test")
-    @RequirePermission(PermissionCodes.E_EML)
-    public void testarAccount(
-            @AuthenticationPrincipal AuthPrincipal principal, @PathVariable UUID id) {
-        accountService.testarConexao(principal, id);
-    }
 
     // ─── Templates ────────────────────────────────────────────────────────────
 
@@ -314,7 +198,6 @@ public class EmailController {
         return toEnvioResponse(
                 sendService.enviar(
                         principal,
-                        req.accountId(),
                         req.templateId(),
                         req.destinatarioEmail(),
                         req.destinatarioNome(),
@@ -363,22 +246,6 @@ public class EmailController {
 
     // ─── Mappers ──────────────────────────────────────────────────────────────
 
-    private AccountResponse toAccountResponse(EmailAccount a) {
-        return new AccountResponse(
-                a.getId(),
-                a.getNome(),
-                a.getHost(),
-                a.getPort(),
-                a.getUsername(),
-                a.getFromAddress(),
-                a.getFromName(),
-                a.getTlsMode(),
-                a.getDailyQuota(),
-                a.getStatus(),
-                a.getFalhasAuthCount(),
-                a.getUpdatedAt());
-    }
-
     private TemplateResponse toTemplateResponse(EmailTemplate t) {
         return new TemplateResponse(
                 t.getId(),
@@ -399,7 +266,6 @@ public class EmailController {
     private EnvioResponse toEnvioResponse(EmailEnvio e) {
         return new EnvioResponse(
                 e.getId(),
-                e.getAccountId(),
                 e.getTemplateId(),
                 e.getDestinatarioEmail(),
                 e.getDestinatarioNome(),

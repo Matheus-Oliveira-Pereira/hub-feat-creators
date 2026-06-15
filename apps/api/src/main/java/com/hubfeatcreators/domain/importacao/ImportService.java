@@ -120,12 +120,7 @@ public class ImportService {
                     "IMPORT_TOO_MANY_ROWS", "Arquivo excede " + MAX_LINHAS + " linhas.");
         }
 
-        ImportJob job =
-                new ImportJob(
-                        principal.usuarioId(),
-                        entidade,
-                        dest.toString(),
-                        filename);
+        ImportJob job = new ImportJob(principal.usuarioId(), entidade, dest.toString(), filename);
         job.setTotalLinhas(probe.estimatedTotal());
         return jobRepo.save(job);
     }
@@ -296,8 +291,7 @@ public class ImportService {
 
         if (jobRepo.countExecutandoByUsuario(principal.usuarioId()) >= 5) {
             throw BusinessException.tooManyRequests(
-                    "IMPORT_CONCURRENT_LIMIT",
-                    "Limite de 5 imports simultâneos atingido.");
+                    "IMPORT_CONCURRENT_LIMIT", "Limite de 5 imports simultâneos atingido.");
         }
         if (jobRepo.countExecutandoByUsuario(principal.usuarioId()) >= 1) {
             throw BusinessException.tooManyRequests(
@@ -314,10 +308,7 @@ public class ImportService {
         job.setUpdatedAt(Instant.now());
         ImportJob saved = jobRepo.save(job);
 
-        jobService.enqueue(
-                "IMPORT_BULK",
-                Map.of("importJobId", saved.getId().toString()),
-                batchId);
+        jobService.enqueue("IMPORT_BULK", Map.of("importJobId", saved.getId().toString()), batchId);
 
         return saved;
     }
@@ -474,10 +465,7 @@ public class ImportService {
     }
 
     public UUID persistInfluenciador(
-            Map<String, String> row,
-            UUID usuarioId,
-            String baseLegal,
-            String dedupStrategy) {
+            Map<String, String> row, UUID usuarioId, String baseLegal, String dedupStrategy) {
 
         String email = row.get("email");
         String instagram = row.get("instagram");
@@ -540,10 +528,7 @@ public class ImportService {
     }
 
     public UUID persistMarca(
-            Map<String, String> row,
-            UUID usuarioId,
-            String baseLegal,
-            String dedupStrategy) {
+            Map<String, String> row, UUID usuarioId, String baseLegal, String dedupStrategy) {
 
         String nome = row.getOrDefault("nome", "");
 
@@ -584,10 +569,7 @@ public class ImportService {
     }
 
     public UUID persistContato(
-            Map<String, String> row,
-            UUID usuarioId,
-            String baseLegal,
-            String dedupStrategy) {
+            Map<String, String> row, UUID usuarioId, String baseLegal, String dedupStrategy) {
 
         String email = row.get("email");
         String marcaIdStr = row.get("marca_id");

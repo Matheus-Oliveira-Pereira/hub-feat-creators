@@ -129,8 +129,7 @@ public class RelatorioService {
         List<Map<String, Object>> previous = queryPerformance(prev[0], prev[1]);
 
         List<Map<String, Object>> usuarios =
-                jdbc.queryForList(
-                        "SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
+                jdbc.queryForList("SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
 
         List<AssessorItem> assessores = new ArrayList<>();
         for (Map<String, Object> row : current) {
@@ -195,8 +194,7 @@ public class RelatorioService {
         List<Map<String, Object>> previous = querySla(prev[0], prev[1], responsavelId);
 
         List<Map<String, Object>> usuarios =
-                jdbc.queryForList(
-                        "SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
+                jdbc.queryForList("SELECT id, email FROM usuarios WHERE deleted_at IS NULL");
 
         List<TarefaSlaItem> assessores = new ArrayList<>();
         for (Map<String, Object> row : current) {
@@ -329,8 +327,7 @@ public class RelatorioService {
     public RelatorioSalvo salvar(
             AuthPrincipal principal, String nome, String tipo, Map<String, Object> filtros) {
         validateTipo(tipo);
-        return savedRepo.save(
-                new RelatorioSalvo(principal.usuarioId(), nome, tipo, filtros));
+        return savedRepo.save(new RelatorioSalvo(principal.usuarioId(), nome, tipo, filtros));
     }
 
     @Transactional(readOnly = true)

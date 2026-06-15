@@ -90,12 +90,7 @@ public class ImportJobHandler implements JobHandler {
                     if (erros.isEmpty()) {
                         try {
                             entidadeId =
-                                    persist(
-                                            entidade,
-                                            row,
-                                            usuarioId,
-                                            baseLegal,
-                                            dedupStrategy);
+                                    persist(entidade, row, usuarioId, baseLegal, dedupStrategy);
                             status = entidadeId != null ? "OK" : "SKIP";
                         } catch (Exception e) {
                             erros = List.of("Erro ao persistir: " + e.getMessage());
@@ -165,8 +160,7 @@ public class ImportJobHandler implements JobHandler {
         return switch (entidade) {
             case "INFLUENCIADOR" ->
                     importService.persistInfluenciador(row, usuarioId, baseLegal, dedupStrategy);
-            case "MARCA" ->
-                    importService.persistMarca(row, usuarioId, baseLegal, dedupStrategy);
+            case "MARCA" -> importService.persistMarca(row, usuarioId, baseLegal, dedupStrategy);
             case "CONTATO" ->
                     importService.persistContato(row, usuarioId, baseLegal, dedupStrategy);
             default -> null;

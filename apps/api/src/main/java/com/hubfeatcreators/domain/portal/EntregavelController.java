@@ -17,9 +17,7 @@ public class EntregavelController {
 
     @PatchMapping("/{id}/revisao")
     @RequirePermission(PermissionCodes.C_TAR)
-    public CreatorEntregavel revisar(
-            @PathVariable UUID id,
-            @RequestBody RevisaoRequest req) {
+    public CreatorEntregavel revisar(@PathVariable UUID id, @RequestBody RevisaoRequest req) {
         return portalService.revisarEntregavel(id, req.status(), req.feedback());
     }
 

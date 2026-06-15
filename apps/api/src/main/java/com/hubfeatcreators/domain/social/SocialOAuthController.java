@@ -58,12 +58,9 @@ public class SocialOAuthController {
                                                 "OAuth state inválido ou expirado"));
 
         switch (plataforma.toUpperCase()) {
-            case "INSTAGRAM" ->
-                    socialService.connectInstagram(pending.influenciadorId(), code);
-            case "YOUTUBE" ->
-                    socialService.connectYoutube(pending.influenciadorId(), code);
-            case "TIKTOK" ->
-                    socialService.connectTiktok(pending.influenciadorId(), code);
+            case "INSTAGRAM" -> socialService.connectInstagram(pending.influenciadorId(), code);
+            case "YOUTUBE" -> socialService.connectYoutube(pending.influenciadorId(), code);
+            case "TIKTOK" -> socialService.connectTiktok(pending.influenciadorId(), code);
             default ->
                     throw com.hubfeatcreators.infra.web.BusinessException.badRequest(
                             "PLATAFORMA_INVALIDA", "Plataforma não suportada");

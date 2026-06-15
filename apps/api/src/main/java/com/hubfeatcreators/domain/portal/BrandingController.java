@@ -27,8 +27,7 @@ public class BrandingController {
     @PutMapping
     @RequirePermission(PermissionCodes.OWNR)
     public AssessoriaBranding upsert(
-            @AuthenticationPrincipal Object principal,
-            @Valid @RequestBody BrandingRequest req) {
+            @AuthenticationPrincipal Object principal, @Valid @RequestBody BrandingRequest req) {
         AssessoriaBranding branding =
                 brandingRepo.findAll().stream()
                         .findFirst()

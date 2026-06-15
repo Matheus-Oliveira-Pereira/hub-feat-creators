@@ -42,9 +42,7 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
         AND t.status NOT IN ('FEITA','CANCELADA')
         AND t.prazo < :fimDia
       """)
-    long countAlerta(
-            @Param("usuarioId") UUID usuarioId,
-            @Param("fimDia") Instant fimDia);
+    long countAlerta(@Param("usuarioId") UUID usuarioId, @Param("fimDia") Instant fimDia);
 
     /** Tarefas para digest diário: vencidas + hoje + próximas 3 da semana. */
     @Query(
@@ -64,8 +62,7 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
       ORDER BY t.prazo ASC
       """)
     List<Tarefa> findByEntidade(
-            @Param("tipo") EntidadeTipo tipo,
-            @Param("entidadeId") UUID entidadeId);
+            @Param("tipo") EntidadeTipo tipo, @Param("entidadeId") UUID entidadeId);
 
     @Query(
             value =

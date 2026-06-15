@@ -37,9 +37,7 @@ public class PortalService {
 
     @Transactional(readOnly = true)
     public List<Tarefa> listarTarefas(UUID influenciadorId) {
-        return tarefaRepo
-                .findByEntidade(EntidadeTipo.INFLUENCIADOR, influenciadorId)
-                .stream()
+        return tarefaRepo.findByEntidade(EntidadeTipo.INFLUENCIADOR, influenciadorId).stream()
                 .filter(Tarefa::isVisivelParaCreator)
                 .toList();
     }
@@ -64,10 +62,7 @@ public class PortalService {
 
     @Transactional
     public TarefaComentario comentar(
-            UUID influenciadorId,
-            UUID tarefaId,
-            UUID creatorUserId,
-            String texto) {
+            UUID influenciadorId, UUID tarefaId, UUID creatorUserId, String texto) {
         detalharTarefa(influenciadorId, tarefaId); // validates access
         TarefaComentario c = TarefaComentario.fromCreator(tarefaId, creatorUserId, texto);
         return comentarioRepo.save(c);
@@ -83,10 +78,7 @@ public class PortalService {
 
     @Transactional
     public CreatorEntregavel enviarEntregavel(
-            UUID influenciadorId,
-            UUID tarefaId,
-            UUID creatorUserId,
-            MultipartFile file) {
+            UUID influenciadorId, UUID tarefaId, UUID creatorUserId, MultipartFile file) {
         detalharTarefa(influenciadorId, tarefaId);
 
         AttachmentStorage.StoredFile stored;
@@ -119,9 +111,7 @@ public class PortalService {
     public CreatorEntregavel revisarEntregavel(
             UUID entregavelId, String novoStatus, String feedback) {
         CreatorEntregavel e =
-                entregavelRepo
-                        .findById(entregavelId)
-                        .orElseThrow(BusinessException::notFound);
+                entregavelRepo.findById(entregavelId).orElseThrow(BusinessException::notFound);
         e.setStatus(novoStatus);
         if (feedback != null) e.setFeedback(feedback);
         return entregavelRepo.save(e);
@@ -132,9 +122,7 @@ public class PortalService {
     @Transactional(readOnly = true)
     public DownloadResult downloadEntregavel(UUID entregavelId) {
         CreatorEntregavel e =
-                entregavelRepo
-                        .findById(entregavelId)
-                        .orElseThrow(BusinessException::notFound);
+                entregavelRepo.findById(entregavelId).orElseThrow(BusinessException::notFound);
         InputStream stream = storage.load(e.getArquivoPath());
         return new DownloadResult(stream, e.getFilename(), e.getContentType(), e.getSizeBytes());
     }
